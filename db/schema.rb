@@ -10,8 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_12_14_074310) do
+ActiveRecord::Schema[8.0].define(version: 2024_12_14_182239) do
   create_table "accounts", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "categories", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -25,10 +31,13 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_14_074310) do
     t.integer "debitor_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "category_id"
+    t.index ["category_id"], name: "index_transactions_on_category_id"
     t.index ["creditor_id"], name: "index_transactions_on_creditor_id"
     t.index ["debitor_id"], name: "index_transactions_on_debitor_id"
   end
 
   add_foreign_key "transactions", "accounts", column: "creditor_id"
   add_foreign_key "transactions", "accounts", column: "debitor_id"
+  add_foreign_key "transactions", "categories"
 end
