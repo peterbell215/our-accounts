@@ -1,7 +1,10 @@
 <div id="<%= dom_id account %>">
   <p>
-    <strong>Name:</strong>
-    <%= account.name %>
+    <strong>Name:</strong><%= account.name %><br>
+    <strong>Account Number:</strong><%= account.account_number %><br>
+    <strong>Sort Code:</strong> <%= account.sortcode %><br>
+    <strong>Opening Date:</strong> <%= account.opening_date %><br>
+    <strong>Opening Balance:</strong> <%= humanized_money_with_symbol(account.opening_balance) %>
   </p>
 
 </div>

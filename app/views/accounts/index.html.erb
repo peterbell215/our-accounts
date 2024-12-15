@@ -4,13 +4,29 @@
 
 <h1>Accounts</h1>
 
-<div id="accounts">
-  <% @accounts.each do |account| %>
-    <%= render account %>
-    <p>
-      <%= link_to "Show this account", account %>
-    </p>
-  <% end %>
-</div>
+<table id="accounts">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Account Number</th>
+      <th>Sort Code</th>
+      <th>Opening Date</th>
+      <th>Opening Balance</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @accounts.each do |account| %>
+      <tr id="<%= dom_id account %>">
+        <td><%= account.name %></td>
+        <td><%= account.account_number %></td>
+        <td><%= account.sortcode %></td>
+        <td><%= account.opening_date.to_s %></td>
+        <td><%= humanized_money_with_symbol(account.opening_balance) %></td>
+        <td><%= link_to "Show this account", account %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
 
 <%= link_to "New account", new_account_path %>
