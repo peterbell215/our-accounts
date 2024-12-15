@@ -27,5 +27,5 @@
 #       "yes": yup
 #       enabled: "ON"
 
-en:
+en-GB:
   hello: "Hello world"
