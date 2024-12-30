@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @import_matcher %>
+
+<div>
+  <%= link_to "Edit this import matcher", edit_import_matcher_path(@import_matcher) %> |
+  <%= link_to "Back to import matchers", import_matchers_path %>
+
+  <%= button_to "Destroy this import matcher", @import_matcher, method: :delete %>
+</div>

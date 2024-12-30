@@ -1,0 +1,16 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Import matchers" %>
+
+<h1>Import matchers</h1>
+
+<div id="import_matchers">
+  <% @import_matchers.each do |import_matcher| %>
+    <%= render import_matcher %>
+    <p>
+      <%= link_to "Show this import matcher", import_matcher %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New import matcher", new_import_matcher_path %>

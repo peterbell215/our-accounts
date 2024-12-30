@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_12_15_164411) do
+ActiveRecord::Schema[8.0].define(version: 2024_12_27_174305) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -26,6 +26,36 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_15_164411) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "import_column_definitions", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.integer "date_column", null: false
+    t.string "date_format", null: false
+    t.integer "transaction_type_column"
+    t.integer "sortcode_column"
+    t.integer "account_number_column"
+    t.integer "other_party_column"
+    t.integer "amount_column"
+    t.integer "debit_column"
+    t.integer "credit_column"
+    t.integer "balance_column"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_import_column_definitions_on_account_id"
+  end
+
+  create_table "import_matchers", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "category_id"
+    t.integer "import_column_definition_id", null: false
+    t.string "other_party", null: false
+    t.boolean "other_party_is_regex", default: false, null: false
+    t.index ["account_id"], name: "index_import_matchers_on_account_id"
+    t.index ["category_id"], name: "index_import_matchers_on_category_id"
+    t.index ["import_column_definition_id"], name: "index_import_matchers_on_import_column_definition_id"
   end
 
   create_table "transactions", force: :cascade do |t|
@@ -46,6 +76,9 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_15_164411) do
     t.index ["previous_trx_id"], name: "index_transactions_on_previous_trx_id"
   end
 
+  add_foreign_key "import_matchers", "accounts"
+  add_foreign_key "import_matchers", "categories"
+  add_foreign_key "import_matchers", "import_column_definitions"
   add_foreign_key "transactions", "accounts", column: "creditor_id"
   add_foreign_key "transactions", "accounts", column: "debitor_id"
   add_foreign_key "transactions", "categories"

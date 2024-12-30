@@ -20,6 +20,9 @@ gem "jbuilder"
 # Provide monetization features for Rails applications
 gem "money-rails"
 
+# Required to process input records
+gem "csv"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
@@ -44,6 +47,9 @@ gem "thruster", require: false
 # gem "image_processing", "~> 1.2"
 
 group :development, :test do
+  # Include foreman to allow hot compilation of assets
+  gem "foreman"
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 
@@ -52,6 +58,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Use RSpec for testing
+  gem 'rspec-rails', '~> 5.0'
 end
 
 group :development do
@@ -59,3 +68,5 @@ group :development do
   gem "web-console"
 end
 
+
+gem "cssbundling-rails", "~> 1.4"

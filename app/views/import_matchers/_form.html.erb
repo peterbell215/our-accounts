@@ -1,0 +1,97 @@
+<%= form_with(model: import_matcher, local: true, class: 'form-horizontal') do |form| %>
+  <% if import_matcher.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(import_matcher.errors.count, "error") %> prohibited this import_matcher from being saved:</h2>
+      <ul>
+        <% import_matcher.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group.row">
+    <div class="col-sm-2">
+      <%= form.label :account_id, class: "control-label col-sm-2" %>
+    </div>
+    <div class="col-sm-10">
+      <%= form.text_field :account_id, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :date_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :date_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :date_format, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.text_field :date_format, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :transaction_type_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :transaction_type_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :sortcode_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :sortcode_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :account_number_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :account_number_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :other_party_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :other_party_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :amount_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :amount_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :debit_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :debit_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :credit_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :credit_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :balance_column, class: "control-label col-sm-2" %>
+    <div class="col-sm-10">
+      <%= form.number_field :balance_column, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <%= form.submit class: "btn btn-primary" %>
+    </div>
+  </div>
+<% end %>
