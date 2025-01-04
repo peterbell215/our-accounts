@@ -1,4 +1,4 @@
-class ImportColumnDefinition < ActiveRecord::Migration[8.0]
+class ImportColumnsDefinition < ActiveRecord::Migration[8.0]
   def change
     create_table :import_column_definitions do |t|
       t.references :account, null: false

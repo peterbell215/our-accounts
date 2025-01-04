@@ -53,7 +53,7 @@ end
 # @param csv [CSV] the CSV file to build the parameters from
 # @return [Hash] the common parameters used for the Lloyds Bank CSV importer
 def build_import_column_definitions(headers, account)
-  ImportColumnDefinition.create!(
+  ImportColumnsDefinition.create!(
     account_id: account.id,
     date_column: headers.index("Date"),
     date_format: "%d/%m/%Y",

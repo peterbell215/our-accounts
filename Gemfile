@@ -58,9 +58,17 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+end
 
+group :test do
   # Use RSpec for testing
   gem 'rspec-rails', '~> 7.1'
+
+  # Use FactoryBot to generate test data
+  gem 'factory_bot_rails'
+
+  # Use DatabaseCleaner to ensure database is always in a definied state
+  gem 'database_cleaner-active_record'
 end
 
 group :development do

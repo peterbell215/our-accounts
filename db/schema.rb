@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_12_27_174305) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_04_053818) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -28,7 +28,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_27_174305) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "import_column_definitions", force: :cascade do |t|
+  create_table "import_columns_definitions", force: :cascade do |t|
     t.integer "account_id", null: false
     t.integer "date_column", null: false
     t.string "date_format", null: false
@@ -42,7 +42,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_27_174305) do
     t.integer "balance_column"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_import_column_definitions_on_account_id"
+    t.index ["account_id"], name: "index_import_columns_definitions_on_account_id"
   end
 
   create_table "import_matchers", force: :cascade do |t|
@@ -56,6 +56,18 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_27_174305) do
     t.index ["account_id"], name: "index_import_matchers_on_account_id"
     t.index ["category_id"], name: "index_import_matchers_on_category_id"
     t.index ["import_column_definition_id"], name: "index_import_matchers_on_import_column_definition_id"
+  end
+
+  create_table "imported_transactions", force: :cascade do |t|
+    t.integer "import_account_id", null: false
+    t.date "date"
+    t.string "description"
+    t.string "trx_type"
+    t.integer "amount_pence", default: 0, null: false
+    t.string "amount_currency", default: "GBP", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["import_account_id"], name: "index_imported_transactions_on_import_account_id"
   end
 
   create_table "transactions", force: :cascade do |t|
@@ -78,7 +90,8 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_27_174305) do
 
   add_foreign_key "import_matchers", "accounts"
   add_foreign_key "import_matchers", "categories"
-  add_foreign_key "import_matchers", "import_column_definitions"
+  add_foreign_key "import_matchers", "import_columns_definitions", column: "import_column_definition_id"
+  add_foreign_key "imported_transactions", "accounts", column: "import_account_id"
   add_foreign_key "transactions", "accounts", column: "creditor_id"
   add_foreign_key "transactions", "accounts", column: "debitor_id"
   add_foreign_key "transactions", "categories"
