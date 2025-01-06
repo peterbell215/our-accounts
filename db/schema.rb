@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_04_053818) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_05_202153) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -67,6 +67,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_04_053818) do
     t.string "amount_currency", default: "GBP", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "balance_pence"
+    t.string "balance_currency"
     t.index ["import_account_id"], name: "index_imported_transactions_on_import_account_id"
   end
 

@@ -180,7 +180,6 @@
         <option value="rspec:generator" />
         <option value="rspec:helper" />
         <option value="rspec:install" />
-        <option value="rspec:integration" />
         <option value="rspec:job" />
         <option value="rspec:mailbox" />
         <option value="rspec:mailer" />
@@ -243,7 +242,6 @@
         <option value="rspec:generator" />
         <option value="rspec:helper" />
         <option value="rspec:install" />
-        <option value="rspec:integration" />
         <option value="rspec:job" />
         <option value="rspec:mailbox" />
         <option value="rspec:mailer" />
