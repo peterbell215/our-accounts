@@ -7,15 +7,14 @@ class ImportedTransactionFactory
   # @param [ImportColumnsDefinition] import_columns_definition
   # @return [null, ImportedTransaction]
   def self.build(csv_row, import_columns_definition)
+    csv_row = strip_leading_quote(csv_row)
+
     imported_transaction = ImportedTransaction.new
-    # TODO: replace with something that also checks the account columns if defined.
-    imported_transaction.import_account_id = import_columns_definition.account.id
 
+    imported_transaction.import_account_id = set_account_id(import_columns_definition, csv_row)
     imported_transaction.date = Date.strptime(csv_row[import_columns_definition.date_column], import_columns_definition.date_format)
-
     imported_transaction.trx_type = csv_row[import_columns_definition.transaction_type_column]
     imported_transaction.description = csv_row[import_columns_definition.other_party_column]
-
     imported_transaction.amount = set_amount(csv_row, import_columns_definition)
 
     if import_columns_definition.balance_column
@@ -26,6 +25,29 @@ class ImportedTransactionFactory
   end
 
   private
+
+  # For CSV files imported from Excel, there is on some fields a leading single quote to demark a string.  This
+  # method strips those single quotes.
+  # @param [CSV::Row] csv_row
+  def self.strip_leading_quote(csv_row)
+    csv_row.fields.map! {|s| s.is_a?(String) && s[0] == "'" && s[-1]!="'" ? s[1..] : s }
+  end
+
+  # Determine the transaction amount.
+  # @param [CSV::Row] csv_row
+  # @param [ImportColumnsDefinition] import_columns_definition
+  # @return [Money]
+  def self.set_account_id(import_columns_definition, csv_row)
+    if import_columns_definition.sortcode_column
+      account_details_match =
+        csv_row[import_columns_definition.sortcode_column]==import_columns_definition.account.sortcode &&
+        csv_row[import_columns_definition.account_number_column]==import_columns_definition.account.account_number
+
+      raise ImportError, "Sortcode and/or account number do not match with input file" unless account_details_match
+    end
+
+    import_columns_definition.account.id
+  end
 
   # Determine the transaction amount.
   # @param [CSV::Row] csv_row

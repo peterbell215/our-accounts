@@ -8,7 +8,7 @@ RSpec.describe ImportedTransactionFactory, type: :model do
 
     let(:csv_row) { CSV::Row.new(header, csv_data) }
     let(:header) { ["Transaction Date", "Transaction Type", "Sort Code", "Account Number", "Transaction Description", "Debit Amount", "Credit Amount", "Balance"] }
-    let(:csv_data) { ["12/12/2024", "DEB","'30-00-01" ,"01234567" , "Maison Bertaux", 5.95, nil, 1525.80] }
+    let(:csv_data) { ["12/12/2024", "DEB","'30-00-00" ,"01234567" , "Maison Bertaux", 5.95, nil, 1525.80] }
     let(:account) { Account.find_by(name: "Lloyds Account") }
 
     describe '#build' do
