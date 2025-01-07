@@ -17,7 +17,7 @@ FactoryBot.define do
     end
 
     factory :barclaycard_import_columns_definition do
-      account factory :barclay_card_account
+      account factory: :barclay_card_account
 
       date_column             { 0 }
       date_format             { "%d %b %y" }
@@ -25,11 +25,11 @@ FactoryBot.define do
       transaction_type_column { 4 }
       sortcode_column         { nil }
       account_number_column   { nil }
-
       amount_column           { nil }
       debit_column            { 5 }
       credit_column           { 6 }
       balance_column          { nil }
+      credit_sign             { -1 }
     end
   end
 end

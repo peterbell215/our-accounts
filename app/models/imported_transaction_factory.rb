@@ -17,8 +17,10 @@ class ImportedTransactionFactory
     imported_transaction.description = csv_row[import_columns_definition.other_party_column]
 
     imported_transaction.amount = set_amount(csv_row, import_columns_definition)
-    imported_transaction.balance =
-      import_columns_definition.balance_column && Money.from_amount(csv_row[import_columns_definition.balance_column])
+
+    if import_columns_definition.balance_column
+      imported_transaction.balance = Money.from_amount(csv_row[import_columns_definition.balance_column])
+    end
 
     imported_transaction
   end
@@ -30,11 +32,12 @@ class ImportedTransactionFactory
   # @param [ImportColumnsDefinition] import_columns_definition
   # @return [Money]
   def self.set_amount(csv_row, import_columns_definition)
-    amount = if (import_columns_definition.amount_column)
-               csv_row[import_columns_definition.amount_column]
-             else
-               csv_row[import_columns_definition.credit_column] || -csv_row[import_columns_definition.debit_column]
-             end
+    if (import_columns_definition.amount_column)
+      amount = csv_row[import_columns_definition.amount_column]
+    else
+      amount = csv_row[import_columns_definition.credit_column] || -csv_row[import_columns_definition.debit_column]
+      amount *= import_columns_definition.credit_sign
+    end
     Money.from_amount(amount)
   end
 end
