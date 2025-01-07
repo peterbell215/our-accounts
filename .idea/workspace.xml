@@ -5,12 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
-      <change afterPath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/our-accounts.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/our-accounts.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/imported_transaction.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/imported_transaction.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/db/schema.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/imported_transaction_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/imported_transaction_factory_spec.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/spec/factories/import_columns_definitions.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/factories/import_columns_definitions.rb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,42 +58,43 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultRubyCreateTestTemplate&quot;: &quot;RSpec&quot;,
-    &quot;Gem Command.our-accounts (2).executor&quot;: &quot;Run&quot;,
-    &quot;RSpec.account_spec.executor&quot;: &quot;Run&quot;,
-    &quot;RSpec.import_columns_definition_spec.executor&quot;: &quot;Run&quot;,
-    &quot;RSpec.imported_transaction_factory_spec.executor&quot;: &quot;Run&quot;,
-    &quot;Rails.our-accounts.executor&quot;: &quot;Run&quot;,
-    &quot;Rake.Import Categorised.executor&quot;: &quot;Debug&quot;,
-    &quot;Rake.db:create: our-accounts.executor&quot;: &quot;Run&quot;,
-    &quot;Rake.db:migrate: our-accounts.executor&quot;: &quot;Run&quot;,
-    &quot;Rake.db:reset: our-accounts.executor&quot;: &quot;Run&quot;,
-    &quot;Rake.spec: our-accounts.executor&quot;: &quot;Run&quot;,
-    &quot;Ruby Console.Rails console: our-accounts.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;Shell Script.our-accounts (2).executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/peter/RubymineProjects/our-accounts&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.ruby.settings.RubyActiveModuleSdkConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultRubyCreateTestTemplate": "RSpec",
+    "Gem Command.our-accounts (2).executor": "Run",
+    "RSpec.account_spec.executor": "Run",
+    "RSpec.import_columns_definition_spec.executor": "Run",
+    "RSpec.imported_transaction_factory_spec.executor": "Run",
+    "Rails.our-accounts.executor": "Run",
+    "Rake.Import Categorised.executor": "Debug",
+    "Rake.db:create: our-accounts.executor": "Run",
+    "Rake.db:migrate: our-accounts.executor": "Run",
+    "Rake.db:reset: our-accounts.executor": "Run",
+    "Rake.spec: our-accounts.executor": "Run",
+    "Ruby Console.Rails console: our-accounts.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Shell Script.our-accounts (2).executor": "Run",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/home/peter/RubymineProjects/our-accounts",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.ruby.settings.RubyActiveModuleSdkConfigurable",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;sqlite&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "sqlite"
     ],
-    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
-      &quot;ruby&quot;
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "ruby"
     ]
   }
-}</component>
+}]]></component>
   <component name="RbsLanguageSettings" isCollectionManagementEnabled="true" />
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -462,7 +461,7 @@
       <workItem from="1735548632579" duration="24970000" />
       <workItem from="1735968995445" duration="4533000" />
       <workItem from="1736098806007" duration="7088000" />
-      <workItem from="1736199276747" duration="1081000" />
+      <workItem from="1736199276747" duration="3491000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
