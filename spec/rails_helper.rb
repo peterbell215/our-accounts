@@ -21,6 +21,10 @@ RSpec.configure do |config|
   # setup for factory bot
   config.include FactoryBot::Syntax::Methods
 
+  config.before(:suite) do
+    Rails.application.load_seed
+  end
+
   config.before(:each) do
     DatabaseCleaner.start
   end

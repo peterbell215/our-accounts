@@ -1,29 +1,19 @@
 require "csv"
 
 namespace :import do
-  desc "Import previous analysis data"
-  task :categorised, [:input_file] => :environment do |_, args|
-
+  desc "Import categories from previous analysis data"
+  task :extract_categories, [:input_file] => :environment do |_, args|
     # import data from excel file
     file = File.join(Rails.root, "db", args[:input_file])
     csv = CSV.read(file, headers: true)
-    
-    extract_categories(csv)
 
-    build_importer_column_definitions(csv)
-  end
-end
+    csv.each do |row|
+      # remove any leading single quotes (used by Excel to de-mark a String) from each row element
+      row = row.to_h.transform_values! {|s| s && s[0] == "'" ? s[1..] : s }
 
-# Extract categories from the CSV file
-# @param csv [CSV] the CSV file to extract categories from
-# @return [void]
-def extract_categories(csv)
-  csv.each do |row|
-    # remove any leading single quotes (used by Excel to de-mark a String) from each row element
-    row = row.to_h.transform_values! {|s| s && s[0] == "'" ? s[1..] : s }
-
-    next if row["Category"].nil?
-    Category.find_or_create_by!(name: row["Category"])
+      next if row["Category"].nil?
+      Category.find_or_create_by!(name: row["Category"])
+    end
   end
 end
 
