@@ -20,6 +20,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_08_213658) do
     t.date "opening_date"
     t.integer "opening_balance_pence", default: 0, null: false
     t.string "opening_balance_currency", default: "GBP", null: false
+    t.string "type"
   end
 
   create_table "categories", force: :cascade do |t|
