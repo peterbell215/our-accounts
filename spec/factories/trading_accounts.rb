@@ -4,5 +4,9 @@ FactoryBot.define do
       name            { "Octopus Energy" }
       account_number  { '01234567' }
     end
+
+    factory :amazon_account do
+      name            { "Amazon" }
+    end
   end
 end

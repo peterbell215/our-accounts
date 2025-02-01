@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_08_213658) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_25_192017) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -51,12 +51,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_08_213658) do
     t.integer "account_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "category_id"
+    t.integer "category_id", null: false
     t.string "description", null: false
     t.boolean "description_is_regex", default: false, null: false
     t.string "trx_type"
+    t.integer "other_party_id", null: false
     t.index ["account_id"], name: "index_import_matchers_on_account_id"
     t.index ["category_id"], name: "index_import_matchers_on_category_id"
+    t.index ["other_party_id"], name: "index_import_matchers_on_other_party_id"
   end
 
   create_table "imported_transactions", force: :cascade do |t|
@@ -85,17 +87,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_08_213658) do
     t.integer "previous_trx_id", null: false
     t.integer "balance_pence", default: 0, null: false
     t.string "balance_currency", default: "GBP", null: false
+    t.integer "debitor_previous_trx_id"
+    t.integer "creditor_previous_trx_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
     t.index ["creditor_id"], name: "index_transactions_on_creditor_id"
+    t.index ["creditor_previous_trx_id"], name: "index_transactions_on_creditor_previous_trx_id"
     t.index ["debitor_id"], name: "index_transactions_on_debitor_id"
+    t.index ["debitor_previous_trx_id"], name: "index_transactions_on_debitor_previous_trx_id"
     t.index ["previous_trx_id"], name: "index_transactions_on_previous_trx_id"
   end
 
   add_foreign_key "import_matchers", "accounts"
+  add_foreign_key "import_matchers", "accounts", column: "other_party_id"
   add_foreign_key "import_matchers", "categories"
   add_foreign_key "imported_transactions", "accounts", column: "import_account_id"
   add_foreign_key "transactions", "accounts", column: "creditor_id"
   add_foreign_key "transactions", "accounts", column: "debitor_id"
   add_foreign_key "transactions", "categories"
-  add_foreign_key "transactions", "transactions", column: "previous_trx_id"
+  add_foreign_key "transactions", "transactions", column: "creditor_previous_trx_id"
+  add_foreign_key "transactions", "transactions", column: "debitor_previous_trx_id"
 end

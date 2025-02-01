@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :imported_transaction do
-    factory :amazon do
+    factory :amazon_imported_trx do
       import_account factory: :lloyds_account
 
       date        { Date.new(2024, 7, 16) }
@@ -10,7 +10,7 @@ FactoryBot.define do
       balance     { Money.from_amount(334.60) }
     end
 
-    factory :octopus_energy do
+    factory :octopus_energy_imported_trx do
       import_account factory: :lloyds_account
 
       date        { Date.new(2024, 11, 19) }
