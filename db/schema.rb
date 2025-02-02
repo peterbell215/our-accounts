@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_25_192017) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_02_162153) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -61,20 +61,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_25_192017) do
     t.index ["other_party_id"], name: "index_import_matchers_on_other_party_id"
   end
 
-  create_table "imported_transactions", force: :cascade do |t|
-    t.integer "import_account_id", null: false
-    t.date "date"
-    t.string "description"
-    t.string "trx_type"
-    t.integer "amount_pence", default: 0, null: false
-    t.string "amount_currency", default: "GBP", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "balance_pence"
-    t.string "balance_currency"
-    t.index ["import_account_id"], name: "index_imported_transactions_on_import_account_id"
-  end
-
   create_table "transactions", force: :cascade do |t|
     t.date "date"
     t.integer "amount_pence", default: 0, null: false
@@ -100,7 +86,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_25_192017) do
   add_foreign_key "import_matchers", "accounts"
   add_foreign_key "import_matchers", "accounts", column: "other_party_id"
   add_foreign_key "import_matchers", "categories"
-  add_foreign_key "imported_transactions", "accounts", column: "import_account_id"
   add_foreign_key "transactions", "accounts", column: "creditor_id"
   add_foreign_key "transactions", "accounts", column: "debitor_id"
   add_foreign_key "transactions", "categories"
