@@ -9,7 +9,6 @@ class ImportedTransactionFactory
     csv_row = strip_leading_quote(csv_row)
 
     imported_transaction = ImportedTransaction.new
-
     imported_transaction.import_account_id = set_account_id(csv_row, import_columns_definition)
     imported_transaction.date = Date.strptime(csv_row[import_columns_definition.date_column], import_columns_definition.date_format)
     imported_transaction.trx_type = csv_row[import_columns_definition.transaction_type_column]

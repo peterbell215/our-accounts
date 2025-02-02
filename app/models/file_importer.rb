@@ -1,5 +1,7 @@
 # Ruby Class to run a file import process.
 class FileImporter
+  attr_reader :file, :account, :column_definitions
+
   # Initialize the FileImporter
   # @param file [String] the path to the file to import
   # @param account [Account] the account to import the file into
@@ -23,16 +25,26 @@ class FileImporter
   # @return [ImportedTransaction]
   def import_row(row)
     imported_transaction = ImportedTransaction.new
-    imported_transaction.date = Date.strptime(row[import_matcher.date_column], import_matcher.date_format)
+    imported_transaction.date = Date.strptime(row[column_definitions.date_column], column_definitions.date_format)
+    imported_transaction.import_account_id = account.id
 
-    if import_column_definitions.debit_column && import_column_definitions.credit_column
-      imported_transaction.amount = Money.new(row[import_matcher.amount_column].to_f * 100)
-      imported_transaction.creditor = import_matcher.account
-      imported_transaction.debitor = import_matcher.account
+    imported_transaction.description = row[column_definitions.other_party_column]
+    imported_transaction.trx_type = row[column_definitions.transaction_type_column]
+
+    if column_definitions.debit_column && column_definitions.credit_column
+      imported_transaction.amount = if row[column_definitions.debit_column]
+                                      Money.from_amount(-row[column_definitions.debit_column].to_f)
+                                    elsif row[column_definitions.credit_column]
+                                      Money.from_amount(row[column_definitions.credit_column].to_f)
+                                    else
+                                      raise ImportError, "No credit or debit amount specified."
+                                    end
+    end
+
+    if column_definitions.balance_column
+      imported_transaction.balance = Money.from_amount(row[column_definitions.balance_column].to_f)
     end
 
     imported_transaction
   end
-
-  private
 end
