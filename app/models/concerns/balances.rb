@@ -25,7 +25,7 @@ module Balances
 
       raise ImportError if imported_transaction.balance && imported_transaction.balance!=trx.balance
 
-      trx.save
+      trx.save!
       trx
     end
   end
