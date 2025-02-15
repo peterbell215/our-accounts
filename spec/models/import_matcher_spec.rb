@@ -44,4 +44,17 @@ RSpec.describe ImportMatcher, type: :model do
       end
     end
   end
+
+  describe '#find_match' do
+    subject!(:import_matcher) { create(:import_matcher_octopus_energy) }
+
+    context 'when a match exists' do
+      let(:octopus_energy_imported_trx) { build(:octopus_energy_imported_trx, import_account: lloyds_account) }
+      let(:lloyds_account) { Account.find_by_name('Lloyds Account') }
+
+      it "finds the match" do
+        expect(ImportMatcher.find_match(octopus_energy_imported_trx)).to eq import_matcher
+      end
+    end
+  end
 end

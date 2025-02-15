@@ -6,6 +6,21 @@ class ImportMatcher < ApplicationRecord
   belongs_to :other_party, class_name: "Account"
   belongs_to :category
 
+  # Provided with an `ImportedTransaction` object, try and find a match using the matchers held in the database.
+  #
+  # @param [ImportedTransaction] imported_transaction
+  # @return [Symbol|ImportMatcher] returns either :no_match if no match can be found or a reference to the first
+  #                                successful match
+  def self.find_match(imported_transaction)
+    ImportMatcher.where(account_id: imported_transaction.import_account_id).each do |matcher|
+      if matcher.match(imported_transaction)
+        return matcher
+      end
+    end
+
+    :no_match
+  end
+
   # Tests whether the ```imported_transaction``` matches the criteria defined in the ```ImportMatcher```
   # @param [ImportedTransaction] imported_transaction
   def match(imported_transaction)

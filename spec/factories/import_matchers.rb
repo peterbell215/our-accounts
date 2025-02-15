@@ -1,10 +1,10 @@
 FactoryBot.define do
   factory :import_matcher do
-    account factory: :lloyds_account
+    account { BankAccount.find_by_name("Lloyds Bank") || FactoryBot.create(:lloyds_account) }
 
     factory :import_matcher_octopus_energy do
       category             { Category.find_by(name: 'Utilities') }
-      other_party          { FactoryBot.create(:octopus_energy_account) }
+      other_party          { TradingAccount.find_by(name: "Octopus Energy") || FactoryBot.create(:octopus_energy_account) }
 
       trx_type             { 'DD' }
       description          { 'OCTOPUS ENERGY'}
@@ -13,7 +13,7 @@ FactoryBot.define do
 
     factory :import_matcher_amazon do
       category             { Category.find_by(name: 'Shopping') }
-      other_party          { FactoryBot.create(:amazon_account) }
+      other_party          { TradingAccount.find_by(name: "Amazon") || FactoryBot.create(:amazon_account) }
 
       trx_type             { 'DEB' }
       description          { 'AMAZON' }
