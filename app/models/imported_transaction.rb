@@ -16,8 +16,6 @@ class ImportedTransaction
     import_account.id
   end
 
-  # belongs_to :import_account, class_name: "Account", foreign_key: :import_account_id
-
   attribute :date, :date
   attribute :description, :string
   attribute :trx_type, :string
