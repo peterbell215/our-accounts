@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :import_matcher do
-    account { BankAccount.find_by_name("Lloyds Bank") || FactoryBot.create(:lloyds_account) }
+    account { BankAccount.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
 
     factory :import_matcher_octopus_energy do
       category             { Category.find_by(name: 'Utilities') }

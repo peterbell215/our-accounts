@@ -13,9 +13,7 @@ class ImportMatcher < ApplicationRecord
   #                                successful match
   def self.find_match(imported_transaction)
     ImportMatcher.where(account_id: imported_transaction.import_account_id).each do |matcher|
-      if matcher.match(imported_transaction)
-        return matcher
-      end
+      return matcher if matcher.match(imported_transaction)
     end
 
     :no_match
