@@ -499,7 +499,7 @@
     <routine id="190" parent="1" name="fts5"/>
     <schema id="191" parent="1" name="main">
       <Current>1</Current>
-      <LastIntrospectionLocalTimestamp>2025-02-15.15:23:38</LastIntrospectionLocalTimestamp>
+      <LastIntrospectionLocalTimestamp>2025-02-16.05:25:48</LastIntrospectionLocalTimestamp>
     </schema>
     <argument id="192" parent="16">
       <ArgumentDirection>R</ArgumentDirection>
@@ -1941,7 +1941,7 @@
       <Position>8</Position>
       <StoredType>varchar|0s</StoredType>
     </column>
-    <column id="637" parent="563" name="sequence">
+    <column id="637" parent="563" name="day_index">
       <Position>9</Position>
       <StoredType>integer|0s</StoredType>
     </column>
