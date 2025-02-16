@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :transaction do
     account     { BankAccount.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
-    date        { Date.new(2024, 7, 16) }
+    date        { Date.new(2024, 11, 19) }
     category_id { Category.find_by_name("Utilities").id }
     other_party { TradingAccount.find_by_name("Octopus Energy") || FactoryBot.create(:octopus_energy_account) }
     amount      { Money.from_amount(-50.00) }

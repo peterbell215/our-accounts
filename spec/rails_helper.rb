@@ -27,6 +27,7 @@ RSpec.configure do |config|
 
   config.before(:each) do
     DatabaseCleaner.start
+    FactoryBot.rewind_sequences
   end
 
   config.append_after(:each) do

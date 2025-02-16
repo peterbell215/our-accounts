@@ -34,7 +34,7 @@ RSpec.describe Balances do
       create_list(:transaction, 5)
       trx = lloyds_account.add_transaction(imported_trx)
 
-      expect(trx.day_index).to eql 0
+      expect(trx.day_index).to eql 6
     end
   end
 
@@ -54,10 +54,18 @@ RSpec.describe Balances do
       expect(trx.balance).to eql Money.from_amount(950.00)
     end
 
-    it 'calculates the balance from the previous transaction balance' do
+    it 'calculates the balance from the previous transaction balance on same day' do
       create_list(:transaction, 5)
       trx = lloyds_account.add_transaction(imported_trx)
       expect(trx.balance).to eql Money.from_amount(700.00)
+      expect(trx.day_index).to eql 6
+    end
+
+    it 'calculates the balance from the previous transaction balance on preceding day' do
+      create_list(:transaction, 5, date: Date.new(2024, 7, 13))
+      trx = lloyds_account.add_transaction(imported_trx)
+      expect(trx.balance).to eql Money.from_amount(700.00)
+      expect(trx.day_index).to eql 0
     end
   end
 end
