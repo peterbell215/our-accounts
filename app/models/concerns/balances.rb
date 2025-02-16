@@ -18,8 +18,8 @@ module Balances
                             other_party: match.other_party,
                             category_id: match.category_id)
 
-      previous_transaction = self.transactions.where("date <= ?", trx.date).order(:sequence).first
-      trx.sequence = previous_transaction&.date == trx.date ? previous_transaction.sequence + 1 : 0
+      previous_transaction = self.transactions.where("date <= ?", trx.date).order(:day_index).first
+      trx.day_index = previous_transaction&.date == trx.date ? previous_transaction.day_index + 1 : 0
 
       trx.balance = (previous_transaction&.balance || trx.account.opening_balance) + trx.amount
 
