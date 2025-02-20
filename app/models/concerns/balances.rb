@@ -9,6 +9,8 @@ module Balances
     validates :opening_balance, presence: true
 
     # Add an imported transaction to the account, taking account of whether other transactions have already been added.
+    # @param [ImportedTransaction] imported_transaction
+    # @return [Tramsaction]
     def add_transaction(imported_transaction)
       match = ImportMatcher.find_match(imported_transaction)
 
