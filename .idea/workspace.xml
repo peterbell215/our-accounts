@@ -4,24 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
-      <change afterPath="$PROJECT_DIR$/spec/models/transaction_spec.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/account.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/account.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/bank_account.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/bank_account.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/concerns/balances.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/import_matcher.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/import_matcher.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/imported_transaction.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/trading_account.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/trading_account.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/transaction.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/transaction.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/factories/imported_transactions.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/factories/transactions.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/factories/transactions.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/bank_account_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/bank_account_spec.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/concerns/balances_spec.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/credit_card_account_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/credit_card_account_spec.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/import_matcher_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/import_matcher_spec.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/trading_account_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/trading_account_spec.rb" afterDir="false" />
-    </list>
+    <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -62,7 +45,7 @@
     <option name="CUSTOM_FILTER" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -556,7 +539,7 @@
       <workItem from="1739522199971" duration="4325000" />
       <workItem from="1739622346132" duration="30686000" />
       <workItem from="1739827188431" duration="976000" />
-      <workItem from="1740088387008" duration="11687000" />
+      <workItem from="1740088387008" duration="12752000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -644,7 +627,7 @@
     <SUITE FILE_PATH="coverage/our_accounts@bank_account_spec.rcov" NAME="bank_account_spec Coverage Results" MODIFIED="1738276000314" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportedTransactionFactory_Barclaycard_Import__build.rcov" NAME="ImportedTransactionFactory Barclaycard Import #build Coverage Results" MODIFIED="1740159686216" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@file_importer_spec.rcov" NAME="file_importer_spec Coverage Results" MODIFIED="1738495915854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1740160728879" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1740162328377" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportedTransactionFactory_Lloyds_Import__build.rcov" NAME="ImportedTransactionFactory Lloyds Import #build Coverage Results" MODIFIED="1736288090414" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@import_extract_categories.rcov" NAME="import:extract_categories Coverage Results" MODIFIED="1737816884218" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@spec__our_accounts.rcov" NAME="spec: our-accounts Coverage Results" MODIFIED="1736579110909" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />

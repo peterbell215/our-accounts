@@ -13,7 +13,7 @@ class Transaction < ApplicationRecord
   monetize :balance_pence, allow_nil: true
 
   # Find if a match for this trx exists using the ImportMatcher class.
-  # @return [Tramsaction]
+  # @return [Transaction]
   def find_match
     match = ImportMatcher.find_match(self)
 
@@ -25,8 +25,8 @@ class Transaction < ApplicationRecord
   end
 
   # Add an imported transaction to the account, taking account of whether other transactions have already been added.
-  # @param [ImportedTransaction] trx
-  # @return [Tramsaction]
+
+  # @return [void]
   def sequence
     previous_transaction = self.account.transactions.where("date <= ?", self.date).order(:date, :day_index).last
     self.day_index = previous_transaction&.date == self.date ? previous_transaction.day_index + 1 : 0

@@ -7,7 +7,7 @@ FactoryBot.define do
       other_party          { TradingAccount.find_by(name: "Octopus Energy") || FactoryBot.create(:octopus_energy_account) }
 
       trx_type             { 'DD' }
-      description          { 'OCTOPUS ENERGY'}
+      description          { 'OCTOPUS ENERGY' }
       description_is_regex { false }
     end
 

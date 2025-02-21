@@ -7,11 +7,11 @@ RSpec.describe ImportedTransactionFactory, type: :model do
     let(:import_columns_definition) { FactoryBot.create(:lloyds_import_columns_definition) }
 
     let(:csv_row) { CSV::Row.new(header, csv_data) }
-    let(:header) { ["Transaction Date", "Transaction Type", "Sort Code", "Account Number", "Transaction Description", "Debit Amount", "Credit Amount", "Balance"] }
+    let(:header) { [ "Transaction Date", "Transaction Type", "Sort Code", "Account Number", "Transaction Description", "Debit Amount", "Credit Amount", "Balance" ] }
     let(:account) { Account.find_by(name: "Lloyds Account") }
 
     describe '#build' do
-      let(:csv_data) { ["12/12/2024", "DEB","'30-00-00" ,"01234567" , "Maison Bertaux", 5.95, nil, 1525.80] }
+      let(:csv_data) { [ "12/12/2024", "DEB", "'30-00-00", "01234567", "Maison Bertaux", 5.95, nil, 1525.80 ] }
 
       specify { expect(imported_transaction.account_id).to eq(account.id) }
       specify { expect(imported_transaction.date).to eq(Date.new(2024, 12, 12)) }
@@ -22,7 +22,7 @@ RSpec.describe ImportedTransactionFactory, type: :model do
     end
 
   describe '#build raises AccountError' do
-    let(:csv_data) { ["12/12/2024", "DEB","'30-00-01" ,"01234567" , "Maison Bertaux", 5.95, nil, 1525.80] }
+    let(:csv_data) { [ "12/12/2024", "DEB", "'30-00-01", "01234567", "Maison Bertaux", 5.95, nil, 1525.80 ] }
 
     it 'raises an AccountError when account details do not match' do
       expect { ImportedTransactionFactory.build(csv_row, import_columns_definition) }.to raise_error(ImportError, "Sortcode and/or account number do not match with input file")
@@ -34,7 +34,7 @@ RSpec.describe ImportedTransactionFactory, type: :model do
     let(:import_columns_definition) { FactoryBot.create(:barclaycard_import_columns_definition) }
 
     let(:csv_row) { CSV::Row.new([], csv_data) }
-    let(:csv_data) { ["01 Dec 24", " Norton *AP1563501329, Dublin99.99 POUND STERLING IRELAND ","Visa","MR C BELL","Shopping", nil, 99.99] }
+    let(:csv_data) { [ "01 Dec 24", " Norton *AP1563501329, Dublin99.99 POUND STERLING IRELAND ", "Visa", "MR C BELL", "Shopping", nil, 99.99 ] }
     let(:account) { Account.find_by(name: "Barclaycard") }
 
     describe '#build' do
@@ -48,5 +48,4 @@ RSpec.describe ImportedTransactionFactory, type: :model do
       specify { expect(imported_transaction.balance).to be_nil }
     end
   end
-
 end

@@ -9,5 +9,4 @@ describe Account, type: :model do
 
     context
   end
-
 end

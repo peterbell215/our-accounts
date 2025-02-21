@@ -16,7 +16,6 @@ class FileImporter
   def read
     CSV.read(@file, headers: true).each do |row|
       # @todo: add inner workings.
-
     end
   end
 end
