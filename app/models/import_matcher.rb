@@ -9,20 +9,20 @@ class ImportMatcher < ApplicationRecord
   # Provided with an `ImportedTransaction` object, try and find a match using the matchers held in the database.
   #
   # @param [ImportedTransaction] imported_transaction
-  # @return [Symbol|ImportMatcher] returns either :no_match if no match can be found or a reference to the first
+  # @return [nil|ImportMatcher] returns either nil if no match can be found or a reference to the first
   #                                successful match
   def self.find_match(imported_transaction)
-    ImportMatcher.where(account_id: imported_transaction.import_account_id).each do |matcher|
+    ImportMatcher.where(account_id: imported_transaction.account_id).each do |matcher|
       return matcher if matcher.match(imported_transaction)
     end
 
-    :no_match
+    nil
   end
 
   # Tests whether the ```imported_transaction``` matches the criteria defined in the ```ImportMatcher```
   # @param [ImportedTransaction] imported_transaction
   def match(imported_transaction)
-    return false if self.account_id != imported_transaction.import_account_id
+    return false if self.account_id != imported_transaction.account_id
     return false if self.trx_type != nil && self.trx_type != imported_transaction.trx_type
 
     if self.description_is_regex

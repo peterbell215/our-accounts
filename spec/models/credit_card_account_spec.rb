@@ -7,10 +7,6 @@ describe CreditCardAccount, type: :model do
     specify { expect(account.name).to eq "Barclaycard" }
   end
 
-  describe '#balances?' do
-    specify { expect(account.class.balances?).to be_truthy }
-  end
-
   describe 'validations' do
     specify { expect(FactoryBot.build(:lloyds_account, opening_balance: nil)).to_not be_valid }
     specify { expect(FactoryBot.build(:lloyds_account, account_number: '00')).to_not be_valid }

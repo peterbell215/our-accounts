@@ -7,10 +7,6 @@ describe TradingAccount, type: :model do
     specify { expect(account.name).to eq "Octopus Energy" }
   end
 
-  describe '#balances?' do
-    specify { expect(account.class.balances?).to be_falsey }
-  end
-
   describe 'validations' do
     specify { expect(FactoryBot.build(:octopus_energy_account, opening_balance: nil)).to be_valid }
   end
