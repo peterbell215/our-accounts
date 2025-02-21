@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_20_215822) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_21_054604) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -67,7 +67,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_20_215822) do
     t.date "date", null: false
     t.integer "amount_pence", default: 0, null: false
     t.string "amount_currency", default: "GBP", null: false
-    t.integer "balance_pence", default: 0, null: false
+    t.integer "balance_pence"
     t.string "balance_currency", default: "GBP", null: false
     t.integer "day_index"
     t.integer "other_party_id"

@@ -13,7 +13,7 @@ RSpec.describe ImportedTransactionFactory, type: :model do
     describe '#build' do
       let(:csv_data) { ["12/12/2024", "DEB","'30-00-00" ,"01234567" , "Maison Bertaux", 5.95, nil, 1525.80] }
 
-      specify { expect(imported_transaction.import_account_id).to eq(account.id) }
+      specify { expect(imported_transaction.account_id).to eq(account.id) }
       specify { expect(imported_transaction.date).to eq(Date.new(2024, 12, 12)) }
       specify { expect(imported_transaction.trx_type).to eq('DEB') }
       specify { expect(imported_transaction.description).to eq('Maison Bertaux') }
@@ -40,7 +40,7 @@ RSpec.describe ImportedTransactionFactory, type: :model do
     describe '#build' do
       subject(:imported_transaction) { ImportedTransactionFactory.build(csv_row, import_columns_definition) }
 
-      specify { expect(imported_transaction.import_account_id).to eq(account.id) }
+      specify { expect(imported_transaction.account_id).to eq(account.id) }
       specify { expect(imported_transaction.date).to eq(Date.new(2024, 12, 1)) }
       specify { expect(imported_transaction.trx_type).to eq('Shopping') }
       specify { expect(imported_transaction.description).to eq(" Norton *AP1563501329, Dublin99.99 POUND STERLING IRELAND ") }

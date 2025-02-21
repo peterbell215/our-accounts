@@ -5,10 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/40414050-c794-4d99-9c39-70523b8775f0.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/40414050-c794-4d99-9c39-70523b8775f0.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/a214a433-4a2f-4320-8a4e-6069e89115f5.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/a214a433-4a2f-4320-8a4e-6069e89115f5.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/concerns/balances.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/concerns/balances.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/transaction.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/transaction.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/db/schema.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/spec/models/imported_transaction_factory_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/imported_transaction_factory_spec.rb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -142,12 +144,12 @@
       <command value="rake import:extract_categories outgoings-analysis-apr-to-jun24.csv" />
       <command value="rake db:seed" />
       <command value="rake db:migrate:down" />
-      <command value="rake db:rollback" />
       <command value="rails generate migration" />
+      <command value="rake db:rollback" />
       <command value="rake db:migrate" />
     </option>
   </component>
-  <component name="RunManager" selected="RSpec.all">
+  <component name="RunManager" selected="Rake.db:migrate: our-accounts">
     <configuration name="our-accounts (2)" type="CommandRunConfigurationType" factoryName="Gem Command">
       <module name="our-accounts" />
       <COMMAND_RUN_CONFIGURATION NAME="RUBY_ARGS" VALUE="" />
@@ -168,7 +170,7 @@
       <COMMAND_CONFIG_SETTINGS_ID NAME="WORKING_DIR" VALUE="$MODULE_DIR$" />
       <method v="2" />
     </configuration>
-    <configuration name="Balances when imported balance is not set calculates the balance from the previous transaction balance on same day" type="RSpecRunConfigurationType" factoryName="RSpec" temporary="true" nameIsGenerated="true">
+    <configuration name="ImportedTransactionFactory Barclaycard Import #build" type="RSpecRunConfigurationType" factoryName="RSpec" temporary="true" nameIsGenerated="true">
       <module name="our-accounts" />
       <predefined_log_file enabled="true" id="RUBY_RSPEC" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="RUBY_ARGS" VALUE="" />
@@ -189,49 +191,11 @@
       </EXTENSION>
       <EXTENSION ID="org.jetbrains.plugins.ruby.rails.run.RailsRunConfigurationExtension" SCRATCH_USE_RAILS_RUNNER="false" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TESTS_FOLDER_PATH" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATH" VALUE="$MODULE_DIR$/spec/models/concerns/balances_spec.rb" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATHS" VALUE="$MODULE_DIR$/spec/models/concerns/balances_spec.rb" />
+      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATH" VALUE="$MODULE_DIR$/spec/models/imported_transaction_factory_spec.rb" />
+      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATHS" VALUE="$MODULE_DIR$/spec/models/imported_transaction_factory_spec.rb" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_RUNNER_PATH" VALUE="" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_FILE_MASK" VALUE="'**/*_spec.rb'" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_EXAMPLE_NAME" VALUE="Balances when imported balance is not set calculates the balance from the previous transaction balance on same day" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="USE_EXAMPLE_MATCHES" VALUE="false" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="LINE_NUMBER_EXAMPLE_IDS" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_TEST_TYPE" VALUE="TEST_SCRIPT" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_ARGS" VALUE="--no-color" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="RUNNER_VERSION" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="USE_CUSTOM_SPEC_RUNNER" VALUE="false" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="DRB" VALUE="false" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="ZEUS" VALUE="false" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPRING" VALUE="false" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="FULL_BACKTRACE" VALUE="false" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Balances when previous transactions in account on same date" type="RSpecRunConfigurationType" factoryName="RSpec" temporary="true" nameIsGenerated="true">
-      <module name="our-accounts" />
-      <predefined_log_file enabled="true" id="RUBY_RSPEC" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="RUBY_ARGS" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="WORK DIR" VALUE="$MODULE_DIR$" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SHOULD_USE_SDK" VALUE="false" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="ALTERN_SDK_NAME" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="myPassParentEnvs" VALUE="true" />
-      <envs>
-        <env name="RAILS_ENV" value="test" />
-        <env name="JRUBY_OPTS" value="-X+O" />
-      </envs>
-      <EXTENSION ID="BundlerRunConfigurationExtension" BUNDLE_MODE="DISABLE" bundleExecEnabled="false" />
-      <EXTENSION ID="JRubyRunConfigurationExtension" NailgunExecEnabled="false" />
-      <EXTENSION ID="RubyCoverageRunConfigurationExtension" track_test_folders="true" runner="rcov" ENABLE_BRANCH_COVERAGE="true" ENABLE_FORKED_COVERAGE="true">
-        <COVERAGE_PATTERN ENABLED="true">
-          <PATTERN REGEXPS="/.rvm/" INCLUDED="false" />
-        </COVERAGE_PATTERN>
-      </EXTENSION>
-      <EXTENSION ID="org.jetbrains.plugins.ruby.rails.run.RailsRunConfigurationExtension" SCRATCH_USE_RAILS_RUNNER="false" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TESTS_FOLDER_PATH" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATH" VALUE="$MODULE_DIR$/spec/models/concerns/balances_spec.rb" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATHS" VALUE="$MODULE_DIR$/spec/models/concerns/balances_spec.rb" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_RUNNER_PATH" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_FILE_MASK" VALUE="'**/*_spec.rb'" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_EXAMPLE_NAME" VALUE="Balances when previous transactions in account on same date" />
+      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_EXAMPLE_NAME" VALUE="ImportedTransactionFactory Barclaycard Import #build" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="USE_EXAMPLE_MATCHES" VALUE="false" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="LINE_NUMBER_EXAMPLE_IDS" VALUE="" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_TEST_TYPE" VALUE="TEST_SCRIPT" />
@@ -349,7 +313,7 @@
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="FULL_BACKTRACE" VALUE="false" />
       <method v="2" />
     </configuration>
-    <configuration name="import_matcher_spec" type="RSpecRunConfigurationType" factoryName="RSpec" temporary="true" nameIsGenerated="true">
+    <configuration name="imported_transaction_factory_spec" type="RSpecRunConfigurationType" factoryName="RSpec" temporary="true" nameIsGenerated="true">
       <module name="our-accounts" />
       <predefined_log_file enabled="true" id="RUBY_RSPEC" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="RUBY_ARGS" VALUE="" />
@@ -370,8 +334,8 @@
       </EXTENSION>
       <EXTENSION ID="org.jetbrains.plugins.ruby.rails.run.RailsRunConfigurationExtension" SCRATCH_USE_RAILS_RUNNER="false" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TESTS_FOLDER_PATH" VALUE="" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATH" VALUE="$MODULE_DIR$/spec/models/import_matcher_spec.rb" />
-      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATHS" VALUE="$MODULE_DIR$/spec/models/import_matcher_spec.rb" />
+      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATH" VALUE="$MODULE_DIR$/spec/models/imported_transaction_factory_spec.rb" />
+      <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_SCRIPT_PATHS" VALUE="$MODULE_DIR$/spec/models/imported_transaction_factory_spec.rb" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_RUNNER_PATH" VALUE="" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="TEST_FILE_MASK" VALUE="'**/*_spec.rb'" />
       <RSPEC_RUN_CONFIG_SETTINGS_ID NAME="SPEC_EXAMPLE_NAME" VALUE="" />
@@ -419,6 +383,30 @@
       <RAKE_RUN_CONFIG_SETTINGS_ID NAME="SHOULD_USE_SDK" VALUE="false" />
       <RAKE_RUN_CONFIG_SETTINGS_ID NAME="ALTERN_SDK_NAME" VALUE="" />
       <RAKE_RUN_CONFIG_SETTINGS_ID NAME="myPassParentEnvs" VALUE="true" />
+      <EXTENSION ID="BundlerRunConfigurationExtension" BUNDLE_MODE="AUTO" bundleExecEnabled="true" />
+      <EXTENSION ID="RubyCoverageRunConfigurationExtension" track_test_folders="true" runner="rcov" ENABLE_BRANCH_COVERAGE="true" ENABLE_FORKED_COVERAGE="true">
+        <COVERAGE_PATTERN ENABLED="true">
+          <PATTERN REGEXPS="/.rvm/" INCLUDED="false" />
+        </COVERAGE_PATTERN>
+      </EXTENSION>
+      <EXTENSION ID="org.jetbrains.plugins.ruby.rails.run.RailsRunConfigurationExtension" SCRATCH_USE_RAILS_RUNNER="false" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_NAME" VALUE="db:migrate" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_ARGS" VALUE="" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_ATTACHED_TEST_FRAMEWORKS" VALUE="" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_OPTION_TRACE" VALUE="false" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_OPTION_DRYRUN" VALUE="false" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_OPTION_PREREQS" VALUE="false" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_OPTION_TESTOPTS" VALUE="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="db:rollback: our-accounts" type="RakeRunConfigurationType" factoryName="Rake" temporary="true">
+      <module name="our-accounts" />
+      <predefined_log_file enabled="true" id="RUBY_RAKE" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RUBY_ARGS" VALUE="" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="WORK DIR" VALUE="$MODULE_DIR$" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="SHOULD_USE_SDK" VALUE="false" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="ALTERN_SDK_NAME" VALUE="" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="myPassParentEnvs" VALUE="true" />
       <envs>
         <env name="RAILS_ENV" value="development" />
       </envs>
@@ -429,7 +417,7 @@
         </COVERAGE_PATTERN>
       </EXTENSION>
       <EXTENSION ID="org.jetbrains.plugins.ruby.rails.run.RailsRunConfigurationExtension" SCRATCH_USE_RAILS_RUNNER="false" />
-      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_NAME" VALUE="db:migrate" />
+      <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_NAME" VALUE="db:rollback" />
       <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_ARGS" VALUE="" />
       <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_ATTACHED_TEST_FRAMEWORKS" VALUE="" />
       <RAKE_RUN_CONFIG_SETTINGS_ID NAME="RAKE_TASK_OPTION_TRACE" VALUE="false" />
@@ -484,21 +472,21 @@
       <item itemvalue="Gem Command.our-accounts (2)" />
       <item itemvalue="Rails.our-accounts" />
       <item itemvalue="Rake.import:extract_categories" />
+      <item itemvalue="Rake.db:rollback: our-accounts" />
       <item itemvalue="Rake.db:migrate: our-accounts" />
       <item itemvalue="RSpec.all" />
-      <item itemvalue="RSpec.Balances when imported balance is not set calculates the balance from the previous transaction balance on same day" />
-      <item itemvalue="RSpec.Balances when previous transactions in account on same date" />
-      <item itemvalue="RSpec.import_matcher_spec" />
+      <item itemvalue="RSpec.ImportedTransactionFactory Barclaycard Import #build" />
+      <item itemvalue="RSpec.imported_transaction_factory_spec" />
       <item itemvalue="RSpec.balances_spec" />
       <item itemvalue="Shell Script.our-accounts (2)" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="RSpec.ImportedTransactionFactory Barclaycard Import #build" />
         <item itemvalue="Rake.db:migrate: our-accounts" />
+        <item itemvalue="Rake.db:rollback: our-accounts" />
+        <item itemvalue="RSpec.imported_transaction_factory_spec" />
         <item itemvalue="RSpec.balances_spec" />
-        <item itemvalue="RSpec.Balances when imported balance is not set calculates the balance from the previous transaction balance on same day" />
-        <item itemvalue="RSpec.Balances when previous transactions in account on same date" />
-        <item itemvalue="RSpec.import_matcher_spec" />
       </list>
     </recent_temporary>
   </component>
@@ -545,7 +533,7 @@
       <workItem from="1739522199971" duration="4325000" />
       <workItem from="1739622346132" duration="30686000" />
       <workItem from="1739827188431" duration="976000" />
-      <workItem from="1740088387008" duration="634000" />
+      <workItem from="1740088387008" duration="2959000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -611,20 +599,28 @@
           </properties>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="ruby-line">
+          <url>file://$PROJECT_DIR$/app/models/imported_transaction_factory.rb</url>
+          <line>17</line>
+          <properties myBlockOrdinal="-1">
+            <option name="block-ordinal" value="-1" />
+          </properties>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/our_accounts@imported_transaction_factory_spec.rcov" NAME="imported_transaction_factory_spec Coverage Results" MODIFIED="1736366475043" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@db_seed__our_accounts.rcov" NAME="db:seed: our-accounts Coverage Results" MODIFIED="1737821362949" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@imported_transaction_factory_spec.rcov" NAME="imported_transaction_factory_spec Coverage Results" MODIFIED="1740116137507" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Rails_console__our_accounts.rcov" NAME="Rails console: our-accounts Coverage Results" MODIFIED="1739623127262" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@db_reset__our_accounts.rcov" NAME="db:reset: our-accounts Coverage Results" MODIFIED="1736109961834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@trading_account_spec.rcov" NAME="trading_account_spec Coverage Results" MODIFIED="1738300358285" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@db_reset__our_accounts.rcov" NAME="db:reset: our-accounts Coverage Results" MODIFIED="1736109961834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportMatcher__find_match.rcov" NAME="ImportMatcher #find_match Coverage Results" MODIFIED="1739638491111" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@ImportedTransactionFactory_Barclaycard_Import__build.rcov" NAME="ImportedTransactionFactory Barclaycard Import #build Coverage Results" MODIFIED="1736288561664" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@bank_account_spec.rcov" NAME="bank_account_spec Coverage Results" MODIFIED="1738276000314" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@ImportedTransactionFactory_Barclaycard_Import__build.rcov" NAME="ImportedTransactionFactory Barclaycard Import #build Coverage Results" MODIFIED="1740117416873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@file_importer_spec.rcov" NAME="file_importer_spec Coverage Results" MODIFIED="1738495915854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1739681936201" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1740089114977" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportedTransactionFactory_Lloyds_Import__build.rcov" NAME="ImportedTransactionFactory Lloyds Import #build Coverage Results" MODIFIED="1736288090414" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@import_extract_categories.rcov" NAME="import:extract_categories Coverage Results" MODIFIED="1737816884218" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@spec__our_accounts.rcov" NAME="spec: our-accounts Coverage Results" MODIFIED="1736579110909" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
@@ -632,8 +628,8 @@
     <SUITE FILE_PATH="coverage/our_accounts@account_spec.rcov" NAME="account_spec Coverage Results" MODIFIED="1737925374444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@db_create__our_accounts.rcov" NAME="db:create: our-accounts Coverage Results" MODIFIED="1733692209873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@import_matcher_spec.rcov" NAME="import_matcher_spec Coverage Results" MODIFIED="1739640261520" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@db_rollback__our_accounts.rcov" NAME="db:rollback: our-accounts Coverage Results" MODIFIED="1737830783480" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Balances_when_previous_transactions_in_account_on_same_date.rcov" NAME="Balances when previous transactions in account on same date Coverage Results" MODIFIED="1739739202023" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@db_rollback__our_accounts.rcov" NAME="db:rollback: our-accounts Coverage Results" MODIFIED="1740117040616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@balances_spec.rcov" NAME="balances_spec Coverage Results" MODIFIED="1739741509347" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Balances_when_imported_balance_is_not_set_calculates_the_balance_from_the_previous_transaction_balance_on_same_day.rcov" NAME="Balances when imported balance is not set calculates the balance from the previous transaction balance on same day Coverage Results" MODIFIED="1739739481868" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Import_Categorised.rcov" NAME="Import Categorised Coverage Results" MODIFIED="1735308177954" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
@@ -641,7 +637,7 @@
     <SUITE FILE_PATH="coverage/our_accounts@db_migrate_down__our_accounts.rcov" NAME="db:migrate:down: our-accounts Coverage Results" MODIFIED="1737830147920" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@FileImporter__import_rows.rcov" NAME="FileImporter #import_rows Coverage Results" MODIFIED="1738395813525" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@import_columns_definition_spec.rcov" NAME="import_columns_definition_spec Coverage Results" MODIFIED="1736281884526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@db_migrate__our_accounts.rcov" NAME="db:migrate: our-accounts Coverage Results" MODIFIED="1739681811279" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@db_migrate__our_accounts.rcov" NAME="db:migrate: our-accounts Coverage Results" MODIFIED="1740117247184" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportMatcher.rcov" NAME="ImportMatcher Coverage Results" MODIFIED="1737754001996" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
   </component>
 </project>
