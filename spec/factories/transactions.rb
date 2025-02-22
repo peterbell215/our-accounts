@@ -20,7 +20,16 @@ FactoryBot.define do
         amount      { Money.from_amount(218.85) }
         balance     { Money.from_amount(1383.14) }
       end
-    end
+
+      factory :bertaux_transaction_for_export do
+        account     { BankAccount.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
+        date        { Date.new(2024, 12, 12) }
+        trx_type    { "DEB" }
+        description { 'Maison Bertaux' }
+        amount      { Money.from_amount(-5.95) }
+        balance     { Money.from_amount(1525.80) }
+      end
+  end
 
     factory :matched_transaction do
       account     { BankAccount.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }

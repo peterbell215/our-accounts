@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_21_054604) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_22_201253) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -33,7 +33,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_21_054604) do
     t.integer "account_id", null: false
     t.integer "date_column", null: false
     t.string "date_format", null: false
-    t.integer "transaction_type_column"
+    t.integer "trx_type_column"
     t.integer "sortcode_column"
     t.integer "account_number_column"
     t.integer "other_party_column"

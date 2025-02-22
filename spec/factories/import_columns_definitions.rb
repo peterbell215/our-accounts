@@ -6,7 +6,7 @@ FactoryBot.define do
 
       date_column             { 0 }
       date_format             { "%d/%m/%Y" }
-      transaction_type_column { 1 }
+      trx_type_column         { 1 }
       sortcode_column         { 2 }
       account_number_column   { 3 }
       other_party_column      { 4 }
@@ -22,7 +22,7 @@ FactoryBot.define do
       date_column             { 0 }
       date_format             { "%d %b %y" }
       other_party_column      { 1 }
-      transaction_type_column { 4 }
+      trx_type_column         { 4 }
       sortcode_column         { nil }
       account_number_column   { nil }
       amount_column           { nil }

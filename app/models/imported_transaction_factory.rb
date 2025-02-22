@@ -11,7 +11,7 @@ class ImportedTransactionFactory
     imported_transaction = Transaction.new
     imported_transaction.account_id = set_account_id(csv_row, import_columns_definition)
     imported_transaction.date = Date.strptime(csv_row[import_columns_definition.date_column], import_columns_definition.date_format)
-    imported_transaction.trx_type = csv_row[import_columns_definition.transaction_type_column]
+    imported_transaction.trx_type = csv_row[import_columns_definition.trx_type_column]
     imported_transaction.description = csv_row[import_columns_definition.other_party_column]
     imported_transaction.amount = set_amount(csv_row, import_columns_definition)
 
