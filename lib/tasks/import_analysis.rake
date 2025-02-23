@@ -2,14 +2,14 @@ require "csv"
 
 namespace :import do
   desc "Import categories from previous analysis data"
-  task :extract_categories, [:input_file] => :environment do |_, args|
+  task :extract_categories, [ :input_file ] => :environment do |_, args|
     # import data from excel file
     file = File.join(Rails.root, "db", args[:input_file])
     csv = CSV.read(file, headers: true)
 
     csv.each do |row|
       # remove any leading single quotes (used by Excel to de-mark a String) from each row element
-      row = row.to_h.transform_values! {|s| s && s[0] == "'" ? s[1..] : s }
+      row = row.to_h.transform_values! { |s| s && s[0] == "'" ? s[1..] : s }
 
       next if row["Category"].nil?
       Category.find_or_create_by!(name: row["Category"])
