@@ -40,8 +40,9 @@ def build_import(csv)
 end
 
 # Build the common parameters used for the Lloyds Bank CSV importer
-# @param csv [CSV] the CSV file to build the parameters from
+
 # @return [Hash] the common parameters used for the Lloyds Bank CSV importer
+# @param [Object] headers
 def build_import_column_definitions(headers, account)
   ImportColumnsDefinition.create!(
     account_id: account.id,

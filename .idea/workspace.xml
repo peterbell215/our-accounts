@@ -5,13 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/import_columns_definition.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/import_columns_definition.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/db/schema.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/factories/import_columns_definitions.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/factories/import_columns_definitions.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/factories/transactions.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/factories/transactions.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/import_columns_definition_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/import_columns_definition_spec.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db/seeds.rb" beforeDir="false" afterPath="$PROJECT_DIR$/db/seeds.rb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -532,7 +526,7 @@
       <workItem from="1739522199971" duration="4325000" />
       <workItem from="1739622346132" duration="30686000" />
       <workItem from="1739827188431" duration="976000" />
-      <workItem from="1740088387008" duration="28738000" />
+      <workItem from="1740088387008" duration="29049000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
