@@ -4,7 +4,7 @@ require "csv"
 class ImportedTransactionFactory
   # @param [CSV::Row] csv_row
   # @param [ImportColumnsDefinition] import_columns_definition
-  # @return [null, ImportedTransaction]
+  # @return [ImportedTransaction]
   def self.build(csv_row, import_columns_definition)
     csv_row = strip_leading_quote(csv_row)
 

@@ -19,6 +19,17 @@ class ImportColumnsDefinition < ApplicationRecord
     data
   end
 
+  # Does the heavy lifting of extracting a specific datum from the trx and writing it into the appropriate row.
+  # It has two forms of invocation:
+  # - ```extract_data(data, :trx_type_column, trx.trx_type)``` can be used if the datum is a simple type (eg String, Number)
+  # - ```extract_data(data, :sortcode_column) { trx.account.sortcode }``` can be used if a more complex conversion of the
+  #   type is required
+  #
+  # @param [Array] data the array being populated
+  # @param [Symbol] column_index_field should match the names in the ImportColumnDefinition field holding the indexes
+  # @param [Object] field_value
+  # @param [Block] block
+  # @return [void]
   def extract_data(data, column_index_field, field_value = nil)
     column_index = self[column_index_field]
 

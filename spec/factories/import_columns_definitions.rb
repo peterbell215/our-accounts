@@ -2,7 +2,7 @@
 FactoryBot.define do
   factory :import_columns_definition do
     factory :lloyds_import_columns_definition do
-      account factory: :lloyds_account
+      account                 { Account.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
 
       date_column             { 0 }
       date_format             { "%d/%m/%Y" }
@@ -17,7 +17,7 @@ FactoryBot.define do
     end
 
     factory :barclaycard_import_columns_definition do
-      account factory: :barclay_card_account
+      account                 { Account.find_by_name("Barclaycard") || FactoryBot.create(:barclay_card_account) }
 
       date_column             { 0 }
       date_format             { "%d %b %y" }

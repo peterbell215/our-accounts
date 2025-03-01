@@ -29,6 +29,13 @@ FactoryBot.define do
         amount      { Money.from_amount(-5.95) }
         balance     { Money.from_amount(1525.80) }
       end
+
+      factory :tesco_shop do
+        account     { BankAccount.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
+        trx_type    { "DEB" }
+        description { 'TESCO STORES 2889' }
+        amount      { Money.from_amount(-5.95) }
+      end
   end
 
     factory :matched_transaction do
