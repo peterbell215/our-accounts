@@ -5,8 +5,29 @@ class ImportColumnsDefinition < ApplicationRecord
 
   validates :account_id, presence: true
 
+  # Because we use the same attribute to store the column whether the column is referenced by a column header or
+  # an integer index, we need to cast the column name to an integer if no header row is used.  This creates a set
+  # of access methods that do that casting if required.
+  attribute_names.filter { |attribute| attribute =~ /_column$/ }.each do |attribute_name|
+    define_method(attribute_name) do
+      value = super()
+      value = value.to_i if !self.header && __method__ =~ /_column$/ && value
+      value
+    end
+  end
+
+  # Generates an array of column names or column numbers.
+  # @return [Array]
+  def csv_header
+    @csv_header ||=
+      %i[date_column trx_type_column sortcode_column account_number_column other_party_column credit_column debit_column balance_column].map { |column| self[column] }.compact
+  end
+
+  # Builds a CSV::Row object from the Transaction object.
+  # @param [Transaction] trx
+  # @return [CSV::Row]
   def build_csv_data(trx)
-    data = Array.new
+    data = CSV::Row.new(self.header ? csv_header : Array.new(csv_header.size), Array.new(csv_header.size))
     extract_data(data, :date_column) { trx.date.strftime(self.date_format) }
     extract_data(data, :trx_type_column, trx.trx_type)
     extract_data(data, :sortcode_column) { trx.account.sortcode }
@@ -25,7 +46,7 @@ class ImportColumnsDefinition < ApplicationRecord
   # - ```extract_data(data, :sortcode_column) { trx.account.sortcode }``` can be used if a more complex conversion of the
   #   type is required
   #
-  # @param [Array] data the array being populated
+  # @param [CSV::Row] data the array being populated
   # @param [Symbol] column_index_field should match the names in the ImportColumnDefinition field holding the indexes
   # @param [Object] field_value
   # @param [Block] block

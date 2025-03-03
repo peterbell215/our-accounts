@@ -14,7 +14,7 @@ class FileImporter
   # Run the file import process
   # @return [void]
   def import
-    CSV.read(@file, headers: true).each do |row|
+    CSV.read(@file, headers: import_column_definitions.header).each do |row|
       imported_trx = ImportedTransactionFactory.build(csv_row, import_column_definitions)
       imported_trx.find_match
       imported_trx.sequence

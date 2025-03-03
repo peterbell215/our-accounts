@@ -42,7 +42,7 @@ class LloydsImportFileGenerator
 
   def write_file
     import_columns_definitions = FactoryBot.create(:lloyds_import_columns_definition)
-    csv_file = CSV.open(Rails.root.join('tmp', 'lloyds_import_file.csv'), 'w')
+    csv_file = CSV.open(Rails.root.join('tmp', 'lloyds_import_file.csv'), 'w', write_headers: true)
     @transactions.each { |trx| csv_file << import_columns_definitions.build_csv_data(trx) }
     csv_file.close
   end

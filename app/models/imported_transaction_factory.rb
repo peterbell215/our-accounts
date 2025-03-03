@@ -6,7 +6,7 @@ class ImportedTransactionFactory
   # @param [ImportColumnsDefinition] import_columns_definition
   # @return [ImportedTransaction]
   def self.build(csv_row, import_columns_definition)
-    csv_row = strip_leading_quote(csv_row)
+    strip_leading_quote(csv_row)
 
     imported_transaction = Transaction.new
     imported_transaction.account_id = set_account_id(csv_row, import_columns_definition)
@@ -27,9 +27,11 @@ class ImportedTransactionFactory
   # For CSV files imported from Excel, there is on some fields a leading single quote to demark a string.  This
   # method strips those single quotes.
   # @param [CSV::Row] csv_row
-  # @return [Array] returns the array of column values with any leading single quotes removed
+  # @return [void]
   def self.strip_leading_quote(csv_row)
-    csv_row.fields.map! { |s| s.is_a?(String) && s[0] == "'" && s[-1]!="'" ? s[1..] : s }
+    csv_row.each do |field, s|
+      csv_row[field] = s[1..] if s.is_a?(String) && s[0] == "'" && s[-1]!="'"
+    end
   end
 
   # If the import file contains the account details, check that they match the account we are importing to.

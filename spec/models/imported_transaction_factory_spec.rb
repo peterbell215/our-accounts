@@ -6,7 +6,7 @@ RSpec.describe ImportedTransactionFactory, type: :model do
 
     let(:import_columns_definition) { FactoryBot.create(:lloyds_import_columns_definition) }
 
-    let(:csv_row) { CSV::Row.new(header, csv_data) }
+    let(:csv_row) { CSV::Row.new(header, csv_data, true) }
     let(:header) { [ "Transaction Date", "Transaction Type", "Sort Code", "Account Number", "Transaction Description", "Debit Amount", "Credit Amount", "Balance" ] }
     let(:account) { Account.find_by(name: "Lloyds Account") }
 

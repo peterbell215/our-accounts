@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 describe BankAccount, type: :model do
-  subject(:account) { FactoryBot.create(:lloyds_account) }
+  subject(:account) { Account.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
 
   describe 'FactoryBot' do
     specify { expect(account.name).to eq "Lloyds Account" }
