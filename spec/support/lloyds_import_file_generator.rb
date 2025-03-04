@@ -10,15 +10,23 @@ class LloydsImportFileGenerator
   # Does the real work of generating the file.  At the end, we have a CSV export file that could have come from
   # Lloyds bank's website in the tmp folder.
   def generate(filename)
+    salary
     utility
     tesco_food
     sort
+    add_balances
     write_file
+  end
+
+  private
+
+  def salary
+    @transactions << FactoryBot.build(:salary_transaction, date: @account.opening_date.end_of_month)
   end
 
   def utility
     @transactions <<
-      FactoryBot.build(:octopus_energy_imported_trx, account: @account, date: @account.opening_date + 6.days)
+      FactoryBot.build(:octopus_energy_imported_trx, date: @account.opening_date + 6.days)
   end
 
   # Tesco shops happen every few days.  We have a defined array of the gaps and create a transaction accordingly.
@@ -36,13 +44,13 @@ class LloydsImportFileGenerator
 
   # Transactions are sorted by date descending in the Lloyds CSV export file.
   def sort
-    @transactions.sort { |trx1, trx2| trx1.date <=> trx2.date }
+    @transactions.sort! { |trx1, trx2| trx1.date <=> trx2.date }
   end
-
 
   def write_file
     import_columns_definitions = FactoryBot.create(:lloyds_import_columns_definition)
     csv_file = CSV.open(Rails.root.join('tmp', 'lloyds_import_file.csv'), 'w', write_headers: true)
+    csv_file << import_columns_definitions.csv_header
     @transactions.each { |trx| csv_file << import_columns_definitions.build_csv_data(trx) }
     csv_file.close
   end

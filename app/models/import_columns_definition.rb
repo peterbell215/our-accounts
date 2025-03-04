@@ -33,7 +33,7 @@ class ImportColumnsDefinition < ApplicationRecord
     extract_data(data, :sortcode_column) { trx.account.sortcode }
     extract_data(data, :account_number_column) { trx.account.account_number }
     extract_data(data, :credit_column) { trx.amount > 0 ? trx.amount.to_f : nil }
-    extract_data(data, :debit_column) { trx.amount < 0 && trx.amount.to_f * -1.0 }
+    extract_data(data, :debit_column) { trx.amount < 0 ? trx.amount.to_f * -1.0 : nil }
     extract_data(data, :balance_column) { trx.balance.to_f }
     extract_data(data, :other_party_column, trx.description)
 
