@@ -11,11 +11,15 @@ class FileImporter
     @import_column_definitions = ImportColumnsDefinition.find_by(account_id: account.id)
   end
 
-  # Run the file import process
+  # Run the file import process taking account of whether the CSV is in reverse date order.
   # @return [void]
   def import
-    CSV.read(@file, headers: import_column_definitions.header).each do |csv_row|
-      imported_trx = ImportedTransactionFactory.build(csv_row, import_column_definitions)
+    csv_data = CSV.read(@file, headers: import_column_definitions.header)
+    index_range = (0...csv_data.count)
+    index = (import_column_definitions.reversed ? index_range.reverse_each : index_range.each)
+
+    index.each do |i|
+      imported_trx = ImportedTransactionFactory.build(csv_data[i], import_column_definitions)
       imported_trx.find_match
       imported_trx.sequence
       imported_trx.save!

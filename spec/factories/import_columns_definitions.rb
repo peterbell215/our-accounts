@@ -15,6 +15,7 @@ FactoryBot.define do
       debit_column            { "Debit Amount" }
       credit_column           { "Credit Amount" }
       balance_column          { "Balance" }
+      reversed                { true }
     end
 
     factory :barclaycard_import_columns_definition do
@@ -32,6 +33,7 @@ FactoryBot.define do
       credit_column           { 6 }
       balance_column          { nil }
       credit_sign             { -1 }
+      reversed                { false }
     end
   end
 end

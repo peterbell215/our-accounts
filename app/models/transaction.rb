@@ -2,8 +2,8 @@
 class Transaction < ApplicationRecord
   belongs_to :account, optional: false
 
-  belongs_to :category
-  belongs_to :other_party, class_name: "Account", foreign_key: "other_party_id"
+  belongs_to :category, optional: true
+  belongs_to :other_party, class_name: "Account", foreign_key: "other_party_id", optional: true
   belongs_to :import_matcher, optional: true
 
   validates :date, presence: true
