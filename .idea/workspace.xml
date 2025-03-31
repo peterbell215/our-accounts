@@ -5,16 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/40414050-c794-4d99-9c39-70523b8775f0.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/40414050-c794-4d99-9c39-70523b8775f0.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/our-accounts.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/our-accounts.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Gemfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gemfile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/file_importer.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/file_importer.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/imported_transaction_factory.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/transaction.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/transaction.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/factories/import_columns_definitions.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/factories/import_columns_definitions.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/file_importer_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/file_importer_spec.rb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -108,7 +100,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "Shell Script.our-accounts (2).executor": "Run",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "Merging main",
     "last_opened_file_path": "/home/peter-bell/RubymineProjects/our-accounts",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -569,7 +561,7 @@
       <workItem from="1743358260224" duration="1478000" />
       <workItem from="1743362676187" duration="736000" />
       <workItem from="1743363420894" duration="3842000" />
-      <workItem from="1743430132156" duration="3541000" />
+      <workItem from="1743430132156" duration="3891000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
