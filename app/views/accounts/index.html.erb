@@ -23,7 +23,7 @@
         <td><%= account.sortcode %></td>
         <td><%= account.opening_date.to_s %></td>
         <td><%= humanized_money_with_symbol(account.opening_balance) %></td>
-        <td><%= link_to "Show this account", account %></td>
+        <td><%= link_to "Show this account", account_path(account) %></td>
       </tr>
     <% end %>
   </tbody>
