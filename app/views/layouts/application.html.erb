@@ -18,12 +18,27 @@
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%# stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   </head>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav>
+    <div class="pure-menu pure-menu-horizontal">
+      <a href="#" class="pure-menu-heading pure-menu-link">BRAND</a>
+      <ul class="pure-menu-list">
+        <li class="pure-menu-item">
+          <a href="#" class="pure-menu-link">News</a>
+        </li>
+        <li class="pure-menu-item">
+          <a href="#" class="pure-menu-link">Sports</a>
+        </li>
+        <li class="pure-menu-item">
+          <a href="#" class="pure-menu-link">Finance</a>
+        </li>
+      </ul>
+    </div>
+
     <div class="container-fluid">
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#target-navbar-expanded"
               aria-controls="target-navbar-expanded" aria-expanded="true" aria-label="Toggle navigation">
