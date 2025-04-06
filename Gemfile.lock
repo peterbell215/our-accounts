@@ -88,8 +88,6 @@ GEM
     concurrent-ruby (1.3.5)
     connection_pool (2.5.0)
     crass (1.0.6)
-    cssbundling-rails (1.4.3)
-      railties (>= 6.0.0)
     csv (3.3.3)
     database_cleaner-active_record (2.2.0)
       activerecord (>= 5.a)
@@ -397,7 +395,6 @@ PLATFORMS
 DEPENDENCIES
   bootsnap
   brakeman
-  cssbundling-rails (~> 1.4)
   csv
   database_cleaner-active_record
   debug

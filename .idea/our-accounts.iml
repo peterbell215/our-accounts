@@ -52,7 +52,6 @@
     <orderEntry type="library" scope="PROVIDED" name="concurrent-ruby (v1.3.5, RVM: ruby-3.3.6) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="connection_pool (v2.5.0, RVM: ruby-3.3.6) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="crass (v1.0.6, RVM: ruby-3.3.6) [gem]" level="application" />
-    <orderEntry type="library" scope="PROVIDED" name="cssbundling-rails (v1.4.3, RVM: ruby-3.3.6) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="csv (v3.3.3, RVM: ruby-3.3.6) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="database_cleaner-active_record (v2.2.0, RVM: ruby-3.3.6) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="database_cleaner-core (v2.0.1, RVM: ruby-3.3.6) [gem]" level="application" />
@@ -460,22 +459,6 @@
             <subtasks>
               <RakeTaskImpl description="Lookup first-level dependencies for TEMPLATE (like messages/show or comments/_comment.html)" fullCommand="cache_digests:dependencies" id="dependencies" />
               <RakeTaskImpl description="Lookup nested dependencies for TEMPLATE (like messages/show or comments/_comment.html)" fullCommand="cache_digests:nested_dependencies" id="nested_dependencies" />
-            </subtasks>
-          </RakeTaskImpl>
-          <RakeTaskImpl id="css">
-            <subtasks>
-              <RakeTaskImpl description="Build your CSS bundle" fullCommand="css:build" id="build" />
-              <RakeTaskImpl description="Remove CSS builds" fullCommand="css:clobber" id="clobber" />
-              <RakeTaskImpl description="Install CSS dependencies" fullCommand="css:install" id="install" />
-              <RakeTaskImpl id="install">
-                <subtasks>
-                  <RakeTaskImpl description="Install Bootstrap" fullCommand="css:install:bootstrap" id="bootstrap" />
-                  <RakeTaskImpl description="Install Bulma" fullCommand="css:install:bulma" id="bulma" />
-                  <RakeTaskImpl description="Install PostCSS" fullCommand="css:install:postcss" id="postcss" />
-                  <RakeTaskImpl description="Install Sass" fullCommand="css:install:sass" id="sass" />
-                  <RakeTaskImpl description="Install Tailwind" fullCommand="css:install:tailwind" id="tailwind" />
-                </subtasks>
-              </RakeTaskImpl>
             </subtasks>
           </RakeTaskImpl>
           <RakeTaskImpl id="db">
