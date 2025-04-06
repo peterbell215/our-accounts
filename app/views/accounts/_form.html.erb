@@ -1,22 +1,43 @@
-<%= form_with(model: account) do |form| %>
-  <% if account.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(account.errors.count, "error") %> prohibited this account from being saved:</h2>
+<div class="pure-u-1-2">
+  <%= form_with(model: account, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
+    <% if account.errors.any? %>
+      <div id="error_explanation" class="pure-alert pure-alert-error">
+        <h2><%= pluralize(account.errors.count, "error") %> prohibited this account from being saved:</h2>
+        <ul>
+          <% account.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
 
-      <ul>
-        <% account.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+    <div class="pure-control-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "pure-input-1-2" %>
+    </div>
+
+    <div class="pure-control-group">
+      <%= form.label :account_number %>
+      <%= form.text_field :account_number, class: "pure-input-1-2" %>
+    </div>
+
+    <div class="pure-control-group">
+      <%= form.label :sortcode %>
+      <%= form.text_field :sortcode, class: "pure-input-1-2" %>
+    </div>
+
+    <div class="pure-control-group">
+      <%= form.label :opening_date %>
+      <%= form.date_field :opening_date, class: "pure-input-1-2" %>
+    </div>
+
+    <div class="pure-control-group">
+      <%= form.label :opening_balance %>
+      <%= form.text_field :opening_balance, class: "pure-input-1-2" %>
+    </div>
+
+    <div class="pure-controls">
+      <%= form.submit class: "pure-button pure-button-primary" %>
     </div>
   <% end %>
-
-  <div>
-    <%= form.label :name, style: "display: block" %>
-    <%= form.text_field :name %>
-  </div>
-
-  <div>
-    <%= form.submit %>
-  </div>
-<% end %>
+</div>

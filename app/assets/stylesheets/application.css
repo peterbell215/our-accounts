@@ -9,3 +9,16 @@
  * Consider organizing styles into separate files for maintainability.
  */
 @import url("purecss/build/pure.css");
+
+/* app/assets/stylesheets/application.css */
+.pure-menu {
+    background-color: #333; /* Dark background color */
+}
+
+.pure-menu .pure-menu-link {
+    color: #fff; /* White text color */
+}
+
+.pure-menu .pure-menu-link:hover {
+    color: #000; /* Light gray text color on hover */
+}

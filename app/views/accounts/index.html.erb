@@ -4,7 +4,7 @@
 
 <h1>Accounts</h1>
 
-<table id="accounts">
+<table id="accounts" class="pure-table pure-table-striped">
   <thead>
     <tr>
       <th>Name</th>
@@ -29,4 +29,7 @@
   </tbody>
 </table>
 
-<%= link_to "New account", new_account_path %>
+<div style="margin-top: 1rem">
+  <%= link_to "New account", new_account_path, class: "pure-button" %>
+</div>
+
