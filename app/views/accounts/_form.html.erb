@@ -1,5 +1,5 @@
 
-<%= form_with(model: account, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
+<%= form_with(model: account, url: accounts_path, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
   <% if account.errors.any? %>
     <div id="error_explanation" class="pure-alert pure-alert-error">
       <h2><%= pluralize(account.errors.count, "error") %> prohibited this account from being saved:</h2>
@@ -12,6 +12,11 @@
   <% end %>
 
   <div class="pure-control-group">
+    <%= form.label :type %>
+    <%= form.select :type, options_for_select([['Bank Account', 'BankAccount'], ['Credit Card', 'CreditCard']]), {}, id:"type", class: "pure-input-1-4" %>
+  </div>
+
+  <div class="pure-control-group">
     <%= form.label :name %>
     <%= form.text_field :name, class: "pure-input-1-3" %>
   </div>
@@ -21,7 +26,7 @@
     <%= form.text_field :account_number, class: "pure-input-1-4" %>
   </div>
 
-  <div class="pure-control-group">
+  <div id="sortcode" class="pure-control-group">
     <%= form.label :sortcode %>
     <%= form.text_field :sortcode, class: "pure-input-1-4" %>
   </div>
@@ -40,3 +45,5 @@
     <%= form.submit class: "pure-button pure-button-primary" %>
   </div>
 <% end %>
+
+<%= javascript_include_tag "accounts" %>
