@@ -61,8 +61,9 @@ group :development, :test do
 end
 
 group :test do
-  # Use RSpec for testing
   gem "rspec-rails", "~> 7.1"
+  gem "capybara", "~> 3.40"
+  gem "selenium-webdriver"
 
   # Use FactoryBot to generate test data
   gem "factory_bot_rails"
@@ -75,3 +76,4 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 end
+

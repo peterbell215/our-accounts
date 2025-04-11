@@ -1,5 +1,6 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
+
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 
@@ -10,6 +11,9 @@ Dir[Rails.root.join('spec/support/**/*.rb')].sort.each { |f| require f }
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 
 # Add additional requires below this line. Rails is not loaded until this point!
+require "capybara/rails"
+require "capybara/rspec"
+
 
 # Checks for pending migrations and applies them before tests are run.
 # If you are not using ActiveRecord, you can remove these lines.
@@ -36,4 +40,6 @@ RSpec.configure do |config|
   config.append_after(:each) do
     DatabaseCleaner.clean
   end
+
+  config.include Rails.application.routes.url_helpers
 end

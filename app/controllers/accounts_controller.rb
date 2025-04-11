@@ -25,7 +25,7 @@ class AccountsController < ApplicationController
 
     respond_to do |format|
       if @account.save
-        format.html { redirect_to @account, notice: "Account was successfully created." }
+        format.html { redirect_to account_path(@account), notice: "Account was successfully created." }
         format.json { render :show, status: :created, location: @account }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -58,13 +58,14 @@ class AccountsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_account
-      @account = Account.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def account_params
-      params.expect(account: [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode])
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_account
+    @account = Account.find(params.expect(:id))
+  end
+
+  # Only allow a list of trusted parameters through.
+  def account_params
+    params.expect(account: [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode])
+  end
 end
