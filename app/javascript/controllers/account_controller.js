@@ -1,20 +1,17 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-    sortcodeField;
+    static targets = ["sortcode"];
 
-    connect() {
-        this.sortcodeField = document.getElementById("sortcode");
-    }
     type_changed(event) {
         const accountType = event.target.value;
 
         if (accountType === "CreditCardAccount") {
-            this.sortcodeField.style.display = "none";
-            this.sortcodeField.disabled = true;
+            this.sortcodeTarget.style.display = "none";
+            this.sortcodeTarget.disabled = true;
         } else {
-            this.sortcodeField.style.display = "";
-            this.sortcodeField.disabled = false;
+            this.sortcodeTarget.style.display = "";
+            this.sortcodeTarget.disabled = false;
         }
     }
 }

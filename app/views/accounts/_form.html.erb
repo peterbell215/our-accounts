@@ -11,41 +11,43 @@
     </div>
   <% end %>
 
-  <div class="pure-control-group" data-controller="account">
-    <%= form.label :type %>
-    <%= form.select :type,
-                    options_for_select([['Bank Account', 'BankAccount'], ['Credit Card', 'CreditCardAccount']]),
-                    {}, id:"type",
-                    class: "pure-input-1-4",
-                    data: { action: "account#type_changed" } %>
-  </div>
+  <fieldset data-controller="account">
+    <div class="pure-control-group" >
+      <%= form.label :type %>
+      <%= form.select :type,
+                      options_for_select([['Bank Account', 'BankAccount'], ['Credit Card', 'CreditCardAccount']]),
+                      {}, id:"type",
+                      class: "pure-input-1-4",
+                      data: { action: "account#type_changed" } %>
+    </div>
 
-  <div class="pure-control-group">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "pure-input-1-3" %>
-  </div>
+    <div class="pure-control-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "pure-input-1-3" %>
+    </div>
 
-  <div class="pure-control-group">
-    <%= form.label :account_number %>
-    <%= form.text_field :account_number, class: "pure-input-1-4" %>
-  </div>
+    <div class="pure-control-group">
+      <%= form.label :account_number %>
+      <%= form.text_field :account_number, class: "pure-input-1-4" %>
+    </div>
 
-  <div id="sortcode" class="pure-control-group">
-    <%= form.label :sortcode %>
-    <%= form.text_field :sortcode, class: "pure-input-1-4" %>
-  </div>
+    <div id="sortcode" class="pure-control-group" data-account-target="sortcode">
+      <%= form.label :sortcode %>
+      <%= form.text_field :sortcode, class: "pure-input-1-4" %>
+    </div>
 
-  <div class="pure-control-group">
-    <%= form.label :opening_date %>
-    <%= form.date_field :opening_date, class: "pure-input-1-4" %>
-  </div>
+    <div class="pure-control-group">
+      <%= form.label :opening_date %>
+      <%= form.date_field :opening_date, class: "pure-input-1-4" %>
+    </div>
 
-  <div class="pure-control-group">
-    <%= form.label :opening_balance %>
-    <%= form.text_field :opening_balance, class: "pure-input-1-4" %>
-  </div>
+    <div class="pure-control-group">
+      <%= form.label :opening_balance %>
+      <%= form.text_field :opening_balance, class: "pure-input-1-4" %>
+    </div>
 
-  <div class="pure-controls">
-    <%= form.submit class: "pure-button pure-button-primary" %>
-  </div>
+    <div class="pure-controls">
+      <%= form.submit class: "pure-button pure-button-primary" %>
+    </div>
+  </fieldset>
 <% end %>
