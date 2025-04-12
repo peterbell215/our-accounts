@@ -17,4 +17,9 @@ RSpec.describe FileImporter, type: :class do
 
     specify { expect(lloyds_account.transactions.count).to eq(17) }
   end
+
+  after(:all) do
+    FileUtils.rm_f(FILENAME_WITH_PATH)
+    Account.destroy_all
+  end
 end
