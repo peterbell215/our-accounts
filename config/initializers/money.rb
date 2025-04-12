@@ -4,9 +4,10 @@ Money.locale_backend = :i18n
 
 MoneyRails.configure do |config|
   # To set the default currency
-  #
   config.default_currency = :gbp
 
+  # Always show the pence.
+  config.no_cents_if_whole = false
 
   # Default ActiveRecord migration configuration values for columns:
   #

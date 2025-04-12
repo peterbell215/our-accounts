@@ -71,6 +71,21 @@ RSpec.describe 'Creating a new account', type: :system do
     expect(page).to have_content("Name can't be blank")
   end
 
+  it 'renders the account details correctly' do
+    # Create a test account in the database
+    account = FactoryBot.create(:lloyds_account)
+
+    # Visit the account show page
+    visit account_path(account)
+
+    # Verify that the account details are displayed correctly
+    expect(page).to have_content('Lloyds Account')
+    expect(page).to have_content('01234567')
+    expect(page).to have_content('30-00-00')
+    expect(page).to have_content('£1,000.00')
+    expect(page).to have_content('3 January 2023')
+  end
+
   def check_account_creation
     # Verify the record was written to the database
     account = Account.find_by(name: 'Test Account')
