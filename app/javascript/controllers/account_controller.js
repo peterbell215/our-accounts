@@ -5,7 +5,6 @@ export default class extends Controller {
 
     connect() {
         this.sortcodeField = document.getElementById("sortcode");
-        console.log("Hello, Stimulus!", this.element)
     }
     type_changed(event) {
         const accountType = event.target.value;
