@@ -1,5 +1,5 @@
 
-<%= form_with(model: account, url: accounts_path, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
+<%= form_with(model: account, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
   <% if account.errors.any? %>
     <div id="error_explanation">
       <h2><%= pluralize(account.errors.count, "error") %> prohibited this account from being saved:</h2>

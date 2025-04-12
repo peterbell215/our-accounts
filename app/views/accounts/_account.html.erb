@@ -9,10 +9,12 @@
     <div class="pure-u-1-4"><%= account.account_number %></div>
   </div>
 
-  <div class="pure-g">
-    <div class="pure-u-1-6"><strong>Sort Code:</strong></div>
-    <div class="pure-u-1-4"><%= account.sortcode %></div>
-  </div>
+  <% if account.is_a? BankAccount %>
+    <div class="pure-g">
+      <div class="pure-u-1-6"><strong>Sort Code:</strong></div>
+      <div class="pure-u-1-4"><%= account.sortcode %></div>
+    </div>
+  <%end %>
 
   <div class="pure-g" data-controller="dateinlocale" data-date="<%= @account.opening_date.iso8601 %>">
     <div class="pure-u-1-6"><strong>Opening Date:</strong></div>

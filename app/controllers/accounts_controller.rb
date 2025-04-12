@@ -38,7 +38,7 @@ class AccountsController < ApplicationController
   def update
     respond_to do |format|
       if @account.update(account_params)
-        format.html { redirect_to @account, notice: "Account was successfully updated." }
+        format.html { redirect_to account_path(@account), notice: "Account was successfully updated." }
         format.json { render :show, status: :ok, location: @account }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -66,6 +66,12 @@ class AccountsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def account_params
-    params.expect(account: [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode])
+    if params.has_key?(:account)
+      params.expect(account: [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode])
+    elsif params.has_key?(:bank_account)
+      params.expect(bank_account: [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode])
+    elsif params.has_key?(:credit_card_account)
+      params.expect(credit_card_account: [:name, :type, :opening_balance, :opening_date, :account_number])
+    end
   end
 end

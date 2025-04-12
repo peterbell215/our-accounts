@@ -2,7 +2,11 @@ Rails.application.routes.draw do
   resources :import_matchers
   resources :categories
   resources :transactions
+
   resources :accounts
+  resources :bank_accounts, controller: :accounts
+  resources :credit_card_accounts, controller: :accounts
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
