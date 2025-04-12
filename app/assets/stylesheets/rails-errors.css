@@ -1,0 +1,43 @@
+/* Style for the error explanation container */
+#error_explanation {
+    margin: 1em 0;
+    padding: 1em;
+    border: 1px solid #e00;
+    background-color: #fdd;
+    color: #900;
+    border-radius: 4px;
+}
+
+/* Style for the error explanation heading */
+#error_explanation h2 {
+    margin: 0 0 0.5em;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* Style for the error explanation list */
+#error_explanation ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#error_explanation ul li {
+    margin: 0.2em 0;
+}
+
+/* Highlight invalid form fields */
+div.field_with_errors {
+    display: inline; /* Prevent block-level wrapping */
+    width: 100%;
+}
+
+.pure-form .field_with_errors input,
+.pure-form .field_with_errors select,
+.pure-form .field_with_errors textarea {
+    box-sizing: border-box;
+    border: 1px solid #e00;
+    background-color: #fdd;
+    color: #900;
+    border-radius: 4px;
+}

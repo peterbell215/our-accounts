@@ -1,10 +1,26 @@
-<div id="<%= dom_id account %>">
-  <p>
-    <strong>Name:</strong><%= account.name %><br>
-    <strong>Account Number:</strong><%= account.account_number %><br>
-    <strong>Sort Code:</strong> <%= account.sortcode %><br>
-    <strong>Opening Date:</strong> <%= account.opening_date %><br>
-    <strong>Opening Balance:</strong> <%= humanized_money_with_symbol(account.opening_balance) %>
-  </p>
+<div id="<%= dom_id account %>" class="account-grid">
+  <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Name:</strong></div>
+    <div class="pure-u-1-4"><%= account.name %></div>
+  </div>
 
+  <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Account Number:</strong></div>
+    <div class="pure-u-1-4"><%= account.account_number %></div>
+  </div>
+
+  <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Sort Code:</strong></div>
+    <div class="pure-u-1-4"><%= account.sortcode %></div>
+  </div>
+
+  <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Opening Date:</strong></div>
+    <div class="pure-u-1-4"><%= account.opening_date %></div>
+  </div>
+
+  <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Opening Balance:</strong></div>
+    <div class="pure-u-1-4"><%= humanized_money_with_symbol(account.opening_balance) %></div>
+  </div>
 </div>
