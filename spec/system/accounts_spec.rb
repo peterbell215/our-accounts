@@ -38,7 +38,7 @@ RSpec.describe 'Creating a new account', type: :system do
 
     # Fill in the form fields
     fill_in 'Name', with: 'Test Credit Card'
-    fill_in 'Account number', with: '87654321'
+    fill_in 'Account number', with: '0000-0000-0000-0000'
     fill_in 'Opening balance', with: '500.00'
     fill_in 'Opening date', with: '2023-01-01'
 
