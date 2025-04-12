@@ -3,10 +3,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const sortcodeField = document.getElementById("sortcode");
 
     function toggleSortcodeField() {
-        if (accountType.value === "CreditCard") {
+        if (accountType.value === "CreditCardAccount") {
             sortcodeField.style.display = "none";
+            sortcodeField.disabled = true;
         } else {
             sortcodeField.style.display = "";
+            sortcodeField.disabled = false;
         }
     }
 

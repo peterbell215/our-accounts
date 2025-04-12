@@ -6,6 +6,7 @@ require_relative '../config/environment'
 
 # Require any support files.
 Dir[Rails.root.join('spec/support/**/*.rb')].sort.each { |f| require f }
+require 'rspec/rails'
 
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
@@ -13,7 +14,6 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 # Add additional requires below this line. Rails is not loaded until this point!
 require "capybara/rails"
 require "capybara/rspec"
-
 
 # Checks for pending migrations and applies them before tests are run.
 # If you are not using ActiveRecord, you can remove these lines.
@@ -25,6 +25,9 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 RSpec.configure do |config|
+  # Reset the database before each test
+  config.use_transactional_fixtures = true
+
   # setup for factory bot
   config.include FactoryBot::Syntax::Methods
 
@@ -33,13 +36,11 @@ RSpec.configure do |config|
   end
 
   config.before(:each) do
-    DatabaseCleaner.start
     FactoryBot.rewind_sequences
-  end
-
-  config.append_after(:each) do
-    DatabaseCleaner.clean
   end
 
   config.include Rails.application.routes.url_helpers
 end
+
+# Capybara configuration
+Capybara.default_driver = :selenium_chrome
