@@ -11,7 +11,7 @@
 @import url("purecss/build/pure.css");
 @import url("purecss/build/grids-responsive.css");
 
-@import url("rails-errors.css");
+@import url("rails-messages.css");
 
 nav {
     .pure-menu {
