@@ -1,6 +1,8 @@
-<div id="notice_explanation">
-  <h2><%= notice %>Account was successfully created</h2>
-</div>
+<% if notice.present? %>
+  <div id="notice_explanation">
+    <h2><%= notice %></h2>
+  </div>
+<% end %>
 
 <%= render 'accounts/bank_account', account: @account %>
 
