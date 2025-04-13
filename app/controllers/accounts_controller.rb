@@ -21,7 +21,7 @@ class AccountsController < ApplicationController
 
   # POST /accounts or /accounts.json
   def create
-    @account = Account.new(account_params)
+    @account = Account.new(new_account_params)
 
     respond_to do |format|
       if @account.save
@@ -68,13 +68,15 @@ class AccountsController < ApplicationController
   PERMITTED_PARAMS_BANK_ACCOUNT = PERMITTED_PARAMS.dup.tap { |a| a.delete(:type) }.freeze
   PERMITTED_PARAMS_CREDIT_CARD = PERMITTED_PARAMS_BANK_ACCOUNT.dup.tap { |a| a.delete(:sortcode) }.freeze
 
+  def new_account_params
+    params.expect(account: PERMITTED_PARAMS)
+  end
+
   # Only allow a list of trusted parameters through.
   def account_params
-    if params.has_key?(:account)
-      params.expect(account: PERMITTED_PARAMS)
-    elsif params.has_key?(:bank_account)
+    if @account.is_a?(BankAccount)
       params.expect(bank_account: PERMITTED_PARAMS_BANK_ACCOUNT)
-    elsif params.has_key?(:credit_card_account)
+    elsif @account.is_a?(CreditCardAccount)
       params.expect(credit_card_account: PERMITTED_PARAMS_CREDIT_CARD)
     end
   end
