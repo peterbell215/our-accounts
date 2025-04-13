@@ -4,13 +4,25 @@
 
 <h1>Categories</h1>
 
-<div id="categories">
-  <% @categories.each do |category| %>
-    <%= render category %>
-    <p>
-      <%= link_to "Show this category", category %>
-    </p>
-  <% end %>
-</div>
+<table id="categories" class="pure-table pure-table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @categories.each do |category| %>
+      <tr id="<%= dom_id category %>">
+        <td><%= category.name %></td>
+        <td><%= category.description %></td>
+        <td><%= link_to "Show this category", category_path(category) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
 
-<%= link_to "New category", new_category_path %>
+<div style="margin-top: 1rem">
+  <%= link_to "New category", new_category_path, class: "pure-button" %>
+</div>

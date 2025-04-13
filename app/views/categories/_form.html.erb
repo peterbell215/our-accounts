@@ -1,22 +1,28 @@
-<%= form_with(model: category) do |form| %>
+<%= form_with(model: category, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
   <% if category.errors.any? %>
-    <div style="color: red">
+    <div id="error_explanation">
       <h2><%= pluralize(category.errors.count, "error") %> prohibited this category from being saved:</h2>
-
       <ul>
-        <% category.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+        <% category.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
         <% end %>
       </ul>
     </div>
   <% end %>
 
-  <div>
-    <%= form.label :name, style: "display: block" %>
-    <%= form.text_field :name %>
-  </div>
+  <fieldset>
+    <div class="pure-control-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "pure-input-1-3" %>
+    </div>
 
-  <div>
-    <%= form.submit %>
-  </div>
+    <div class="pure-control-group">
+      <%= form.label :description %>
+      <%= form.text_area :description, class: "pure-input-1-1" %>
+    </div>
+
+    <div class="pure-controls">
+      <%= form.submit class: "pure-button pure-button-primary" %>
+    </div>
+  </fieldset>
 <% end %>

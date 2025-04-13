@@ -47,7 +47,7 @@ class CategoriesController < ApplicationController
     end
   end
 
-  # DELETE /categories/1 or /categories/1.json
+  # DELETE /categories/1 or /categories/1.jsonmain
   def destroy
     @category.destroy!
 
@@ -65,6 +65,6 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.expect(category: [ :name ])
+      params.expect(category: [ :name, :description ])
     end
 end
