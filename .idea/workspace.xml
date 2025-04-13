@@ -5,10 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
-      <change afterPath="$PROJECT_DIR$/USING_AI.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/markdown.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/controllers/accounts_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/accounts_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/USING_AI.md" beforeDir="false" afterPath="$PROJECT_DIR$/USING_AI.md" afterDir="false" />
     </list>
     <list id="eae238ec-11a4-4392-aa20-0d8cd9681392" name="Removing Bootstrap" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -91,7 +90,7 @@
     "RSpec.imported_transaction_factory_spec.executor": "Run",
     "RSpec.trading_account_spec.executor": "Debug",
     "RSpec.transaction_spec.executor": "Run",
-    "Rails.our-accounts.executor": "Debug",
+    "Rails.our-accounts.executor": "Run",
     "Rake.Import Categorised.executor": "Debug",
     "Rake.db:create: our-accounts.executor": "Run",
     "Rake.db:migrate: our-accounts.executor": "Run",
@@ -105,6 +104,7 @@
     "Ruby.import_columns_definition.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Shell Script.our-accounts (2).executor": "Run",
     "git-widget-placeholder": "main",
     "javascript.nodejs.core.library.configured.version": "23.11.0",
@@ -167,7 +167,7 @@
       <command value="rails generate rspec:request" />
     </option>
   </component>
-  <component name="RunManager" selected="RSpec.all">
+  <component name="RunManager" selected="Rails.our-accounts">
     <configuration name="our-accounts (2)" type="CommandRunConfigurationType" factoryName="Gem Command">
       <module name="our-accounts" />
       <COMMAND_RUN_CONFIGURATION NAME="RUBY_ARGS" VALUE="" />
@@ -581,7 +581,7 @@
       <workItem from="1744383773822" duration="136000" />
       <workItem from="1744404570296" duration="1423000" />
       <workItem from="1744432557216" duration="15365000" />
-      <workItem from="1744451867004" duration="29734000" />
+      <workItem from="1744451867004" duration="35480000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -685,7 +685,7 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/our_accounts@our_accounts.rcov" NAME="our-accounts Coverage Results" MODIFIED="1744500064390" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@our_accounts.rcov" NAME="our-accounts Coverage Results" MODIFIED="1744528957479" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@trading_account_spec.rcov" NAME="trading_account_spec Coverage Results" MODIFIED="1738300358285" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@FileImporter__import_rows.rcov" NAME="FileImporter #import_rows Coverage Results" MODIFIED="1738395813525" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@bank_account_spec.rcov" NAME="bank_account_spec Coverage Results" MODIFIED="1738276000314" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
