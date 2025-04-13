@@ -5,6 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/controllers/accounts_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/accounts_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/accounts/_form.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/accounts/_form.html.erb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/spec/system/accounts_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/system/accounts_spec.rb" afterDir="false" />
     </list>
     <list id="eae238ec-11a4-4392-aa20-0d8cd9681392" name="Removing Bootstrap" comment="" />
@@ -162,7 +165,7 @@
       <command value="rake db:migrate" />
     </option>
   </component>
-  <component name="RunManager" selected="RSpec.all">
+  <component name="RunManager" selected="RSpec.accounts_spec">
     <configuration name="our-accounts (2)" type="CommandRunConfigurationType" factoryName="Gem Command">
       <module name="our-accounts" />
       <COMMAND_RUN_CONFIGURATION NAME="RUBY_ARGS" VALUE="" />
@@ -505,10 +508,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="RSpec.accounts_spec" />
+        <item itemvalue="Ruby Console.Rails console: our-accounts" />
         <item itemvalue="RSpec.credit_card_account_spec" />
         <item itemvalue="RSpec.file_importer_spec" />
         <item itemvalue="Ruby Console.Rails console: our-accounts" />
-        <item itemvalue="RSpec.account_spec" />
       </list>
     </recent_temporary>
   </component>
@@ -576,7 +579,7 @@
       <workItem from="1744383773822" duration="136000" />
       <workItem from="1744404570296" duration="1423000" />
       <workItem from="1744432557216" duration="15365000" />
-      <workItem from="1744451867004" duration="23390000" />
+      <workItem from="1744451867004" duration="26314000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -684,7 +687,7 @@
     <SUITE FILE_PATH="coverage/our_accounts@trading_account_spec.rcov" NAME="trading_account_spec Coverage Results" MODIFIED="1738300358285" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@FileImporter__import_rows.rcov" NAME="FileImporter #import_rows Coverage Results" MODIFIED="1738395813525" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@bank_account_spec.rcov" NAME="bank_account_spec Coverage Results" MODIFIED="1738276000314" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1744501706888" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1744516962484" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@db_rollback__our_accounts.rcov" NAME="db:rollback: our-accounts Coverage Results" MODIFIED="1740938843629" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@FileImporter.rcov" NAME="FileImporter Coverage Results" MODIFIED="1741068366596" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@db_create__our_accounts.rcov" NAME="db:create: our-accounts Coverage Results" MODIFIED="1733692209873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
@@ -700,7 +703,7 @@
     <SUITE FILE_PATH="coverage/our_accounts@import_columns_definition_spec.rcov" NAME="import_columns_definition_spec Coverage Results" MODIFIED="1741037794716" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Balances_when_previous_transactions_in_account_on_same_date.rcov" NAME="Balances when previous transactions in account on same date Coverage Results" MODIFIED="1739739202023" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@db_migrate_down__our_accounts.rcov" NAME="db:migrate:down: our-accounts Coverage Results" MODIFIED="1737830147920" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@Rails_console__our_accounts.rcov" NAME="Rails console: our-accounts Coverage Results" MODIFIED="1744215466877" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@Rails_console__our_accounts.rcov" NAME="Rails console: our-accounts Coverage Results" MODIFIED="1744518990930" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportColumnsDefinition_Creating_a_record.rcov" NAME="ImportColumnsDefinition Creating a record Coverage Results" MODIFIED="1741034508301" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@our_accounts__2_.rcov" NAME="our-accounts (2) Coverage Results" MODIFIED="1734760546092" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Import_Categorised.rcov" NAME="Import Categorised Coverage Results" MODIFIED="1735308177954" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
@@ -715,7 +718,7 @@
     <SUITE FILE_PATH="coverage/our_accounts@import_extract_categories.rcov" NAME="import:extract_categories Coverage Results" MODIFIED="1737816884218" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportMatcher__find_match.rcov" NAME="ImportMatcher #find_match Coverage Results" MODIFIED="1739638491111" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@ImportedTransactionFactory_Barclaycard_Import.rcov" NAME="ImportedTransactionFactory Barclaycard Import Coverage Results" MODIFIED="1740943818750" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@accounts_spec.rcov" NAME="accounts_spec Coverage Results" MODIFIED="1744444371240" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@accounts_spec.rcov" NAME="accounts_spec Coverage Results" MODIFIED="1744518957955" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Transaction_sequence_when_imported_balance_is_not_set.rcov" NAME="Transaction#sequence when imported balance is not set Coverage Results" MODIFIED="1740160479992" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
   </component>
 </project>

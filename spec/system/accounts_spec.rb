@@ -114,6 +114,32 @@ RSpec.describe 'Creating a new account', type: :system do
     expect(account.opening_balance).to eq(Money.from_amount(2000.00))
   end
 
+  it 'allows a user to edit a credit card account' do
+    # Create a test credit card account in the database
+    account = FactoryBot.create(:barclay_card_account)
+
+    # Visit the edit account page
+    visit edit_account_path(account)
+
+    # Update the account details
+    fill_in 'Name', with: 'Updated Credit Card Name'
+    fill_in 'Account number', with: '1111-1111-1111-1111'
+    fill_in 'Opening balance', with: '1000.00'
+
+    # Submit the form
+    click_button 'Update Credit card account'
+
+    # Verify the account was updated successfully
+    expect(page).to have_content('Account was successfully updated.')
+    expect(page).to have_content('Updated Credit Card Name')
+
+    # Verify the record was updated in the database
+    account.reload
+    expect(account.name).to eq('Updated Credit Card Name')
+    expect(account.account_number).to eq('1111-1111-1111-1111')
+    expect(account.opening_balance).to eq(Money.from_amount(1000.00))
+  end
+
   def check_account_creation
     # Verify the record was written to the database
     account = Account.find_by(name: 'Test Account')

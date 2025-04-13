@@ -18,7 +18,8 @@
                       options_for_select([['Bank Account', 'BankAccount'], ['Credit Card', 'CreditCardAccount']]),
                       {}, id:"type",
                       class: "pure-input-1-4",
-                      data: { action: "account#type_changed" } %>
+                      data: { action: "account#type_changed" },
+                      disabled: account.id %>
     </div>
 
     <div class="pure-control-group">

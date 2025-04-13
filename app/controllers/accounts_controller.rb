@@ -64,14 +64,18 @@ class AccountsController < ApplicationController
     @account = Account.find(params.expect(:id))
   end
 
+  PERMITTED_PARAMS = [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode].freeze
+  PERMITTED_PARAMS_BANK_ACCOUNT = PERMITTED_PARAMS.dup.tap { |a| a.delete(:type) }.freeze
+  PERMITTED_PARAMS_CREDIT_CARD = PERMITTED_PARAMS_BANK_ACCOUNT.dup.tap { |a| a.delete(:sortcode) }.freeze
+
   # Only allow a list of trusted parameters through.
   def account_params
     if params.has_key?(:account)
-      params.expect(account: [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode])
+      params.expect(account: PERMITTED_PARAMS)
     elsif params.has_key?(:bank_account)
-      params.expect(bank_account: [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode])
+      params.expect(bank_account: PERMITTED_PARAMS_BANK_ACCOUNT)
     elsif params.has_key?(:credit_card_account)
-      params.expect(credit_card_account: [:name, :type, :opening_balance, :opening_date, :account_number])
+      params.expect(credit_card_account: PERMITTED_PARAMS_CREDIT_CARD)
     end
   end
 end
