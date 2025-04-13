@@ -40,6 +40,12 @@ RSpec file from scratch.
 But even with all that, it genuinely saved me many hours of work.  On top of that, I wrote one test to test for a
 possible attack which I probably wouldn't have bethered with, and the test identified a genuine issue.
 
+### Copying what I had implemented for one set of models for another
+
+Gen AI at its best.  Having created a reasonably sound structure of how Accounts and rendered including system
+tests, I was able to ask Copilot to create a similar set of views and system tests for Categories. I am sure we have
+all experienced the boring process of copying and pasting code from one view directory to another, then having to
+make tweaks.  Likewise for the RSpec tests.
 
 ### Replacing Bootstrap with Pure-CSS
 
