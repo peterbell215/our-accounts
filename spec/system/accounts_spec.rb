@@ -86,6 +86,34 @@ RSpec.describe 'Creating a new account', type: :system do
     expect(page).to have_content('3 January 2023')
   end
 
+  it 'allows a user to edit a bank account' do
+    # Create a test account in the database
+    account = FactoryBot.create(:lloyds_account)
+
+    # Visit the edit account page
+    visit edit_account_path(account)
+
+    # Update the account details
+    fill_in 'Name', with: 'Updated Account Name'
+    fill_in 'Account number', with: '87654321'
+    fill_in 'Sortcode', with: '65-43-21'
+    fill_in 'Opening balance', with: '2000.00'
+
+    # Submit the form
+    click_button 'Update Bank account'
+
+    # Verify the account was updated successfully
+    expect(page).to have_content('Account was successfully updated.')
+    expect(page).to have_content('Updated Account Name')
+
+    # Verify the record was updated in the database
+    account.reload
+    expect(account.name).to eq('Updated Account Name')
+    expect(account.account_number).to eq('87654321')
+    expect(account.sortcode).to eq('65-43-21')
+    expect(account.opening_balance).to eq(Money.from_amount(2000.00))
+  end
+
   def check_account_creation
     # Verify the record was written to the database
     account = Account.find_by(name: 'Test Account')
