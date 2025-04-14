@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
-      <change beforePath="$PROJECT_DIR$/app/views/layouts/application.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/layouts/application.html.erb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/import_columns_definitions/_form.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/import_columns_definitions/_form.html.erb" afterDir="false" />
     </list>
     <list id="eae238ec-11a4-4392-aa20-0d8cd9681392" name="Removing Bootstrap" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -59,77 +60,77 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultRubyCreateTestTemplate": "RSpec",
-    "Gem Command.our-accounts (2).executor": "Run",
-    "RSpec.Balances when imported balance is not set calculates the balance from the previous transaction balance on same day.executor": "Run",
-    "RSpec.Balances when previous transactions in account on same date.executor": "Debug",
-    "RSpec.FileImporter #import_rows.executor": "Debug",
-    "RSpec.FileImporter.executor": "Debug",
-    "RSpec.ImportColumnsDefinition #build_csv_data generates the csv_data.executor": "Debug",
-    "RSpec.ImportColumnsDefinition Creating a record.executor": "Debug",
-    "RSpec.ImportMatcher #find_match.executor": "Debug",
-    "RSpec.ImportMatcher.executor": "Debug",
-    "RSpec.ImportedTransactionFactory Barclaycard Import #build.executor": "Debug",
-    "RSpec.ImportedTransactionFactory Barclaycard Import.executor": "Debug",
-    "RSpec.ImportedTransactionFactory Lloyds Import #build.executor": "Debug",
-    "RSpec.Transaction#sequence when imported balance is not set.executor": "Debug",
-    "RSpec.account_spec.executor": "Run",
-    "RSpec.accounts_spec (request).executor": "Run",
-    "RSpec.accounts_spec.executor": "Run",
-    "RSpec.all.executor": "Run",
-    "RSpec.balances_spec.executor": "Run",
-    "RSpec.bank_account_spec.executor": "Run",
-    "RSpec.categories_spec.executor": "Run",
-    "RSpec.credit_card_account_spec.executor": "Run",
-    "RSpec.file_importer_spec.executor": "Run",
-    "RSpec.import_columns_definition_spec.executor": "Debug",
-    "RSpec.import_matcher_spec.executor": "Run",
-    "RSpec.imported_transaction_factory_spec.executor": "Run",
-    "RSpec.trading_account_spec.executor": "Debug",
-    "RSpec.transaction_spec.executor": "Run",
-    "Rails.our-accounts.executor": "Debug",
-    "Rake.Import Categorised.executor": "Debug",
-    "Rake.db:create: our-accounts.executor": "Run",
-    "Rake.db:migrate: our-accounts.executor": "Run",
-    "Rake.db:migrate:down: our-accounts.executor": "Run",
-    "Rake.db:reset: our-accounts.executor": "Run",
-    "Rake.db:rollback: our-accounts.executor": "Run",
-    "Rake.db:seed: our-accounts.executor": "Run",
-    "Rake.import:extract_categories.executor": "Debug",
-    "Rake.spec: our-accounts.executor": "Run",
-    "Ruby Console.Rails console: our-accounts.executor": "Run",
-    "Ruby.import_columns_definition.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Shell Script.our-accounts (2).executor": "Run",
-    "git-widget-placeholder": "main",
-    "javascript.nodejs.core.library.configured.version": "23.11.0",
-    "javascript.nodejs.core.library.typings.version": "22.14.0",
-    "last_opened_file_path": "/home/peter-bell/RubymineProjects/our-accounts/app/assets/javascript",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_interpreter_path": "/home/peter-bell/.nvm/versions/node/v23.11.0/bin/node",
-    "nodejs_package_manager_path": "npm",
-    "ruby.structure.view.model.defaults.configured": "true",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "ide.date.format",
-    "ts.external.directory.path": "/home/peter-bell/.local/share/JetBrains/Toolbox/apps/rubymine/plugins/javascript-plugin/jsLanguageServicesImpl/external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultRubyCreateTestTemplate&quot;: &quot;RSpec&quot;,
+    &quot;Gem Command.our-accounts (2).executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.Balances when imported balance is not set calculates the balance from the previous transaction balance on same day.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.Balances when previous transactions in account on same date.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.FileImporter #import_rows.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.FileImporter.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.ImportColumnsDefinition #build_csv_data generates the csv_data.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.ImportColumnsDefinition Creating a record.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.ImportMatcher #find_match.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.ImportMatcher.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.ImportedTransactionFactory Barclaycard Import #build.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.ImportedTransactionFactory Barclaycard Import.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.ImportedTransactionFactory Lloyds Import #build.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.Transaction#sequence when imported balance is not set.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.account_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.accounts_spec (request).executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.accounts_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.all.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.balances_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.bank_account_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.categories_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.credit_card_account_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.file_importer_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.import_columns_definition_spec.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.import_matcher_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.imported_transaction_factory_spec.executor&quot;: &quot;Run&quot;,
+    &quot;RSpec.trading_account_spec.executor&quot;: &quot;Debug&quot;,
+    &quot;RSpec.transaction_spec.executor&quot;: &quot;Run&quot;,
+    &quot;Rails.our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Rake.Import Categorised.executor&quot;: &quot;Debug&quot;,
+    &quot;Rake.db:create: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Rake.db:migrate: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Rake.db:migrate:down: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Rake.db:reset: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Rake.db:rollback: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Rake.db:seed: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Rake.import:extract_categories.executor&quot;: &quot;Debug&quot;,
+    &quot;Rake.spec: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Ruby Console.Rails console: our-accounts.executor&quot;: &quot;Run&quot;,
+    &quot;Ruby.import_columns_definition.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Shell Script.our-accounts (2).executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;javascript.nodejs.core.library.configured.version&quot;: &quot;23.11.0&quot;,
+    &quot;javascript.nodejs.core.library.typings.version&quot;: &quot;22.14.0&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/peter-bell/RubymineProjects/our-accounts/app/assets/javascript&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_interpreter_path&quot;: &quot;/home/peter-bell/.nvm/versions/node/v23.11.0/bin/node&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;ruby.structure.view.model.defaults.configured&quot;: &quot;true&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ide.date.format&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/home/peter-bell/.local/share/JetBrains/Toolbox/apps/rubymine/plugins/javascript-plugin/jsLanguageServicesImpl/external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "sqlite"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;sqlite&quot;
     ],
-    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
-      "ruby"
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;ruby&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RbsLanguageSettings" isCollectionManagementEnabled="true" />
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -167,7 +168,7 @@
       <command value="rails generate scaffold ImportColumnsDefinition" />
     </option>
   </component>
-  <component name="RunManager" selected="RSpec.all">
+  <component name="RunManager" selected="Rails.our-accounts">
     <configuration name="our-accounts (2)" type="CommandRunConfigurationType" factoryName="Gem Command">
       <module name="our-accounts" />
       <COMMAND_RUN_CONFIGURATION NAME="RUBY_ARGS" VALUE="" />
@@ -573,7 +574,10 @@
       <workItem from="1744451867004" duration="47817000" />
       <workItem from="1744575243520" duration="2036000" />
       <workItem from="1744577367678" duration="644000" />
-      <workItem from="1744608396233" duration="2360000" />
+      <workItem from="1744608396233" duration="3198000" />
+      <workItem from="1744649502972" duration="1240000" />
+      <workItem from="1744662248681" duration="83000" />
+      <workItem from="1744662340095" duration="3537000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -677,7 +681,7 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/our_accounts@our_accounts.rcov" NAME="our-accounts Coverage Results" MODIFIED="1744609073231" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@our_accounts.rcov" NAME="our-accounts Coverage Results" MODIFIED="1744662369887" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@FileImporter__import_rows.rcov" NAME="FileImporter #import_rows Coverage Results" MODIFIED="1738395813525" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@trading_account_spec.rcov" NAME="trading_account_spec Coverage Results" MODIFIED="1738300358285" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@bank_account_spec.rcov" NAME="bank_account_spec Coverage Results" MODIFIED="1738276000314" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
