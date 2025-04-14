@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :import_columns_definitions
   resources :import_matchers
   resources :categories
   resources :transactions

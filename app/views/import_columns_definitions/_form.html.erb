@@ -1,0 +1,60 @@
+<%= form_with(model: import_columns_definition) do |form| %>
+  <% if import_matcher.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(import_matcher.errors.count, "error") %> prohibited this import matcher from being saved:</h2>
+      <ul>
+        <% import_matcher.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <fieldset>
+    <div class="pure-control-group">
+      <%= form.label :account_id %>
+      <%= form.select :account_id, options_from_collection_for_select(Account.all, :id, :name), {}, class: "pure-input-1-3" %>
+    </div>
+
+    <div class="pure-control-group">
+      <%= form.label :header %>
+      <%= form.check_box :header, class: "pure-input-1-3" %>
+    </div>
+
+    <div class="pure-control-group">
+      <%= form.label :reversed %>
+      <%= form.check_box :reversed, class: "pure-input-1-3" %>
+    </div>
+
+    <div class="pure-control-group" display="flex">
+      <%= form.label :credit_sign %>
+      <fieldset class="pure-group pure-form-aligned">
+        <%= form.radio_button :credit_sign, 1, id: "credit_sign_positive" %>
+        <%= form.label :credit_sign_positive, "+", class: "pure-checkbox" %>
+        <%= form.radio_button :credit_sign, -1, id: "credit_sign_negative" %>
+        <%= form.label :credit_sign_negative, "-", class: "pure-checkbox" %>
+      </fieldset>
+    </div>
+
+    <table>
+      <thead>
+      <tr>
+        <th>Column</th>
+        <th>Record</th>
+      </tr>
+      </thead>
+      <tbody>
+      <% import_matcher.attributes.keep_if { |a| a =~ /_column\Z/ }.each do |field, value| %>
+        <tr>
+          <td><%= value %></td>
+          <td><%= field %></td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+
+    <div class="pure-controls">
+      <%= form.submit class: "pure-button pure-button-primary" %>
+    </div>
+  </fieldset>
+<% end %>

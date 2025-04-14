@@ -1,0 +1,16 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Import columns definitions" %>
+
+<h1>Import columns definitions</h1>
+
+<div id="import_columns_definitions">
+  <% @import_columns_definitions.each do |import_columns_definition| %>
+    <%= render import_columns_definition %>
+    <p>
+      <%= link_to "Show this import columns definition", import_columns_definition %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New import columns definition", new_import_columns_definition_path %>

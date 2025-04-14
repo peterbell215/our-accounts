@@ -1,0 +1,1 @@
+json.partial! "import_columns_definitions/import_columns_definition", import_columns_definition: @import_columns_definition
