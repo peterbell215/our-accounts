@@ -40,3 +40,14 @@ body div.container {
     margin-top: 1em; /* Adjust the value as needed */
     margin-bottom: 1em; /* Adjust the value as needed */
 }
+
+.credit-sign-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    label {
+        display: inline-block !important;
+        width: min-content !important;
+    }
+}

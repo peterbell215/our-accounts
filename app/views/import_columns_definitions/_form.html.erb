@@ -28,30 +28,35 @@
 
     <div class="pure-control-group">
       <%= form.label :credit_sign %>
-      <div style="display: inline-flex; align-items: center; gap: 5px;">
+      <div class="credit-sign-container">
         <%= form.radio_button :credit_sign, 1, id: "credit_sign_positive" %>
-        <%= form.label :credit_sign_positive, "+", class: "pure-checkbox", style: "width: min-content;", for: "credit_sign_positive" %>
+        <%= form.label :credit_sign_positive, "+", for: "credit_sign_positive" %>
         <%= form.radio_button :credit_sign, -1, id: "credit_sign_negative" %>
-        <%= form.label :credit_sign_negative, "-", class: "pure-checkbox", style: "width: min-content;", for: "credit_sign_negative" %>
+        <%= form.label :credit_sign_negative, "-", for: "credit_sign_negative" %>
       </div>
     </div>
 
-    <table class="pure-table">
-      <thead>
-        <tr>
-          <th>Column</th>
-          <th>Record</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% import_columns_definition.attributes.keep_if { |a| a =~ /_column\Z/ }.each_with_index do |field, value| %>
+    <div class="pure-control-group">
+      <%= form.label :date_column %>
+
+        <table class="pure-table">
+          <thead>
           <tr>
-            <td><%= value %></td>
-            <td><%= field %></td>
+            <th>Column</th>
+            <th>Record</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+          </thead>
+          <tbody>
+          <% import_columns_definition.attributes.keep_if { |a| a =~ /_column\Z/ }.each_with_index do |field, value| %>
+            <tr>
+              <td><%= value %></td>
+              <td><%= field %></td>
+            </tr>
+          <% end %>
+          </tbody>
+        </table>
+
+    </div>
 
     <div class="pure-controls">
       <%= form.submit class: "pure-button pure-button-primary" %>
