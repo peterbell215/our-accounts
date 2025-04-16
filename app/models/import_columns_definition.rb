@@ -5,10 +5,16 @@ class ImportColumnsDefinition < ApplicationRecord
 
   validates :account_id, presence: true
 
+  # Generates an array of column names or column numbers.
+  # @return [Array]
+  def self.csv_header
+    @csv_header ||= ImportColumnsDefinition.attribute_names.dup.keep_if { |a| a =~ /_column\z/ }.freeze
+  end
+
   # Because we use the same attribute to store the column whether the column is referenced by a column header or
   # an integer index, we need to cast the column name to an integer if no header row is used.  This creates a set
   # of access methods that do that casting if required.
-  attribute_names.filter { |attribute| attribute =~ /_column$/ }.each do |attribute_name|
+  csv_header.each do |attribute_name|
     define_method(attribute_name) do
       value = super()
       value = value.to_i if !self.header && __method__ =~ /_column$/ && value
@@ -16,11 +22,39 @@ class ImportColumnsDefinition < ApplicationRecord
     end
   end
 
-  # Generates an array of column names or column numbers.
-  # @return [Array]
-  def csv_header
-    @csv_header ||=
-      %i[date_column trx_type_column sortcode_column account_number_column other_party_column credit_column debit_column balance_column].map { |column| self[column] }.compact
+
+  def self.analyze_csv(file)
+    # Read only the first few rows to get headers/structure without loading the whole file
+    # Using headers: true attempts to read the first row as headers
+    csv_options = { headers: true, return_headers: false } # Start assuming headers exist
+    headers = nil
+    first_data_row = nil
+
+    # Try reading with headers
+    begin
+      csv = CSV.new(file.tempfile, **csv_options)
+      headers = csv.first&.headers # Read just the header row
+      file.tempfile.rewind # Rewind after reading headers
+      csv = CSV.new(file.tempfile, **csv_options) # Re-initialize CSV object
+      first_data_row = csv.first&.fields # Read the first data row
+    rescue CSV::MalformedCSVError => e
+      # If headers: true fails (e.g., inconsistent columns), try without it
+      Rails.logger.warn("CSV parsing with headers failed: #{e.message}. Trying without headers.")
+      headers = nil # Reset headers
+      csv_options = { headers: false }
+      file.tempfile.rewind
+      csv = CSV.new(file.tempfile, **csv_options)
+      first_data_row = csv.first # Read the first row as data
+    end
+
+    file.tempfile.rewind # Ensure file is rewound for potential re-reads if needed
+
+    # Prepare columns data (index and value from first data row)
+    columns_data = (first_data_row || []).map.with_index do |value, index|
+      { index: index, value: value&.strip } # Strip whitespace
+    end
+
+    [headers, columns_data]
   end
 
   # Builds a CSV::Row object from the Transaction object.
