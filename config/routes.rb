@@ -1,10 +1,23 @@
 Rails.application.routes.draw do
-  resources :import_columns_definitions
+  resources :import_columns_definitions do
+    collection do
+      post :analyze_csv # Add this line
+    end
+  end
+
   resources :import_matchers
   resources :categories
   resources :transactions
 
-  resources :accounts
+  resources :accounts do
+    resources :transactions, only: [:index, :new, :create] do
+      collection do
+        get :import
+        post :import_process
+      end
+    end
+  end
+
   resources :bank_accounts, controller: :accounts
   resources :credit_card_accounts, controller: :accounts
 
@@ -19,5 +32,5 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "accounts#index"
 end
