@@ -1,0 +1,33 @@
+<%# app/views/csv_analyses/create.turbo_stream.erb %>
+<%= turbo_stream.update "csv_results" do %>
+  <h6>Detected Columns (Drag to map):</h6>
+  <div class="column-list">
+    <% if @csv_headers.present? %>
+      <p><strong>Headers Found:</strong></p>
+      <% @csv_headers.each_with_index do |header, index| %>
+        <% column_value = header.presence || "Column #{index}" %>
+        <div class="column-item"
+             draggable="true"
+             data-action="dragstart->csv-analyzer#handleDragStart"
+             data-column-value="<%= h(column_value) %>">
+          <strong><%= index %>:</strong> <%= header.presence || '(empty)' %>
+        </div>
+      <% end %>
+      <p>Drag header names or indices to fields.</p>
+    <% elsif @columns.present? %>
+      <p><strong>First Row Data (No Headers Detected):</strong></p>
+      <% @columns.each do |col| %>
+        <% column_value = col[:index].to_s %>
+        <div class="column-item"
+             draggable="true"
+             data-action="dragstart->csv-analyzer#handleDragStart"
+             data-column-value="<%= h(column_value) %>">
+          <strong><%= col[:index] %>:</strong> <%= col[:value].presence || '(empty)' %>
+        </div>
+      <% end %>
+      <p>Drag column indices (0, 1, 2...) to fields.</p>
+    <% else %>
+      <p class="pure-alert">Could not detect columns or headers. The file might be empty or invalid.</p>
+    <% end %>
+  </div>
+<% end %>

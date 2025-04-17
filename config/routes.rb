@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   resources :import_columns_definitions do
     collection do
-      post :analyze_csv # Add this line
+      post :analyze_csv, to: "csv_analyses#create"
     end
   end
 

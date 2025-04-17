@@ -57,34 +57,6 @@ class ImportColumnsDefinitionsController < ApplicationController
     end
   end
 
-  # POST /import_columns_definitions/analyze_csv
-  def analyze_csv
-    file = params[:csv_file]
-
-    if file.nil?
-      return render json: { error: "No file uploaded." }, status: :bad_request
-    elsif file.content_type != "text/csv" && !file.original_filename.end_with?(".csv")
-      return render json: { error: "Invalid file type. Please upload a CSV file." }, status: :unprocessable_entity
-    end
-
-    begin
-      headers, columns_data = ImportColumnsDefinition.analyze_csv(file)
-
-      render json: {
-        headers: headers, # Will be nil if headers: true failed or wasn't used
-        columns: columns_data # Always contains {index, value} from the first row
-      }
-    rescue CSV::MalformedCSVError => e
-      render json: { error: "Error parsing CSV: #{e.message}" }, status: :unprocessable_entity
-    rescue => e # Catch other potential errors
-      Rails.logger.error "Error analyzing CSV: #{e.message}\n#{e.backtrace.join("\n")}"
-      render json: { error: "An unexpected error occurred while processing the file." }, status: :internal_server_error
-    ensure
-      file.tempfile.close
-      # file.tempfile.unlink # Tempfile is usually automatically cleaned up, but uncomment if needed
-    end
-  end
-
   private
 
   # Use callbacks to share common setup or constraints between actions.

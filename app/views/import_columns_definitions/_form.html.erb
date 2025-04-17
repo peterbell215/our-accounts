@@ -1,14 +1,13 @@
 <%# --- /home/peter-bell/RubymineProjects/our-accounts/app/views/import_columns_definitions/_form.html.erb --- %>
 
 <%# Wrap both forms in a container if needed for layout %>
-<div class="pure-g"> <%# Example using PureCSS grid %>
-
+<div class="pure-g"
+     data-controller="csv-analyzer"
+     data-csv-analyzer-drag-over-class ="drag-over">
   <%# Main Definition Form - Takes up part of the width %>
   <div class="pure-u-1 pure-u-md-2-3">
     <%# Connect the main form area to the controller as well to easily find dropZones %>
-    <div data-controller="csv-analyzer"
-         data-csv-analyzer-url-value="<%= analyze_csv_import_columns_definitions_path %>"
-         csv-analyzer-drag-over-class="drag-over" >
+    <div>
       <%= form_with(model: import_columns_definition, html: { class: "pure-form pure-form-aligned" }) do |form| %>
         <% if import_columns_definition.errors.any? %>
           <div id="error_explanation" class="pure-alert pure-alert-error">
@@ -64,24 +63,14 @@
           <legend>Column Mapping</legend>
           <p>Enter column name/index below, or drag from analyzed CSV.</p> <%# Updated instructions %>
 
-          <% column_fields = ImportColumnsDefinition.csv_header %>
-
-          <% column_fields.each do |field| %>
+          <% ImportColumnsDefinition.csv_header.each do |field| %>
             <div class="pure-control-group">
               <%= form.label field %>
-              <% if field == :date_format %>
-                <%# Date format is not a typical drop target %>
-                <%= form.text_field field, placeholder: "e.g., %d/%m/%Y or %Y-%m-%d" %>
-                <span class="pure-form-message-inline"><a href="https://ruby-doc.org/stdlib-3.1.2/libdoc/date/rdoc/Date.html#method-c-strptime-label-Format+Codes" target="_blank" rel="noopener noreferrer">Format Codes</a></span>
-              <% else %>
-                <%# Add drop zone targets and actions to column mapping fields %>
-                <%= form.text_field field,
-                                    placeholder: "Column Name or Index (e.g., 0)",
-                                    data: {
-                                      csv_analyzer_target: "dropZone", # Target for Stimulus
-                                      action: "dragover->csv-analyzer#handleDragOver dragleave->csv-analyzer#handleDragLeave drop->csv-analyzer#handleDrop" # Actions for D&D events
-                                    } %>
-              <% end %>
+              <%= form.text_field field,
+                                  placeholder: "Column Name or Index (e.g., 0)",
+                                  data: {
+                                    action: "dragover->csv-analyzer#handleDragOver dragleave->csv-analyzer#handleDragLeave drop->csv-analyzer#handleDrop" # Actions for D&D events
+                                  } %>
             </div>
           <% end %>
 
@@ -94,16 +83,11 @@
     </div> <%# End Stimulus Controller div for main form %>
   </div> <%# End Main Form Column %>
 
-
   <%# CSV Analyzer Form - Takes up the remaining width %>
   <div class="pure-u-1 pure-u-md-1-3">
     <%# Keep this controller instance separate for the analyzer itself %>
-    <div class="csv-analyzer-container"
-         data-controller="csv-analyzer" <%# Controller initialization %>
-         data-csv-analyzer-drag-over-class="drag-over" <%# Add this line %>
-         data-csv-analyzer-url-value="<%= analyze_csv_import_columns_definitions_path %>">
-
-      <form class="pure-form" data-action="submit->csv-analyzer#analyze">
+    <div class="csv-analyzer-container">
+      <%= form_with url: analyze_csv_import_columns_definitions_path, multipart: true, class: "pure-form" do |form| %>
         <fieldset>
           <legend>Analyze Sample CSV</legend>
           <p>Upload a sample CSV to see its columns/headers here.</p>
@@ -117,17 +101,22 @@
           </div>
 
           <div class="pure-controls">
-            <button type="submit" class="pure-button pure-button-secondary" data-csv-analyzer-target="analyzeButton">
+            <button type="submit" class="pure-button pure-button-secondary">
               Analyze File
             </button>
           </div>
         </fieldset>
-      </form>
+      <% end %>>
 
-      <div class="analyzer-output" data-csv-analyzer-target="output" style="margin-top: 1em; padding: 0.5em; border: 1px solid #eee; min-height: 50px; background-color: #f9f9f9;">
-        <%# Results will be displayed here by Stimulus %>
-        <p class="pure-form-message-inline">Analysis results will appear here. Drag items to the mapping fields on the left.</p> <%# Updated instructions %>
-      </div>
+      <%= turbo_frame_tag "csv_error" do %>
+      <% end %>
+
+      <%= turbo_frame_tag "csv_results" do %>
+        <div id="csv-results" class="analyzer-output" data-csv-analyzer-target="output" style="margin-top: 1em; padding: 0.5em; border: 1px solid #eee; min-height: 50px; background-color: #f9f9f9;">
+          <%# Results will be displayed here by Stimulus %>
+          <p class="pure-form-message-inline">Analysis results will appear here. Drag items to the mapping fields on the left.</p> <%# Updated instructions %>
+        </div>
+      <% end %>
     </div> <%# End Stimulus Controller div for analyzer %>
   </div> <%# End Analyzer Column %>
 </div> <%# End PureCSS Grid %>
