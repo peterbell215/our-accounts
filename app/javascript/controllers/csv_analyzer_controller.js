@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
     static values = { url: String }
     static classes = [ "dragOver" ]
-    static targets = [ "columnList" ] // Target for the list within the frame
+    static targets = [ "columnList", "hasHeaderCheckbox" ]
 
     // --- Drag and Drop Event Handlers ---
     handleDragStart(event) {
@@ -47,10 +47,7 @@ export default class extends Controller {
         // Check if the target exists before accessing dataset
         if (this.hasColumnListTarget) {
             const hasHeader = this.columnListTarget.dataset.hasHeader === 'true';
-            console.log("Detected header status:", hasHeader);
-            // Add logic here to update the checkbox based on hasHeader
-        } else {
-            console.log("columnList target not found after update.");
+            this.hasHeaderCheckboxTarget.checked = hasHeader;
         }
     }
 }

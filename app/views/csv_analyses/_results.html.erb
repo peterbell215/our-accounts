@@ -1,13 +1,12 @@
-<%# app/views/csv_analyses/create.turbo_stream.erb %>
-<%= turbo_stream.update "csv_results" do %>
+<%# filepath: /home/peter-bell/RubymineProjects/our-accounts/app/views/csv_analyses/_results.html.erb %>
+<%= turbo_frame_tag "csv_results" do %>
   <h6>Detected Columns (Drag to map):</h6>
   <div class="column-list"
-       data-has-header="<%= @csv_headers.present? %>"
-       data-csv-analyzer-target="columnList"
-       data-action="turbo:frame-load->csv-analyzer#resultsLoaded">
-    <% if @csv_headers.present? %>
+       data-has-header="<%= csv_headers.present? %>"
+       data-csv-analyzer-target="columnList">
+    <% if csv_headers.present? %>
       <p><strong>Headers Found:</strong></p>
-      <% @csv_headers.each_with_index do |header, index| %>
+      <% csv_headers.each_with_index do |header, index| %>
         <% column_value = header.presence || "Column #{index}" %>
         <div class="column-item"
              draggable="true"
@@ -17,9 +16,9 @@
         </div>
       <% end %>
       <p>Drag header names or indices to fields.</p>
-    <% elsif @columns.present? %>
+    <% elsif columns.present? %>
       <p><strong>First Row Data (No Headers Detected):</strong></p>
-      <% @columns.each do |col| %>
+      <% columns.each do |col| %>
         <% column_value = col[:index].to_s %>
         <div class="column-item"
              draggable="true"
@@ -34,3 +33,4 @@
     <% end %>
   </div>
 <% end %>
+
