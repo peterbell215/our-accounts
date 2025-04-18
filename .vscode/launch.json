@@ -1,0 +1,36 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "type": "ruby_lsp",
+      "request": "launch",
+      "name": "Rails Server",
+      "program": "${workspaceRoot}/bin/rails server",
+      "args": ["-b", "server", "-p", "3000"],
+      "cwd": "${workspaceRoot}",
+      "env": { "RAILS_ENV": "development" }
+    },
+    {
+      "type": "ruby_lsp",
+      "request": "launch",
+      "name": "Rails Console",
+      "program": "${workspaceRoot}/bin/rails console",
+      "args": ["-e", "development"],
+      "cwd": "${workspaceRoot}",
+      "env": { "RAILS_ENV": "development" }
+    },
+    {
+      "type": "ruby_lsp",
+      "request": "launch",
+      "name": "RSpec",
+      "program": "${workspaceRoot}/bin/rspec",
+      "args": ["spec"],
+      "cwd": "${workspaceRoot}",
+      "env": { "RAILS_ENV": "test" }
+    }
+  ]
+}

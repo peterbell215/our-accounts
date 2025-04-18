@@ -1,0 +1,40 @@
+{
+    // Editor settings
+    "editor.tabSize": 2, // Use 2 spaces for indentation (common in Rails)
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.renderWhitespace": "boundary", // Show whitespace characters
+    "editor.trimAutoWhitespace": true,
+    "editor.formatOnSave": true, // Format code automatically on save (requires formatters)
+    "editor.defaultFormatter": "esbenp.prettier-vscode", // Set Prettier as the default formatter (if used)
+    "[ruby]": {
+      "editor.defaultFormatter": "Shopify.ruby-lsp" // Set Ruby LSP as the default formatter for Ruby files
+    },
+    "[erb]": {
+      "editor.defaultFormatter": "aliariff.erb-formatter" // Set ERB Formatter as the default for ERB files
+    },
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.encoding": "utf8",
+  
+    // Ruby LSP settings
+    "rubyLsp.enabled": true,
+    "rubyLsp.formatter": "rubocop", // Or "standardrb" if you prefer
+    "rubyLsp.lintMode": "onSave", // Lint on save or "onType"
+    "rubyLsp.rubocop.command": "bundle exec rubocop", // Ensure RuboCop runs within the bundle
+    "rubyLsp.standardrb.command": "bundle exec standardrb", // Ensure StandardRB runs within the bundle
+  
+    // Prettier settings (if used)
+    "prettier.requireConfig": true, // Only format if a .prettierrc file exists in the project
+    "prettier.singleQuote": true, // Use single quotes for strings in JavaScript/TypeScript
+    "prettier.trailingComma": "es5",
+  
+    // GitLens settings (optional)
+    "gitlens.blame.statusBar.enabled": true,
+    "gitlens.codeLens.enabled": true,
+  
+    // Test Explorer settings (if used, adjust based on your testing framework)
+    // "ruby-rspec-explorer.command": "bundle exec rspec",
+    // "ruby-minitest-explorer.command": "bundle exec rake test"
+  }
+  
