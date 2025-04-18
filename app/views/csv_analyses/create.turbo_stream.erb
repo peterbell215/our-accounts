@@ -1,7 +1,10 @@
 <%# app/views/csv_analyses/create.turbo_stream.erb %>
 <%= turbo_stream.update "csv_results" do %>
   <h6>Detected Columns (Drag to map):</h6>
-  <div class="column-list">
+  <div class="column-list"
+       data-has-header="<%= @csv_headers.present? %>"
+       data-csv-analyzer-target="columnList"
+       data-action="turbo:frame-load->csv-analyzer#resultsLoaded">
     <% if @csv_headers.present? %>
       <p><strong>Headers Found:</strong></p>
       <% @csv_headers.each_with_index do |header, index| %>

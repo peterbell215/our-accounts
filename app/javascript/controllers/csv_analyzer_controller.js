@@ -4,10 +4,9 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
     static values = { url: String }
     static classes = [ "dragOver" ]
+    static targets = [ "columnList" ] // Target for the list within the frame
 
-    // --- Drag and Drop Event Handlers remain the same ---
-    // handleDragStart, handleDragOver, handleDragLeave, handleDrop
-    // These interact with the DOM *after* Turbo has updated it.
+    // --- Drag and Drop Event Handlers ---
     handleDragStart(event) {
         const columnValue = event.currentTarget.dataset.columnValue
         event.dataTransfer.setData("text/plain", columnValue)
@@ -33,6 +32,25 @@ export default class extends Controller {
     }
 
     // connect/disconnect remain the same if needed for dropZone listeners
-    connect() { }
-    disconnect() { }
+    connect() {
+      console.log("CSV Analyzer Controller connected.");
+    }
+    disconnect() {
+      console.log("CSV Analyzer Controller disconnected.");
+     }
+
+    // --- Custom Action Handlers ---
+    resultsLoaded(event) {
+        console.log("CSV analysis results loaded/updated via Turbo Stream.");
+        // You can access the frame element via event.target if needed
+        // You can access the columnList target via this.columnListTarget (if it exists after the update)
+        // Check if the target exists before accessing dataset
+        if (this.hasColumnListTarget) {
+            const hasHeader = this.columnListTarget.dataset.hasHeader === 'true';
+            console.log("Detected header status:", hasHeader);
+            // Add logic here to update the checkbox based on hasHeader
+        } else {
+            console.log("columnList target not found after update.");
+        }
+    }
 }

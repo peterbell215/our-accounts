@@ -63,7 +63,7 @@
           <legend>Column Mapping</legend>
           <p>Enter column name/index below, or drag from analyzed CSV.</p> <%# Updated instructions %>
 
-          <% ImportColumnsDefinition.csv_header.each do |field| %>
+          <% ImportColumnsDefinition::CSV_HEADERS.each do |field| %>
             <div class="pure-control-group">
               <%= form.label field %>
               <%= form.text_field field,
@@ -106,17 +106,17 @@
             </button>
           </div>
         </fieldset>
-      <% end %>>
+      <% end %>
 
       <%= turbo_frame_tag "csv_error" do %>
       <% end %>
 
-      <%= turbo_frame_tag "csv_results" do %>
-        <div id="csv-results" class="analyzer-output" data-csv-analyzer-target="output" style="margin-top: 1em; padding: 0.5em; border: 1px solid #eee; min-height: 50px; background-color: #f9f9f9;">
+      <div id="csv-results" class="analyzer-output" data-action="turbo:frame-load->csv_analyzer#resultsLoaded">
+        <%= turbo_frame_tag "csv_results" do %>
           <%# Results will be displayed here by Stimulus %>
           <p class="pure-form-message-inline">Analysis results will appear here. Drag items to the mapping fields on the left.</p> <%# Updated instructions %>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     </div> <%# End Stimulus Controller div for analyzer %>
   </div> <%# End Analyzer Column %>
 </div> <%# End PureCSS Grid %>
@@ -124,6 +124,15 @@
 
 <%# Add some basic styling if needed %>
 <style>
+    /* Add styles for #csv-results here */
+    .analyzer-output {
+        margin-top: 1em;
+        padding: 0.5em;
+        border: 1px solid #eee;
+        min-height: 50px;
+        background-color: #f9f9f9;
+    }
+
     .drag-over {
         background-color: #e0ffe0; /* Light green background */
         border-color: #008000; /* Green border */
@@ -140,18 +149,8 @@
     .csv-analyzer-container {
         padding-left: 2em; /* Add some spacing between forms on larger screens */
     }
-    .analyzer-output ul.pure-list li {
-        word-break: break-all; /* Prevent long headers/values from breaking layout */
-        padding: 0.3em 0.5em;
-        margin-bottom: 0.3em;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        cursor: grab; /* Indicate draggable */
-        user-select: none; /* Prevent text selection during drag */
-    }
-    .analyzer-output ul.pure-list li:active {
-        cursor: grabbing;
-    }
+
+
     /* Style for the drop zone when dragging over */
     input[data-csv-analyzer-target="dropZone"].drag-over {
         background-color: #e0ffe0; /* Light green background */
