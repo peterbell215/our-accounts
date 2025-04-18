@@ -5,16 +5,18 @@ class ImportColumnsDefinition < ApplicationRecord
 
   validates :account_id, presence: true
 
+  CSV_HEADERS = ImportColumnsDefinition.attribute_names.dup.keep_if { |a| a =~ /_column\z/ }.freeze
+
   # Generates an array of column names or column numbers.
   # @return [Array]
-  def self.csv_header
-    @csv_header ||= ImportColumnsDefinition.attribute_names.dup.keep_if { |a| a =~ /_column\z/ }.freeze
+  def csv_header
+    @csv_header ||= CSV_HEADERS.map { |column| self[column] }.compact
   end
 
   # Because we use the same attribute to store the column whether the column is referenced by a column header or
   # an integer index, we need to cast the column name to an integer if no header row is used.  This creates a set
   # of access methods that do that casting if required.
-  csv_header.each do |attribute_name|
+  CSV_HEADERS.each do |attribute_name|
     define_method(attribute_name) do
       value = super()
       value = value.to_i if !self.header && __method__ =~ /_column$/ && value
