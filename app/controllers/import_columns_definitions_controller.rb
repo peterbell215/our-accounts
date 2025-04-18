@@ -66,6 +66,9 @@ class ImportColumnsDefinitionsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def import_columns_definition_params
-    params.fetch(:import_columns_definition, {})
+    params.expect(import_columns_definition: [:account_id, :header, :reversed, :credit_sign, :date_format, :date_column,
+                                              :trx_type_column, :sortcode_column, :account_number_column, :other_party_column,
+                                              :amount_column, :debit_column, :credit_column, :balance_column])
+
   end
 end
