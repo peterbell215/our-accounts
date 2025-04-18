@@ -9,7 +9,9 @@ export default class extends Controller {
     // --- Drag and Drop Event Handlers ---
     handleDragStart(event) {
         const columnValue = event.currentTarget.dataset.columnValue
-        event.dataTransfer.setData("text/plain", columnValue)
+
+        const data = (this.hasHeaderCheckboxTarget.checked) ? event.currentTarget.dataset.columnValue : event.currentTarget.dataset.headerIndex;
+        event.dataTransfer.setData("text/plain", data)
         event.dataTransfer.effectAllowed = "copy";
     }
 
@@ -26,8 +28,9 @@ export default class extends Controller {
     handleDrop(event) {
         event.preventDefault();
         event.currentTarget.classList.remove(this.dragOverClass);
-        const columnValue = event.dataTransfer.getData("text/plain");
-        event.currentTarget.value = columnValue;
+
+        const data = event.dataTransfer.getData("text/plain");
+        event.currentTarget.value = data;
         event.currentTarget.dispatchEvent(new Event('change', { bubbles: true }));
     }
 

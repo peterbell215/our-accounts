@@ -24,7 +24,11 @@ class ImportColumnsDefinition < ApplicationRecord
     end
   end
 
-
+  # This Ruby code defines a class method `analyze_csv` within the
+  # `ImportColumnsDefinition` class. Its purpose is to inspect the beginning of
+  # a provided CSV file to determine its structure, specifically identifying
+  # potential headers and capturing the content of the first data row, without
+  # loading the entire file into memory.
   def self.analyze_csv(file)
     # Read only the first few rows to get headers/structure without loading the whole file
     # Using headers: true attempts to read the first row as headers
@@ -56,7 +60,7 @@ class ImportColumnsDefinition < ApplicationRecord
       { index: index, value: value&.strip } # Strip whitespace
     end
 
-    [headers, columns_data]
+    [ headers, columns_data ]
   end
 
   # Builds a CSV::Row object from the Transaction object.

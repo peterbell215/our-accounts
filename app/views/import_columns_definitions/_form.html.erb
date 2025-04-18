@@ -127,6 +127,35 @@
 
 <%# Add some basic styling if needed %>
 <style>
+    /* Styles for the draggable column items */
+    .column-item {
+        padding: 0.4em 0.6em;
+        margin-bottom: 0.4em;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #fff;
+        cursor: grab; /* Indicate draggable */
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        font-size: 0.9em;
+        line-height: 1.4;
+    }
+
+    .column-item:hover {
+        background-color: #f0f0f0;
+        border-color: #bbb;
+    }
+
+    .column-item:active {
+        cursor: grabbing; /* Indicate dragging */
+        background-color: #e0e0e0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .column-item strong {
+        margin-right: 0.5em;
+        color: #555;
+    }
+
     /* Add styles for #csv-results here */
     .analyzer-output {
         margin-top: 1em;
@@ -152,7 +181,6 @@
     .csv-analyzer-container {
         padding-left: 2em; /* Add some spacing between forms on larger screens */
     }
-
 
     /* Style for the drop zone when dragging over */
     input[data-csv-analyzer-target="dropZone"].drag-over {

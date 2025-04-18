@@ -11,7 +11,8 @@
         <div class="column-item"
              draggable="true"
              data-action="dragstart->csv-analyzer#handleDragStart"
-             data-column-value="<%= h(column_value) %>">
+             data-column-value="<%= h(column_value) %>"
+             data-header-index="<%= index.to_s %>">
           <strong><%= index %>:</strong> <%= header.presence || '(empty)' %>
         </div>
       <% end %>
@@ -23,7 +24,7 @@
         <div class="column-item"
              draggable="true"
              data-action="dragstart->csv-analyzer#handleDragStart"
-             data-column-value="<%= h(column_value) %>">
+             data-header-index="<%= h(column_value) %>">
           <strong><%= col[:index] %>:</strong> <%= col[:value].presence || '(empty)' %>
         </div>
       <% end %>
