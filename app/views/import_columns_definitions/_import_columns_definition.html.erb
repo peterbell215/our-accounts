@@ -1,2 +1,19 @@
-<div id="<%= dom_id import_columns_definition %>">
+<div id="<%= dom_id import_columns_definition %>" class="import-columns-grid">
+  <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Name:</strong></div>
+    <div class="pure-u-1-4"><%= import_columns_definition.account.name %></div>
+  </div>
+
+  <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Date Format:</strong></div>
+    <div class="pure-u-1-4"><%= import_columns_definition.date_format %></div>
+  </div>
+
+  <% ImportColumnsDefinition::CSV_HEADERS.each do |column_name| %>
+    <div class="pure-g">
+      <div class="pure-u-1-6"><strong><%= column_name.humanize %>:</strong></div>
+      <div class="pure-u-1-4"><%= import_columns_definition.send(column_name) %></div>
+    </div>
+  <% end %>
 </div>
+

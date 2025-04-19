@@ -1,16 +1,34 @@
-<p style="color: green"><%= notice %></p>
+<%= render "layouts/notice", notice: notice %>
 
 <% content_for :title, "Import columns definitions" %>
 
 <h1>Import columns definitions</h1>
 
-<div id="import_columns_definitions">
+<table id="import_columns_definitions" class="pure-table pure-table-striped">
+  <thead>
+  <tr>
+    <th>Account</th>
+    <th>Date Format</th>
+    <th>Date Column</th>
+    <th>Trx Type Column</th>
+    <th>Description Column</th>
+    <th>Actions</th>
+  </tr>
+  </thead>
+  <tbody>
   <% @import_columns_definitions.each do |import_columns_definition| %>
-    <%= render import_columns_definition %>
-    <p>
-      <%= link_to "Show this import columns definition", import_columns_definition %>
-    </p>
+    <tr id="<%= dom_id import_columns_definition %>">
+      <td><%= import_columns_definition.account.name %></td>
+      <td><%= import_columns_definition.date_format %></td>
+      <td><%= import_columns_definition.date_column %></td>
+      <td><%= import_columns_definition.trx_type_column %></td>
+      <td><%= import_columns_definition.other_party_column %></td>
+      <td><%= link_to "Show this definition", import_columns_definition_path(import_columns_definition) %></td>
+    </tr>
   <% end %>
-</div>
+  </tbody>
+</table>
 
-<%= link_to "New import columns definition", new_import_columns_definition_path %>
+<div style="margin-top: 1rem">
+  <%= link_to "New import columns definition", new_import_columns_definition_path, class: "pure-button" %>
+</div>
