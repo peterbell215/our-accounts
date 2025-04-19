@@ -56,6 +56,15 @@ RSpec.describe ImportColumnsDefinition, type: :model do
         expect(import_columns_definition.errors[:base]).to include("You must define either both credit_column and debit_column, or amount_column.")
       end
     end
+
+    context "when the same field is mapped to multiple columns" do
+      subject(:import_columns_definition) { FactoryBot.build(:lloyds_import_columns_definition, date_column: "Transaction Date", other_party_column: "Transaction Date") }
+
+      it "is invalid" do
+        expect(import_columns_definition).not_to be_valid
+        expect(import_columns_definition.errors[:base]).to include("The same field in the CSV file cannot be mapped to multiple columns: Transaction Date")
+      end
+    end
   end
 
   describe '#build_csv_data generates the csv_data' do

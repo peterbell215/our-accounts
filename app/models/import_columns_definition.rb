@@ -9,6 +9,7 @@ class ImportColumnsDefinition < ApplicationRecord
   validates :other_party_column, presence: true
 
   validate :validate_credit_debit_or_amount_column
+  validate :validate_unique_csv_mappings
 
   CSV_HEADERS = ImportColumnsDefinition.attribute_names.dup.keep_if { |a| a =~ /_column\z/ }.freeze
 
@@ -115,6 +116,16 @@ class ImportColumnsDefinition < ApplicationRecord
 
     if using_credit_debit == using_amount
       errors.add(:base, "You must define either both credit_column and debit_column, or amount_column.")
+    end
+  end
+
+  # Custom validation to ensure no duplicate mappings in CSV columns
+  def validate_unique_csv_mappings
+    mapped_columns = mapped_columns = self.attributes.select { |a, v| a.in?(CSV_HEADERS) && v.present? }.values
+    duplicates = mapped_columns.select { |value| mapped_columns.count(value) > 1 }.uniq
+
+    if duplicates.any?
+      errors.add(:base, "The same field in the CSV file cannot be mapped to multiple columns: #{duplicates.join(', ')}")
     end
   end
 end
