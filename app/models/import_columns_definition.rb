@@ -4,6 +4,11 @@ class ImportColumnsDefinition < ApplicationRecord
   belongs_to :account
 
   validates :account_id, presence: true
+  validates :date_format, presence: true
+  validates :date_column, presence: true
+  validates :other_party_column, presence: true
+
+  validate :validate_credit_debit_or_amount_column
 
   CSV_HEADERS = ImportColumnsDefinition.attribute_names.dup.keep_if { |a| a =~ /_column\z/ }.freeze
 
@@ -89,7 +94,6 @@ class ImportColumnsDefinition < ApplicationRecord
   # @param [CSV::Row] data the array being populated
   # @param [Symbol] column_index_field should match the names in the ImportColumnDefinition field holding the indexes
   # @param [Object] field_value
-  # @param [Block] block
   # @return [void]
   def extract_data(data, column_index_field, field_value = nil)
     column_index = self[column_index_field]
@@ -97,6 +101,20 @@ class ImportColumnsDefinition < ApplicationRecord
     if column_index
       field_value ||= yield
       data[column_index] = field_value.is_a?(String) && field_value =~ /^[0-9]+[+-]/  ? "'" + field_value : field_value
+    end
+  end
+
+  private
+
+  # Custom validation to ensure either credit/debit columns or amount column are used to capture the transaction
+  # value.  If so, error added to model.
+  # @return void
+  def validate_credit_debit_or_amount_column
+    using_credit_debit = (!credit_column.blank? && !debit_column.blank?) && amount_column.blank?
+    using_amount = (credit_column.blank? && debit_column.blank?) && !amount_column.blank?
+
+    if using_credit_debit == using_amount
+      errors.add(:base, "You must define either both credit_column and debit_column, or amount_column.")
     end
   end
 end

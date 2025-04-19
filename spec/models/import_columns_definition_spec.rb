@@ -24,6 +24,40 @@ RSpec.describe ImportColumnsDefinition, type: :model do
     end
   end
 
+  describe "validations" do
+
+
+    context "when credit_column and debit_column are present" do
+      subject(:import_columns_definition) { FactoryBot.build(:lloyds_import_columns_definition, credit_column: "Credit", debit_column: "Debit", amount_column: nil) }
+
+      specify { expect(import_columns_definition).to be_valid }
+    end
+
+    context "when amount_column is present" do
+      subject(:import_columns_definition) { FactoryBot.build(:lloyds_import_columns_definition, credit_column: nil, debit_column: nil, amount_column: "Amount") }
+
+      specify { expect(import_columns_definition).to be_valid }
+    end
+
+    context "when neither credit/debit columns nor amount_column are present" do
+      subject(:import_columns_definition) { FactoryBot.build(:lloyds_import_columns_definition, credit_column: nil, debit_column: nil, amount_column: nil) }
+
+      it "is invalid" do
+        expect(import_columns_definition).not_to be_valid
+        expect(import_columns_definition.errors[:base]).to include("You must define either both credit_column and debit_column, or amount_column.")
+      end
+    end
+
+    context "when inconsistent usage of credit/debit columns and amount column" do
+      subject(:import_columns_definition) { FactoryBot.build(:lloyds_import_columns_definition, credit_column: "Credit", debit_column: nil, amount_column: "Amount") }
+
+      it "is invalid" do
+        expect(import_columns_definition).not_to be_valid
+        expect(import_columns_definition.errors[:base]).to include("You must define either both credit_column and debit_column, or amount_column.")
+      end
+    end
+  end
+
   describe '#build_csv_data generates the csv_data' do
     subject(:import_columns_definition) { FactoryBot.create(:lloyds_import_columns_definition) }
 
