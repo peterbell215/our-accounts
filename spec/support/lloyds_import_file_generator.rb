@@ -5,7 +5,7 @@ class LloydsImportFileGenerator
   def initialize
     @account = Account.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account)
     @transactions = []
-    @import_columns_definitions = FactoryBot.create(:lloyds_import_columns_definition)
+    @import_columns_definitions = FactoryBot.build(:lloyds_import_columns_definition)
   end
 
   # Does the real work of generating the file.  At the end, we have a CSV export file that could have come from
@@ -22,7 +22,7 @@ class LloydsImportFileGenerator
 
   private
 
-  # Gemerate a single salary credit into the account.
+  # Generate a single salary credit into the account.
   def salary
     @transactions << FactoryBot.build(:salary_transaction, date: @account.opening_date.end_of_month)
   end
@@ -59,7 +59,6 @@ class LloydsImportFileGenerator
 
   # Finally, we write the test output CSV file into the tmp directory.
   def write_file
-    import_columns_definitions = FactoryBot.create(:lloyds_import_columns_definition)
     csv_file = CSV.open(Rails.root.join('tmp', 'lloyds_import_file.csv'), 'w', write_headers: true)
     csv_file << import_columns_definitions.csv_header
     @transactions.reverse.each { |trx| csv_file << import_columns_definitions.build_csv_data(trx) }
