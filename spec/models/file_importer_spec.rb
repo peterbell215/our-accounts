@@ -4,9 +4,14 @@ RSpec.describe FileImporter, type: :class do
   FILENAME = "lloyds_import_file.csv"
   FILENAME_WITH_PATH = Rails.root.join('tmp', FILENAME)
 
-  before(:all) { LloydsImportFileGenerator.new.generate(FILENAME) }
+  before(:all) do
+    lloyds_account = FactoryBot.create(:lloyds_account)
+    FactoryBot.create(:lloyds_import_columns_definition)
 
-  let(:lloyds_account) { Account.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
+    AccountTrxDataGenerator.new(account: lloyds_account).generate(output: FILENAME_WITH_PATH)
+  end
+
+  let(:lloyds_account) { Account.find_by_name("Lloyds Account") }
 
   it 'has generated a suitable test file' do
     expect(File.exist?(FILENAME_WITH_PATH)).to be true
