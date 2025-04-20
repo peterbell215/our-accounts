@@ -24,10 +24,12 @@
           <th>Balance</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody data-controller="dateinlocale">
         <% @account.transactions.order(date: :desc, day_index: :desc).each do |transaction| %>
           <tr>
-            <td><%= transaction.date.strftime('%d/%m/%Y') %></td>
+            <td data-date="<%= transaction.date.iso8601 %>" data-dateinlocale-target="date">
+              <%= transaction.date.strftime('%d/%m/%Y') %> <%# Initial content, will be replaced by controller %>
+            </td>
             <td><%= transaction.description %></td>
             <td><%= transaction.category&.name %></td>
             <td><%= transaction.other_party&.name %></td>

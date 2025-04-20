@@ -6,17 +6,15 @@ const dateTimeFormatter = new Intl.DateTimeFormat(navigator.language, {
     day: "numeric",
 });
 
-// This controller formats a date string in the browser's locale
 export default class extends Controller {
     static targets = [ "date" ];
 
-    dateTargetConnected() {
-        const rawDate = this.element.dataset.date;
-
-        // Format the date in the browser's locale
-        const formattedDate = dateTimeFormatter.format(new Date(rawDate));
-
-        // Update the element with the formatted date
-        this.dateTarget.innerHTML = formattedDate;
+    connect() {
+        // Loop through all elements marked as 'date' targets within this controller's scope (tbody)
+        this.dateTargets.forEach(targetElement => {
+            const rawDate = targetElement.dataset.date; // Get data from the target itself
+            const formattedDate = dateTimeFormatter.format(new Date(rawDate));
+            targetElement.innerHTML = formattedDate; // Update the target
+        });
     }
 }
