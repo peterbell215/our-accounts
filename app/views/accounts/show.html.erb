@@ -8,3 +8,38 @@
 
   <%= button_to "Destroy this account", account_path(@account), method: :delete, class: "pure-button" %>
 </div>
+
+<h2>Transactions</h2>
+
+<% if @account.transactions.any? %>
+  <div class="transactions-container" data-controller="account-table">
+    <table id="trx-table" class="pure-table pure-table-bordered pure-table-striped">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Other Party</th>
+          <th>Amount</th>
+          <th>Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @account.transactions.order(date: :desc, day_index: :desc).each do |transaction| %>
+          <tr>
+            <td><%= transaction.date.strftime('%d/%m/%Y') %></td>
+            <td><%= transaction.description %></td>
+            <td><%= transaction.category&.name %></td>
+            <td><%= transaction.other_party&.name %></td>
+            <td class="<%= transaction.amount_pence.positive? ? 'positive' : 'negative' %>">
+              <%= humanized_money_with_symbol transaction.amount %>
+            </td>
+            <td><%= humanized_money_with_symbol transaction.balance if transaction.balance %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p>No transactions found for this account.</p>
+<% end %>
