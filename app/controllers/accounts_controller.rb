@@ -8,6 +8,7 @@ class AccountsController < ApplicationController
 
   # GET /accounts/1 or /accounts/1.json
   def show
+    @categories = Category.order(:name).all
   end
 
   # GET /accounts/new

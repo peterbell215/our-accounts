@@ -25,6 +25,10 @@ nav {
     .pure-menu .pure-menu-link:hover {
         color: #000; /* Light gray text color on hover */
     }
+
+    .pure-menu-selected .pure-menu-link {
+        background-color: #000;
+    }
 }
 
 body div.container {
@@ -50,4 +54,16 @@ body div.container {
         display: inline-block !important;
         width: min-content !important;
     }
+}
+
+td.currency {
+    text-align: right;
+}
+
+td.positive {
+    color: #3ad210;
+}
+
+td.negative {
+    color: #ee0000;
 }
