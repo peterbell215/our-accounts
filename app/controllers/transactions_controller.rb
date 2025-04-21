@@ -3,6 +3,7 @@ class TransactionsController < ApplicationController
   # Add authentication/authorization as needed (e.g., using Devise, Pundit)
   # before_action :authenticate_user!
   before_action :set_transaction, only: [:update]
+  before_action :set_account, only: [:update]
   before_action :load_categories, only: [:update] # Load categories for re-rendering the partial
 
   # PATCH /transactions/:id
@@ -20,6 +21,10 @@ class TransactionsController < ApplicationController
   def set_transaction
     # Ensure the transaction belongs to the current user or account context if necessary
     @transaction = Transaction.find(params[:id])
+  end
+
+  def set_account
+    @account = Account.find(params[:account_id])
   end
 
   # Added method to load categories needed for rendering the partial

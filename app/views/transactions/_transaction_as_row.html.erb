@@ -1,26 +1,35 @@
 <%# The <tr> now serves as the target for Turbo Stream replacements %>
-<tr class="transaction-row" id="<%= dom_id(transaction) %>">
-      <%= form_for transaction do |form| %> <%# Removed data-turbo-frame %>
-        <td data-date="<%= transaction.date.iso8601 %>" data-dateinlocale-target="date">
-          <%= transaction.date.strftime('%d/%m/%Y') %> <%# Initial content, will be replaced by controller %>
-        </td>
-        <td><%= transaction.description %></td>
-        <td>
-          <%# Select tag for category, using Stimulus controller for dynamic updates %>
-          <%= form.select :category_id,
-                          options_from_collection_for_select(@categories, :id, :name, transaction.category_id),
-                          { include_blank: true },
-                          { class: "pure-input-1-2" } %>
-        </td>
-        <td><%= transaction.other_party&.name %></td>
-        <td class="<%= transaction.amount_pence.positive? ? 'positive' : 'negative' %> currency">
-          <%= humanized_money_with_symbol transaction.amount %>
-        </td>
-        <td class="<%= transaction.balance_pence.positive? ? 'positive' : 'negative' %> currency">
-          <%= humanized_money_with_symbol transaction.balance if transaction.balance %>
-        </td>
-        <td>
-          <%= form.submit "Save", class: "pure-button pure-button-primary" %>
-        </td>
-      <% end %> <%# form_for %>
-</tr>
+<tr class="transaction-row" id="<%= dom_id(transaction, transaction.persisted? ? nil : 'new') %>" data-controller="dateinlocale">
+  <%= form_for transaction, url: account_transaction_path(@account, transaction) do |form| %>
+    <% transaction_presenter = TransactionPresenter.new(form, transaction, self) %>
+
+    <td data-date="<%= transaction.date.iso8601 %>" data-dateinlocale-target="date">
+      <%= transaction_presenter.date %>
+    </td>
+
+    <td>
+      <%= transaction_presenter.description %>
+    </td>
+
+    <td>
+      <%= transaction_presenter.category %>
+    </td>
+
+    <td>
+      Other Party
+    </td>
+
+    <td class="currency <%= transaction.amount_pence.positive? ? 'positive' : 'negative' %>">
+      <%= transaction_presenter.amount %>
+    </td>
+
+    <td class="currency <%= transaction.balance_pence.positive? ? 'positive' : 'negative' %>">
+      <%# Balance - Only show for existing, saved transactions %>
+      <%= humanized_money_with_symbol transaction.balance %>
+    </td>
+
+    <td>
+      <%= form.submit "Save", class: "pure-button pure-button-primary" %>
+    </td>
+  <% end %> <%# form_for %>
+</tr> <%# End of transaction row %>

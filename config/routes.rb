@@ -7,15 +7,9 @@ Rails.application.routes.draw do
 
   resources :import_matchers
   resources :categories
-  resources :transactions
 
   resources :accounts do
-    resources :transactions, only: [:index, :new, :create] do
-      collection do
-        get :import
-        post :import_process
-      end
-    end
+    resources :transactions, only: [:new, :create, :edit, :update, :destroy]
   end
 
   resources :bank_accounts, controller: :accounts

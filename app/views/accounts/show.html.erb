@@ -11,6 +11,10 @@
 
 <h2>Transactions</h2>
 
+<%# Button to trigger adding a new row %>
+<%= link_to "Add New Transaction", new_account_transaction_path(@account), data: { turbo_stream: true }, class: "pure-button pure-button-primary" %>
+<br><br> <%# Add some spacing %>
+
 <% if @account.transactions.any? %>
   <div class="transactions-container">
     <table id="trx-table" class="pure-table pure-table-bordered pure-table-striped">
@@ -25,7 +29,7 @@
         <th>Actions</th>
       </tr>
       </thead>
-      <tbody data-controller="dateinlocale">
+      <tbody id="transactions_tbody" data-controller="dateinlocale"> <%# Added ID %>
         <% @account.transactions.order(date: :desc, day_index: :desc).each do |transaction| %>
           <%= render "transactions/transaction_as_row", transaction: transaction, categories: @categories %> <%# Pass @categories %>
         <% end %> <%# @account.transactions.each do %>
