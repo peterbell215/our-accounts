@@ -14,7 +14,7 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
   let(:expected_headers) do
     FactoryBot.attributes_for(:lloyds_import_columns_definition)
               .select { |a, v| a =~ /_column\z/ }
-              .transform_keys{ |key| key.to_s.humanize }
+              .transform_keys { |key| key.to_s.humanize }
   end
 
   it "allows creating a definition by analyzing a CSV and dragging columns" do
@@ -39,7 +39,7 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
     # Wait for the turbo frame to load and Stimulus controller to update checkbox
     expect(page).to have_field('Header', checked: true, wait: 5) # Should be checked automatically
 
-    index = (0..).each;
+    index = (0..).each
 
     expected_headers.each_pair do |target_column, extracted_column|
       next if extracted_column.nil?
@@ -47,7 +47,7 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
       text_from_csv = "#{index.next}: #{extracted_column}"
       expect(page).to have_selector('.column-item', text: text_from_csv), "failed to find selector #{text_from_csv}"
 
-      source = find('.column-item', text: text_from_csv )
+      source = find('.column-item', text: text_from_csv)
       target = find_field(target_column)
 
       source.drag_to(target)
