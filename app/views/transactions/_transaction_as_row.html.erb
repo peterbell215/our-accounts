@@ -1,35 +1,73 @@
-<%# The <tr> now serves as the target for Turbo Stream replacements %>
-<tr class="transaction-row" id="<%= dom_id(transaction, transaction.persisted? ? nil : 'new') %>" data-controller="dateinlocale">
-  <%= form_for transaction, url: account_transaction_path(@account, transaction) do |form| %>
-    <% transaction_presenter = TransactionPresenter.new(form, transaction, self) %>
+<%# Wrap the row with the Stimulus controller %>
+<tr class="transaction-row"
+    id="<%= dom_id(transaction, transaction.persisted? ? nil : 'new') %>"
+    data-controller="dateinlocale transaction-row"> <%# Add transaction-row controller %>
 
-    <td data-date="<%= transaction.date.iso8601 %>" data-dateinlocale-target="date">
-      <%= transaction_presenter.date %>
-    </td>
+  <%# Display static data in these cells %>
+  <% transaction_presenter = TransactionPresenter.new(nil, transaction, self) # Pass nil for form initially %>
 
-    <td>
-      <%= transaction_presenter.description %>
-    </td>
+  <td data-date="<%= transaction.date.iso8601 %>" data-dateinlocale-target="date">
+    <%= transaction_presenter.date %>
+  </td>
 
-    <td>
-      <%= transaction_presenter.category %>
-    </td>
+  <td>
+    <%= transaction_presenter.description %>
+  </td>
 
-    <td>
-      Other Party
-    </td>
+  <%# Category cell - contains the form WITHOUT the submit button %>
+  <td>
+    <%# Add data-transaction-row-target to the form %>
+    <%= form_for transaction, url: account_transaction_path(@account, transaction), html: { class: 'inline-category-form', data: { transaction_row_target: "categoryForm" } } do |form| %>
+      <%# Re-initialize presenter with the form object for form elements %>
+      <% form_presenter = TransactionPresenter.new(form, transaction, self) %>
 
-    <td class="currency <%= transaction.amount_pence.positive? ? 'positive' : 'negative' %>">
-      <%= transaction_presenter.amount %>
-    </td>
+      <div class="category-select" style="display: inline-block; margin-right: 5px;">
+        <%= form_presenter.category %> <%# This now renders the select dropdown %>
+      </div>
 
-    <td class="currency <%= transaction.balance_pence.positive? ? 'positive' : 'negative' %>">
-      <%# Balance - Only show for existing, saved transactions %>
-      <%= humanized_money_with_symbol transaction.balance %>
-    </td>
+      <%# REMOVED form.submit button from here %>
+    <% end %> <%# form_for %>
+  </td>
 
-    <td>
-      <%= form.submit "Save", class: "pure-button pure-button-primary" %>
-    </td>
-  <% end %> <%# form_for %>
+  <td>
+    Other Party <%# Placeholder %>
+  </td>
+
+  <td class="currency <%= transaction.amount_pence.positive? ? 'positive' : 'negative' %>">
+    <%= transaction_presenter.amount %>
+  </td>
+
+  <td class="currency <%= transaction.balance_pence.positive? ? 'positive' : 'negative' %>">
+    <%= humanized_money_with_symbol transaction.balance %>
+  </td>
+
+  <%# Actions cell - Add a button with a Stimulus action %>
+  <td>
+    <button type="button"
+            class="pure-button pure-button-primary pure-button-small"
+            data-action="click->transaction-row#saveCategory">
+      Save
+    </button>
+    <%# Add other non-form actions here if needed %>
+  </td>
 </tr> <%# End of transaction row %>
+
+<%# Optional: Add some basic CSS for the inline form if needed %>
+<style>
+  /* Style for the form within the category cell */
+  .inline-category-form {
+    display: flex; /* Align items horizontally */
+    align-items: center; /* Vertically align items */
+    gap: 5px; /* Add space between elements */
+    justify-content: space-between; /* Push button to the right if needed */
+  }
+  .inline-category-form .category-select select {
+     /* Adjust width/style of select if needed */
+     width: 150px; /* Example width */
+     margin-right: 5px; /* Space between dropdown and button */
+  }
+  .inline-category-form .pure-button-small {
+      padding: 0.3em 0.6em; /* Make button smaller */
+      font-size: 0.8em;
+  }
+</style>
