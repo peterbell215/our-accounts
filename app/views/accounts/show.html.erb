@@ -16,25 +16,25 @@
 <br><br> <%# Add some spacing %>
 
 <% if @account.transactions.any? %>
-  <div class="transactions-container">
-    <table id="trx-table" class="pure-table pure-table-bordered pure-table-striped">
-      <thead>
-      <tr>
-        <th>Date</th>
-        <th>Description</th>
-        <th>Category</th>
-        <th>Other Party</th>
-        <th>Amount</th>
-        <th>Balance</th>
-        <th>Actions</th>
-      </tr>
-      </thead>
-      <tbody id="transactions_tbody" data-controller="dateinlocale"> <%# Added ID %>
-        <% @account.transactions.order(date: :desc, day_index: :desc).each do |transaction| %>
-          <%= render "transactions/transaction_as_row", transaction: transaction, categories: @categories %> <%# Pass @categories %>
-        <% end %> <%# @account.transactions.each do %>
-      </tbody>
-    </table>
+  <div id="trx-div-table" class="div-table">
+    <%# Header Row %>
+    <div class="div-table-header div-table-row">
+      <div class="div-table-col header-col">Date</div>
+      <div class="div-table-col header-col">Description</div>
+      <div class="div-table-col header-col">Category</div>
+      <div class="div-table-col header-col">Other Party</div>
+      <div class="div-table-col header-col">Amount</div>
+      <div class="div-table-col header-col">Balance</div>
+      <div class="div-table-col header-col">Actions</div>
+    </div>
+
+    <%# Body Rows %>
+    <div id="transactions_div_body" class="div-table-body" data-controller="dateinlocale">
+      <% @account.transactions.order(date: :desc, day_index: :desc).each do |transaction| %>
+        <%= render "transactions/transaction_as_row", transaction: transaction, categories: @categories, account: @account %>
+      <% end %>
+      <div id="end-of-table-marker" class="div-table-row"></div> <%# Marker for Turbo Stream %>
+    </div>
   </div>
 <% else %>
   <p>No transactions found for this account.</p>

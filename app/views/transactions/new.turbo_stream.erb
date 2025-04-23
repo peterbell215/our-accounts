@@ -1,0 +1,5 @@
+\
+<%# Prepend the new transaction row partial to the tbody %>
+<%= turbo_stream.prepend "transactions_tbody" do %>
+  <%= render "transactions/transaction_as_row", transaction: @transaction, categories: @categories %>
+<% end %>
