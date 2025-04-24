@@ -67,17 +67,16 @@
     <%# Show Save button only for new/editing rows within the form %>
     <%# Replace text with Material Icon 'check' %>
     <%= f.button type: :submit, class: "pure-button pure-button-primary pure-button-small" do %>
-      <i class="material-icons">check</i> <%# Save Icon %>
+      <span class="material-symbols-outlined">save</span>
     <% end %>
 
-    <%# Delete button - Placed outside the form but in the same cell for persisted records %>
+    <%# Delete link - Replaces button_to %>
     <% if transaction.persisted? %>
-      <%= button_to "Delete",
-                    account_transaction_path(@account, transaction),
-                    method: :delete,
-                    class: "pure-button pure-button-error pure-button-small",
-                    form_class: "delete-button-form", # Add a class to the form for styling if needed
-                    data: { turbo_confirm: "Are you sure you want to delete this transaction?" } %>
+      <%= link_to account_transaction_path(@account, transaction),
+                  class: "pure-button pure-button-error pure-button-small",
+                  data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this transaction?" } do %>
+        <span class="material-symbols-outlined">delete</span>
+      <% end %>
     <% end %>
   </div>
 <% end %> <%# End of form_with %>
