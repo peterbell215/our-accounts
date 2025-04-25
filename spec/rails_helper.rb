@@ -15,6 +15,11 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require "capybara/rails"
 require "capybara/rspec"
 
+require 'money-rails' # Add this line to require the gem
+require 'action_view/helpers/number_helper'
+require 'money-rails/helpers/action_view_extension'
+require 'action_view/record_identifier'
+
 # Checks for pending migrations and applies them before tests are run.
 # If you are not using ActiveRecord, you can remove these lines.
 begin
@@ -44,3 +49,4 @@ end
 
 # Capybara configuration
 Capybara.default_driver = :selenium_chrome
+
