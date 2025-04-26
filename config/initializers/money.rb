@@ -1,5 +1,9 @@
 # encoding : utf-8
 
+# Set default rounding mode explicitly to avoid warning
+Money.rounding_mode = BigDecimal::ROUND_HALF_EVEN
+
+# Keep using default settings for everything else
 Money.locale_backend = :i18n
 
 MoneyRails.configure do |config|
