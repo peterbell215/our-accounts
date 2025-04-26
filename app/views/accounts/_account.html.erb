@@ -18,7 +18,9 @@
 
   <div class="pure-g" data-controller="dateinlocale">
     <div class="pure-u-1-6"><strong>Opening Date:</strong></div>
-    <div class="pure-u-1-4" data-dateinlocale-target="date" data-date="<%= @account.opening_date.iso8601%>"></div>
+    <div class="pure-u-1-4" data-dateinlocale-target="date" data-date="<%= account.opening_date.iso8601 %>">
+      <span></span>
+    </div>
   </div>
 
   <div class="pure-g">
