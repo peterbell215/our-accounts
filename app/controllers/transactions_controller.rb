@@ -1,8 +1,8 @@
 # app/controllers/transactions_controller.rb
 class TransactionsController < ApplicationController
   before_action :set_account
-  before_action :set_transaction, only: [:update, :destroy] # Add :destroy here
-  before_action :load_categories, only: [:new, :create, :update] # Ensure categories are loaded
+  before_action :set_transaction, only: [ :update, :destroy ] # Add :destroy here
+  before_action :load_categories, only: [ :new, :create, :update ] # Ensure categories are loaded
 
   # ... (index action remains the same) ...
 

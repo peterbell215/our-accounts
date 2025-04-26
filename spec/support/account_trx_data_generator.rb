@@ -18,7 +18,7 @@ class AccountTrxDataGenerator
     salary
     single_transaction(6.days, :octopus_energy_imported_trx)
     repeated_transactions([ 3, 1, 3, 1, 1, 1, 3, 4, 2, 4 ], :tesco_shop)
-    repeated_transactions([6, 8, 7, 10, 10], :amazon_imported_trx)
+    repeated_transactions([ 6, 8, 7, 10, 10 ], :amazon_imported_trx)
     sort
     add_balances
 
