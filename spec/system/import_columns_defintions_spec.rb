@@ -1,13 +1,12 @@
 require 'rails_helper'
 
 RSpec.describe "ImportColumnsDefinitions", type: :system do
-  FILENAME = "lloyds_import_file.csv"
-  FILENAME_WITH_PATH = Rails.root.join('tmp', FILENAME)
-
   before(:all) do
+    # Clear existing accounts to ensure a clean test environment
+    Account.destroy_all
+
     lloyds_account = FactoryBot.create(:lloyds_account)
-    lloyds_import_file_generator = AccountTrxDataGenerator.new(account: lloyds_account)
-    lloyds_import_file_generator.generate(output: FILENAME_WITH_PATH)
+    ImportTestHelpers.generate_test_file(lloyds_account)
   end
 
   let(:account) { Account.find_by_name("Lloyds Account") }
@@ -28,7 +27,7 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
     uncheck 'Header'
 
     # Attach the file to the hidden input used by the analyzer form
-    attach_file 'csv_file', FILENAME_WITH_PATH
+    attach_file 'csv_file', ImportTestHelpers::FILENAME_WITH_PATH
 
     # Click the analyze button within the analyzer's form scope
     within('.csv-analyzer-container') do
@@ -68,5 +67,11 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
       next if field == :account
       expect(definition[field]).to eq(expected_value)
     end
+  end
+
+  after(:all) do
+    ImportTestHelpers.cleanup_test_file
+    Account.destroy_all
+    # No need to explicitly destroy ImportColumnsDefinition as it will be destroyed by the Account cascade
   end
 end
