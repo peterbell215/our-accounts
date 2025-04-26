@@ -10,9 +10,13 @@ RSpec.describe "Transactions", type: :system do
   let!(:lloyds_account) { Account.find_by(name: "Lloyds Account") || FactoryBot.create(:lloyds_account) }
 
   before(:all) do
-    lloyds_account = Account.find_by(name: "Lloyds Account")
+    lloyds_account = Account.find_by(name: "Lloyds Account") || FactoryBot.create(:lloyds_account)
     generator = AccountTrxDataGenerator.new(account: lloyds_account) # Pass the account here
     generator.generate(output: :db)
+  end
+
+  after(:all) do
+    Account.destroy_all
   end
 
   it "displays transactions for the Lloyds account correctly" do
