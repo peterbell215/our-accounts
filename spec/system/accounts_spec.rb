@@ -1,7 +1,7 @@
 # spec/system/accounts_spec.rb
 require 'rails_helper'
 
-RSpec.describe 'Creating a new account', type: :system do
+RSpec.describe 'Maintaing a new account', type: :system do
   it 'allows a user to create a new account' do
     # Visit the new account page
     visit new_account_path
