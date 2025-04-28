@@ -99,10 +99,11 @@ class ImportColumnsDefinition < ApplicationRecord
   def extract_data(data, column_index_field, field_value = nil)
     column_index = self[column_index_field]
 
-    if column_index
-      field_value ||= yield
-      data[column_index] = field_value.is_a?(String) && field_value =~ /^[0-9]+[+-]/  ? "'" + field_value : field_value
-    end
+    return if column_index.nil?
+    column_index = column_index.to_i unless self.header?
+
+    field_value ||= yield
+    data[column_index] = field_value.is_a?(String) && field_value =~ /^[0-9]+[+-]/  ? "'" + field_value : field_value
   end
 
   private

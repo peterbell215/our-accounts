@@ -25,8 +25,6 @@ RSpec.describe ImportColumnsDefinition, type: :model do
   end
 
   describe "validations" do
-
-
     context "when credit_column and debit_column are present" do
       subject(:import_columns_definition) { FactoryBot.build(:lloyds_import_columns_definition, credit_column: "Credit", debit_column: "Debit", amount_column: nil) }
 
@@ -68,18 +66,30 @@ RSpec.describe ImportColumnsDefinition, type: :model do
   end
 
   describe '#build_csv_data generates the csv_data' do
-    subject(:import_columns_definition) { FactoryBot.create(:lloyds_import_columns_definition) }
-
     let(:trx) { FactoryBot.build(:bertaux_transaction_for_export) }
     let(:csv_data) { import_columns_definition.build_csv_data(trx) }
 
-    specify("date") { expect(csv_data["Transaction Date"]).to eq "12/12/2024" }
-    specify("trx_type") { expect(csv_data["Transaction Type"]).to eq "DEB" }
-    specify("sortcode") { expect(csv_data["Sort Code"]).to eq "'30-00-00" }
-    specify("account") { expect(csv_data["Account Number"]).to eq "01234567" }
-    specify("description") { expect(csv_data["Transaction Description"]).to eq "Maison Bertaux" }
-    specify("amount") { expect(csv_data["Debit Amount"]).to eq 5.95 }
-    specify("credit") { expect(csv_data["Credit Amount"]).to be_nil }
-    specify("balance") { expect(csv_data["Balance"]).to eq 1525.80 }
+    describe "for Lloyds Account" do
+      subject(:import_columns_definition) { FactoryBot.create(:lloyds_import_columns_definition) }
+
+      specify("date") { expect(csv_data["Transaction Date"]).to eq "12/12/2024" }
+      specify("trx_type") { expect(csv_data["Transaction Type"]).to eq "DEB" }
+      specify("sortcode") { expect(csv_data["Sort Code"]).to eq "'30-00-00" }
+      specify("account") { expect(csv_data["Account Number"]).to eq "01234567" }
+      specify("description") { expect(csv_data["Transaction Description"]).to eq "Maison Bertaux" }
+      specify("debit") { expect(csv_data["Debit Amount"]).to eq 5.95 }
+      specify("credit") { expect(csv_data["Credit Amount"]).to be_nil }
+      specify("balance") { expect(csv_data["Balance"]).to eq 1525.80 }
+    end
+
+    describe "for Barclaycard Account" do
+      subject(:import_columns_definition) { FactoryBot.create(:barclaycard_import_columns_definition) }
+
+      specify("date") { expect(csv_data[0]).to eq "12 Dec 24" }
+      specify("description") { expect(csv_data[1]).to eq "Maison Bertaux" }
+      specify("trx_type") { expect(csv_data[4]).to eq "DEB" }
+      specify("debit") { expect(csv_data[5]).to eq 5.95 }
+      specify("credit") { expect(csv_data[6]).to be_nil }
+    end
   end
 end

@@ -5,16 +5,29 @@ class AccountTrxDataGenerator
 
   # Initialize.
   # @param [Account] account The account object to associate transactions with.
-  def initialize(account:)
+  # @param [Symbol, ImportColumnsDefinition] import_columns_definition_factory A symbol referencing the FactoryBot factory or an actual ImportColumnsDefinition instance
+  def initialize(account:, import_columns_definition_factory: nil)
     @account = account
     @transactions = []
-    @import_columns_definitions = FactoryBot.build(:lloyds_import_columns_definition)
+
+    # Set the import columns definition based on provided factory or default based on account type
+    if import_columns_definition_factory.is_a?(ImportColumnsDefinition)
+      @import_columns_definitions = import_columns_definition_factory
+    elsif import_columns_definition_factory.is_a?(Symbol)
+      @import_columns_definitions = FactoryBot.build(import_columns_definition_factory)
+    else
+      # Default factory based on account type if not specified
+      factory_name = determine_default_factory(account)
+      @import_columns_definitions = FactoryBot.build(factory_name)
+    end
   end
 
   # Does the data generation part. Populates transactions, sorts, and adds balances.
   # Does NOT write the file.
   def generate(output: :db)
     # Clear transactions if generate is called multiple times on the same instance
+    @transactions = []
+
     salary
     single_transaction(6.days, :octopus_energy_imported_trx)
     repeated_transactions([ 3, 1, 3, 1, 1, 1, 3, 4, 2, 4 ], :tesco_shop)
@@ -34,14 +47,26 @@ class AccountTrxDataGenerator
   # @param [String] filename_with_path The base name for the output CSV file (e.g., 'lloyds_import_file.csv')
   # @return [CSVFile]
   def write_file(filename_with_path)
-    CSV.open(filename_with_path, 'w', write_headers: true) do |csv_file|
-      csv_file << import_columns_definitions.csv_header
+    CSV.open(filename_with_path, 'w', write_headers: import_columns_definitions.header) do |csv_file|
+      csv_file << import_columns_definitions.csv_header if import_columns_definitions.header
       # Write transactions (reversed, as before)
       @transactions.reverse.each { |trx| csv_file << import_columns_definitions.build_csv_data(trx) }
     end
   end
 
   private
+
+  # Determine the default factory based on account type
+  # @param [Account] account
+  # @return [Symbol] factory_name
+  def determine_default_factory(account)
+    case account.name
+    when /Barclaycard/i
+      :barclaycard_import_columns_definition
+    else
+      :lloyds_import_columns_definition
+    end
+  end
 
   # Saves the generated transactions to the database.
   # Associates each transaction with the generator's account before saving.
@@ -57,13 +82,13 @@ class AccountTrxDataGenerator
 
       trx.save!
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "LloydsImportFileGenerator: Failed to save transaction: #{e.message}. Record: #{trx.attributes.inspect}"
+      Rails.logger.error "AccountTrxDataGenerator: Failed to save transaction: #{e.message}. Record: #{trx.attributes.inspect}"
       # Re-raise the error to halt execution and fail the test/process
       raise e
     end
     # end # End of optional transaction block
 
-    Rails.logger.info "LloydsImportFileGenerator: Successfully saved #{transactions.count} transactions to the database for account '#{account.name}'."
+    Rails.logger.info "AccountTrxDataGenerator: Successfully saved #{transactions.count} transactions to the database for account '#{account.name}'."
   end
 
   # Generate a single salary credit into the account.

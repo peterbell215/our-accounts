@@ -5,8 +5,14 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
     # Clear existing accounts to ensure a clean test environment
     Account.destroy_all
 
-    lloyds_account = FactoryBot.create(:lloyds_account)
-    ImportTestHelpers.generate_test_file(lloyds_account)
+    @lloyds_account = FactoryBot.create(:lloyds_account)
+    ImportTestHelpers.generate_test_file(@lloyds_account)
+  end
+
+  after(:all) do
+    ImportTestHelpers.cleanup_test_file(@lloyds_account)
+    Account.destroy_all
+    # No need to explicitly destroy ImportColumnsDefinition as it will be destroyed by the Account cascade
   end
 
   let(:account) { Account.find_by_name("Lloyds Account") }
@@ -22,12 +28,13 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
     # --- Fill in basic details ---
     select account.name, from: 'import_columns_definition_account_id'
     fill_in 'Date format', with: '%d/%m/%Y' # Example format
+    find_by_id("import_columns_definition_reversed").set(true)
 
     # --- Analyze CSV ---
     uncheck 'Header'
 
     # Attach the file to the hidden input used by the analyzer form
-    attach_file 'csv_file', ImportTestHelpers::FILENAME_WITH_PATH
+    attach_file 'csv_file', ImportTestHelpers::get_filename_with_path(account)
 
     # Click the analyze button within the analyzer's form scope
     within('.csv-analyzer-container') do
@@ -65,13 +72,7 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
 
     FactoryBot.attributes_for(:lloyds_import_columns_definition).each_pair do |field, expected_value|
       next if field == :account
-      expect(definition[field]).to eq(expected_value)
+      expect(definition[field]).to eq(expected_value), "#{field} should be #{expected_value} but is #{definition[field]}"
     end
-  end
-
-  after(:all) do
-    ImportTestHelpers.cleanup_test_file
-    Account.destroy_all
-    # No need to explicitly destroy ImportColumnsDefinition as it will be destroyed by the Account cascade
   end
 end
