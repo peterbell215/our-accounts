@@ -6,14 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9a10c83d-1716-4cd1-a618-41de5961d2df" name="Changes" comment="First commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/import_columns_definition.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/import_columns_definition.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/tasks/gen_samle_data.rake" beforeDir="false" afterPath="$PROJECT_DIR$/lib/tasks/gen_samle_data.rake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/file_importer_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/file_importer_spec.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/models/import_columns_definition_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/models/import_columns_definition_spec.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/support/account_trx_data_generator.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/support/account_trx_data_generator.rb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/spec/support/import_test_helpers.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/support/import_test_helpers.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/system/import_columns_defintions_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/system/import_columns_defintions_spec.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec/system/transactions_spec.rb" beforeDir="false" afterPath="$PROJECT_DIR$/spec/system/transactions_spec.rb" afterDir="false" />
     </list>
     <list id="eae238ec-11a4-4392-aa20-0d8cd9681392" name="Removing Bootstrap" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -631,7 +624,7 @@
       <workItem from="1745765423711" duration="611000" />
       <workItem from="1745782733173" duration="9927000" />
       <workItem from="1745872600119" duration="117000" />
-      <workItem from="1745872728196" duration="2779000" />
+      <workItem from="1745872728196" duration="3886000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -811,7 +804,7 @@
     <SUITE FILE_PATH="coverage/our_accounts@import_columns_definition_spec.rcov" NAME="import_columns_definition_spec Coverage Results" MODIFIED="1745783549968" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@balances_spec.rcov" NAME="balances_spec Coverage Results" MODIFIED="1739741509347" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@db_seed__our_accounts.rcov" NAME="db:seed: our-accounts Coverage Results" MODIFIED="1737821362949" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
-    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1745875460535" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
+    <SUITE FILE_PATH="coverage/our_accounts@all.rcov" NAME="all Coverage Results" MODIFIED="1745903150443" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@import_columns_definition.rcov" NAME="import_columns_definition Coverage Results" MODIFIED="1741034633301" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Transaction_sequence_when_imported_balance_is_not_set.rcov" NAME="Transaction#sequence when imported balance is not set Coverage Results" MODIFIED="1740160479992" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
     <SUITE FILE_PATH="coverage/our_accounts@Balances_when_previous_transactions_in_account_on_same_date.rcov" NAME="Balances when previous transactions in account on same date Coverage Results" MODIFIED="1739739202023" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="rcov" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" MODULE_NAME="our-accounts" />
