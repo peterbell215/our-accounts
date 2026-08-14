@@ -55,6 +55,21 @@ end
 # spec/system/transactions_spec.rb.
 REQUIRED_CATEGORIES = [ "Shopping", "Travel", "Utilities" ].freeze
 
-# Capybara configuration.  Run a visible Chrome locally, where watching a failing system spec is useful,
-# but headless in CI where there is no display.
-Capybara.default_driver = ENV["CI"].present? ? :selenium_chrome_headless : :selenium_chrome
+# Capybara configuration.
+#
+# The locale has to be pinned. The dateinlocale Stimulus controller deliberately formats dates using the
+# *browser's* locale, so specs asserting on a rendered date otherwise depend on where they run: a UK
+# machine renders "3 January 2023" while a GitHub runner defaults to en-US and renders "January 3, 2023".
+#
+# Chrome is visible locally, where watching a failing system spec is useful, and headless in CI where
+# there is no display.
+Capybara.register_driver :chrome_en_gb do |app|
+  options = Selenium::WebDriver::Chrome::Options.new
+  options.add_argument("--lang=en-GB")
+  options.add_preference("intl.accept_languages", "en-GB,en")
+  options.add_argument("--headless=new") if ENV["CI"].present?
+
+  Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+end
+
+Capybara.default_driver = :chrome_en_gb
