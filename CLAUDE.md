@@ -25,7 +25,7 @@ bundle exec rspec spec/models/transaction_spec.rb:42          # one example by l
 bin/rubocop                     # lint (rubocop-rails-omakase)
 bin/brakeman --no-pager         # security scan
 bin/importmap audit             # JS dependency audit
-bin/rails db:seed               # loads categories from db/outgoings-analysis-apr-to-jun24.csv
+bin/rails db:seed               # imports categories from any db/*.csv with a Category column; no-op in test
 bin/rails data:create_sample_data   # populate dev db with a Lloyds + Barclaycard account and transactions
 ```
 
@@ -131,7 +131,8 @@ Dates are emitted as ISO-8601 in data attributes and reformatted client-side to 
 - `spec/rails_helper.rb` creates the categories in its `REQUIRED_CATEGORIES` constant ("Shopping",
   "Travel", "Utilities") before the suite. The factories and `spec/system/transactions_spec.rb` look
   these up by name, so add to that constant rather than relying on seed data — `db/seeds.rb` sources
-  categories from a CSV of real account data that is gitignored and so absent in CI.
+  categories from CSVs of real account data that are gitignored, and is a deliberate no-op under
+  `RAILS_ENV=test` for exactly that reason.
 - Factories are named after real institutions: `:lloyds_account`, `:barclay_card_account`,
   `:lloyds_import_columns_definition`, `:barclaycard_import_columns_definition`. The Lloyds definition
   is header-based and reversed; the Barclaycard one is index-based with `credit_sign: -1`. Between them
@@ -154,9 +155,6 @@ Dates are emitted as ISO-8601 in data attributes and reformatted client-side to 
 - `data:create_sample_data` appends to whatever is already in the development database — its
   `Rake::Task["db:truncate_all"]` "clear out the database" step is missing an `.invoke` and so does
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
-- **`bin/rails db:seed` never exits.** It does its work, then hangs — `db/seeds.rb` calls
-  `Rails.application.load_tasks`, which re-enters rake from inside a rake task. Interrupt it once the
-  categories are loaded. Long-standing, and unrelated to the CSV guard added for CI.
 - `lib/tasks/import_analysis.rake` contains dead helper methods (`build_import`,
   `build_import_column_definitions`) that reference removed columns such as `transaction_type_column`;
   only the `import:extract_categories` task works.
