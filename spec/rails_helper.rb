@@ -63,6 +63,11 @@ REQUIRED_CATEGORIES = [ "Shopping", "Travel", "Utilities" ].freeze
 #
 # Chrome is visible locally, where watching a failing system spec is useful, and headless in CI where
 # there is no display.
+# Chrome on Linux takes navigator.language from the LANGUAGE environment variable, not from the --lang
+# switch, and it inherits the environment of this process. Setting it here is what actually pins the
+# locale; the switch and the preference below cover other platforms and the Accept-Language header.
+ENV["LANGUAGE"] = "en_GB:en"
+
 Capybara.register_driver :chrome_en_gb do |app|
   options = Selenium::WebDriver::Chrome::Options.new
   options.add_argument("--lang=en-GB")
