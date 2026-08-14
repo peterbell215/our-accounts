@@ -34,7 +34,7 @@ RSpec.describe "ImportColumnsDefinitions", type: :system do
     uncheck 'Header'
 
     # Attach the file to the hidden input used by the analyzer form
-    attach_file 'csv_file', ImportTestHelpers::get_filename_with_path(account)
+    attach_file 'csv_file', ImportTestHelpers.get_filename_with_path(account)
 
     # Click the analyze button within the analyzer's form scope
     within('.csv-analyzer-container') do

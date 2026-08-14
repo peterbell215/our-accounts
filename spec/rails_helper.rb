@@ -49,4 +49,3 @@ end
 
 # Capybara configuration
 Capybara.default_driver = :selenium_chrome
-
