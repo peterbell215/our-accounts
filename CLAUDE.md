@@ -18,7 +18,7 @@ Gems may not be installed in a fresh checkout — run `bundle install` (and `yar
 
 ```sh
 bin/setup                       # install deps, prepare db, start server
-bin/rails server                # dev server (bin/dev exists but Procfile.dev does not — see Known gaps)
+bin/rails server                # dev server; there is no bin/dev, see the note below
 bundle exec rspec               # full suite
 bundle exec rspec spec/models/import_matcher_spec.rb          # one file
 bundle exec rspec spec/models/transaction_spec.rb:42          # one example by line
@@ -150,8 +150,11 @@ Dates are emitted as ISO-8601 in data attributes and reformatted client-side to 
   `spec/models/file_importer_spec.rb`. Wiring it to a controller/upload form is the obvious next step.
 - **No analysis or prediction features exist yet**, despite being the point of the app — no reporting
   views, no aggregation by category or period.
-- `bin/dev` execs `foreman start -f Procfile.dev` but `Procfile.dev` is not in the repo; use
-  `bin/rails server`.
+- There is deliberately **no `bin/dev` or `Procfile.dev`**. With importmap and Propshaft there is no
+  asset build to watch, and solid_queue only runs in production, so foreman would be supervising a
+  single process — while costing the interactive debugger, since its stdout is not a TTY. Use
+  `bin/rails server`. Reintroduce `bin/dev` if development ever gains a second process, such as
+  `bin/jobs`.
 - `data:create_sample_data` appends to whatever is already in the development database — its
   `Rake::Task["db:truncate_all"]` "clear out the database" step is missing an `.invoke` and so does
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
