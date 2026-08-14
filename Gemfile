@@ -1,5 +1,9 @@
 source "https://rubygems.org"
 
+# Fail loudly when running under the wrong Ruby.  Without this, a shell left on a different rvm ruby just
+# reports the bundle's gems as missing, which is a confusing way to find out.
+ruby file: ".ruby-version"
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.3"
 
