@@ -36,8 +36,12 @@ RSpec.configure do |config|
   # setup for factory bot
   config.include FactoryBot::Syntax::Methods
 
+  # Categories the specs depend on.  These used to arrive via Rails.application.load_seed, but db/seeds.rb
+  # sources them from a CSV of real account data that is deliberately not in the repository, so the suite
+  # could only run on a machine that happened to have that file.  Creating them here keeps the suite
+  # self-contained and deterministic.
   config.before(:suite) do
-    Rails.application.load_seed
+    REQUIRED_CATEGORIES.each { |name| Category.find_or_create_by!(name: name) }
   end
 
   config.before(:each) do
@@ -47,5 +51,10 @@ RSpec.configure do |config|
   config.include Rails.application.routes.url_helpers
 end
 
-# Capybara configuration
-Capybara.default_driver = :selenium_chrome
+# Categories referenced by the factories (:matched_transaction, the import matchers) and by
+# spec/system/transactions_spec.rb.
+REQUIRED_CATEGORIES = [ "Shopping", "Travel", "Utilities" ].freeze
+
+# Capybara configuration.  Run a visible Chrome locally, where watching a failing system spec is useful,
+# but headless in CI where there is no display.
+Capybara.default_driver = ENV["CI"].present? ? :selenium_chrome_headless : :selenium_chrome
