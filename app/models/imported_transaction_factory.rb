@@ -57,9 +57,9 @@ class ImportedTransactionFactory
   def self.set_amount(csv_row, import_columns_definition)
     amount = if import_columns_definition.amount_column
                csv_row[import_columns_definition.amount_column].to_f
-             else
+    else
                csv_row[import_columns_definition.credit_column]&.to_f || -(csv_row[import_columns_definition.debit_column].to_f)
-             end
+    end
     amount *= import_columns_definition.credit_sign
     Money.from_amount(amount)
   end

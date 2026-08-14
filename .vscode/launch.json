@@ -26,7 +26,7 @@
       "type": "ruby_lsp",
       "request": "launch",
       "name": "RSpec",
-      "program": "/usr/share/rvm/gems/ruby-3.3.6/bin/rspec",
+      "program": "/usr/share/rvm/gems/ruby-4.0.6/bin/rspec",
       "args": ["spec"],
       "cwd": "${workspaceRoot}",
       "env": { "RAILS_ENV": "test" }

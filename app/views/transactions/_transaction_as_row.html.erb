@@ -4,7 +4,7 @@
               url: url, # Explicitly set the URL
               id: dom_id(transaction, transaction.persisted? ? nil : 'new'),
               html: { class: "div-table-row transaction-row" },
-              data: { controller: "dateinlocale" } do |f| %>
+              data: { controller: "dateinlocale", transaction_id: transaction.id} do |f| %>
 
   <% transaction_presenter = TransactionPresenter.new(transaction, self, @categories, @account) %>
 
@@ -66,7 +66,7 @@
   <div class="div-table-col actions-col"> <%# Added a class for potential styling %>
     <%# Show Save button only for new/editing rows within the form %>
     <%# Replace text with Material Icon 'check' %>
-    <%= f.button type: :submit, class: "pure-button pure-button-primary pure-button-small" do %>
+    <%= f.button type: :submit, class: "pure-button pure-button-primary pure-button-small", name: "save" do %>
       <span class="material-symbols-outlined">save</span>
     <% end %>
 

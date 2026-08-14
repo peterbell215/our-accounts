@@ -10,13 +10,17 @@ namespace :data do
     # --- Step 1: clear out the database.
     Rake::Task["db:truncate_all"]
 
-    # Create accounts if they don't exist
-    lloyds_account = Account.find_by(name: "Lloyds Account") || FactoryBot.create(:lloyds_account)
-    barclaycard_account = Account.find_by(name: "Barclaycard") || FactoryBot.create(:barclay_card_account)
+    # Wrap everything in a transaction so a failure part-way through does not leave the database
+    # holding a partial set of accounts and transactions.
+    ActiveRecord::Base.transaction do
+      # Create accounts if they don't exist
+      lloyds_account = Account.find_by(name: "Lloyds Account") || FactoryBot.create(:lloyds_account)
+      barclaycard_account = Account.find_by(name: "Barclaycard") || FactoryBot.create(:barclay_card_account)
 
-    # Generate data for both account types
-    generate_account_data(lloyds_account)
-    generate_account_data(barclaycard_account, :barclaycard_import_columns_definition)
+      # Generate data for both account types
+      generate_account_data(lloyds_account)
+      generate_account_data(barclaycard_account, :barclaycard_import_columns_definition)
+    end
 
     puts "\nSample data generation task finished successfully."
   rescue StandardError => e
@@ -38,14 +42,9 @@ namespace :data do
 
     puts "Instantiated generator for account: #{generator.account.name} (ID: #{generator.account.id})"
 
-    puts "Generating transaction data in memory..."
-    # Call generate to populate the generator's @transactions array
+    puts "Generating transaction data and writing it to the database..."
+    # generate(output: :db) is the default, and already saves the transactions itself.
     generator.generate
-    puts "Generated #{generator.transactions.count} transactions in memory."
-
-    puts "Writing generated transactions to the database..."
-    # Call write_to_db to save the generated transactions
-    generator.write_to_db # Assuming write_to_db returns the count
     puts "Successfully saved #{generator.transactions.count} transactions to the database"
   end
 end

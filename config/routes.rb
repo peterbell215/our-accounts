@@ -9,7 +9,7 @@ Rails.application.routes.draw do
   resources :categories
 
   resources :accounts do
-    resources :transactions, only: [:new, :create, :edit, :update, :destroy]
+    resources :transactions, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
   resources :bank_accounts, controller: :accounts

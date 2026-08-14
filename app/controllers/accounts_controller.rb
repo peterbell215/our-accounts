@@ -65,7 +65,7 @@ class AccountsController < ApplicationController
     @account = Account.find(params.expect(:id))
   end
 
-  PERMITTED_PARAMS = [:name, :type, :opening_balance, :opening_date, :account_number, :sortcode].freeze
+  PERMITTED_PARAMS = [ :name, :type, :opening_balance, :opening_date, :account_number, :sortcode ].freeze
   PERMITTED_PARAMS_BANK_ACCOUNT = PERMITTED_PARAMS.dup.tap { |a| a.delete(:type) }.freeze
   PERMITTED_PARAMS_CREDIT_CARD = PERMITTED_PARAMS_BANK_ACCOUNT.dup.tap { |a| a.delete(:sortcode) }.freeze
 
