@@ -25,21 +25,25 @@ bundle exec rspec spec/models/transaction_spec.rb:42          # one example by l
 bin/rubocop                     # lint (rubocop-rails-omakase)
 bin/brakeman --no-pager         # security scan
 bin/importmap audit             # JS dependency audit
-bin/rails db:seed               # imports categories from any db/*.csv with a Category column; no-op in test
+bin/rails db:seed               # builds the account and its history from db/*.csv; no-op in test
 bin/rails "import:analysis[outgoings-analysis-apr-to-jun24.csv,Lloyds Account]"   # form A, see below
 bin/rails data:create_sample_data   # populate dev db with a Lloyds + Barclaycard account and transactions
 ```
 
-`db/seeds.local.rb` rebuilds a development database end to end from the statement files in `db/`: it
-creates the account and its `ImportColumnsDefinition`, derives the rules (form A), imports the statement
-(form B) and applies the hand-assigned categories. Run it with `bin/rails runner db/seeds.local.rb`; it
-is safe to re-run, each step being idempotent or skipped once done.
+`db:seed` builds a whole account from the statement files in `db/`, via `AccountSeeder`: the account, its
+`ImportColumnsDefinition`, the rules derived from the hand analysis (form A), the statement import
+(form B), then the hand-assigned categories over the top. Every step is idempotent or skipped once done,
+so it is safe to re-run. It runs in **development and production**, and does nothing in test.
 
-The script itself is committed, but the three strings that identify a real account — the account name and
-the two filenames — live in the encrypted credentials under `local_setup`, edited with
-`bin/rails credentials:edit`. It therefore needs `config/master.key`, which is gitignored, and the
-statement files, which are too. Without them, recreate the account and its column definition by hand
-through `/accounts/new` and `/import_columns_definitions/new`.
+The three strings identifying a real account — the account name and the two filenames — live in the
+encrypted credentials under `seed_data` (`bin/rails credentials:edit`), so seeding needs
+`config/master.key` and the statement files, both gitignored. Where any of that is absent it reports why
+and does nothing, rather than failing, so a deploy does not fall over before the statements are in place.
+
+**Before deploying, note that `.dockerignore` does not exclude `db/*.csv`.** Docker's build context is
+the filesystem rather than git, so those files are baked into the image and pushed to whatever registry
+Kamal is configured with. Either exclude them and put the statements on the host, or satisfy yourself
+that the registry is private.
 
 Ruby is managed by rvm; `.ruby-version` selects `ruby-4.0.6`. Note that on Ruby 4.0 the `rack` gem must be
 >= 3.2 — 3.1.x requires `cgi/cookie`, which Ruby 4 removed — and RuboCop must be >= ~1.89 to recognise
@@ -174,9 +178,9 @@ Dates are emitted as ISO-8601 in data attributes and reformatted client-side to 
 - RSpec + FactoryBot; `config.include FactoryBot::Syntax::Methods`, so call `create(...)` directly.
 - `spec/rails_helper.rb` creates the categories in its `REQUIRED_CATEGORIES` constant ("Shopping",
   "Travel", "Utilities") before the suite. The factories and `spec/system/transactions_spec.rb` look
-  these up by name, so add to that constant rather than relying on seed data — `db/seeds.rb` sources
-  categories from CSVs of real account data that are gitignored, and is a deliberate no-op under
-  `RAILS_ENV=test` for exactly that reason.
+  these up by name, so add to that constant rather than relying on seed data — `db/seeds.rb` builds from
+  CSVs of real account data that are gitignored, and is a deliberate no-op under `RAILS_ENV=test` for
+  exactly that reason.
 - Factories are named after real institutions: `:lloyds_account`, `:barclay_card_account`,
   `:lloyds_import_columns_definition`, `:barclaycard_import_columns_definition`. The Lloyds definition
   is header-based and reversed; the Barclaycard one is index-based with `credit_sign: -1`. Between them
