@@ -9,11 +9,12 @@ RSpec.describe AnalysisImporter, type: :model do
   let(:account) { create(:lloyds_account) }
   let(:file) { Rails.root.join('tmp', 'analysis_spec.csv') }
 
-  # @param rows [Array<Array(String, String, String)>] description, category, trx_type
+  # @param rows [Array<Array(String, String, Array)>] description, category, [sortcode, account_number]
   def write_analysis(rows)
     CSV.open(file, 'w', write_headers: true, headers: HEADERS) do |csv|
-      rows.each_with_index do |(description, category, trx_type), i|
-        csv << [ "0#{i + 1}/04/2024", trx_type || "DEB", "'30-00-00", "01234567",
+      rows.each_with_index do |(description, category, identity), i|
+        sortcode, account_number = identity || [ "'30-00-00", "01234567" ]
+        csv << [ "0#{i + 1}/04/2024", "DEB", sortcode, account_number,
                  description, "10.00", nil, "100.00", category ]
       end
     end
@@ -112,6 +113,47 @@ RSpec.describe AnalysisImporter, type: :model do
 
         expect(matcher).to be_present
         expect(matcher.other_party.name.length).to eq(50)
+      end
+    end
+
+    # The household analysis spreadsheet consolidates the current account, two credit cards and a store
+    # card, so rows have to be attributed to the right account.
+    context 'when the analysis consolidates several accounts' do
+      let(:rows) do
+        [ [ "OCTOPUS ENERGY", "Utilities" ],
+          [ "AMAZON PRIME", "Subscriptions", [ "Visa", "BarclayCard" ] ],
+          [ "PETER JONES", "Clothing", [ nil, "John Lewis" ] ] ]
+      end
+
+      it 'builds rules only from this account rows' do
+        expect { importer }.to change(ImportMatcher, :count).by(1)
+        expect(ImportMatcher.pluck(:description)).to eq([ "OCTOPUS ENERGY" ])
+      end
+
+      it 'reports how many rows it passed over' do
+        expect(importer.other_account_rows).to eq(2)
+      end
+
+      it 'still takes categories from the whole file, since categories are global' do
+        importer
+        expect(Category.find_by(name: "Subscriptions")).to be_present
+        expect(Category.find_by(name: "Clothing")).to be_present
+      end
+    end
+
+    context 'when the file carries no account columns to discriminate on' do
+      let(:file) { Rails.root.join('tmp', 'analysis_spec_bare.csv') }
+
+      it 'accepts every row rather than silently building nothing' do
+        CSV.open(file, 'w', write_headers: true,
+                            headers: [ "Transaction Description", "Category" ]) do |csv|
+          csv << [ "OCTOPUS ENERGY", "Utilities" ]
+        end
+
+        importer = described_class.new(file, account).import
+
+        expect(importer.matchers_created).to eq(1)
+        expect(importer.other_account_rows).to eq(0)
       end
     end
 

@@ -8,14 +8,20 @@ require "csv"
 #
 # Matching is on the transaction description alone, left as a literal rather than a regex, and trx_type
 # is left unset so that a rule is not tied to one transaction type.
+#
+# Note the asymmetry: categories are global, so they are taken from the whole file, but rules belong to
+# an account and are built only from that account's rows.
 class AnalysisImporter
   CATEGORY_COLUMN = "Category".freeze
   DESCRIPTION_COLUMN = "Transaction Description".freeze
+  SORTCODE_COLUMN = "Sort Code".freeze
+  ACCOUNT_NUMBER_COLUMN = "Account Number".freeze
 
   # Account#name is validated as 3 to 50 characters, and descriptions run from 2 to 76.
   NAME_RANGE = (3..50).freeze
 
-  attr_reader :file, :account, :categories_created, :matchers_created, :ambiguous, :unusable
+  attr_reader :file, :account, :categories_created, :matchers_created, :ambiguous, :unusable,
+              :other_account_rows
 
   # @param [Pathname, String] file the analysis CSV
   # @param [Account] account the account the derived rules apply to
@@ -26,6 +32,7 @@ class AnalysisImporter
     @matchers_created = 0
     @ambiguous = []
     @unusable = []
+    @other_account_rows = 0
   end
 
   # @return [AnalysisImporter] self, so the caller can read the counts back
@@ -49,12 +56,39 @@ class AnalysisImporter
   # @param [CSV::Table] csv
   # @return [Array<Array(String, String)>]
   def labelled_rows(csv)
+    identifiers = account_identifiers(csv)
+
     csv.filter_map do |row|
+      unless belongs_to_account?(row, identifiers)
+        @other_account_rows += 1
+        next
+      end
+
       description = strip_leading_quote(row[DESCRIPTION_COLUMN])
       category = strip_leading_quote(row[CATEGORY_COLUMN])
 
       [ description, category ] if description.present? && category.present?
     end
+  end
+
+  # An analysis spreadsheet may consolidate several accounts, as the household one does: the current
+  # account, two credit cards and a store card all in the same sheet.  Rules therefore have to be
+  # restricted to the account being built, or one card's payees become rules against another account.
+  #
+  # Only columns the file actually carries, and that the account actually has a value for, are used;
+  # an empty result means the file gives us nothing to discriminate on and every row is accepted.
+  # @param [CSV::Table] csv
+  # @return [Hash{String => String}]
+  def account_identifiers(csv)
+    { SORTCODE_COLUMN => account.sortcode, ACCOUNT_NUMBER_COLUMN => account.account_number }
+      .select { |column, value| csv.headers.include?(column) && value.present? }
+  end
+
+  # @param [CSV::Row] row
+  # @param [Hash{String => String}] identifiers
+  # @return [Boolean]
+  def belongs_to_account?(row, identifiers)
+    identifiers.all? { |column, value| strip_leading_quote(row[column]) == value }
   end
 
   # One rule per description.  A description that was filed under several categories takes the most

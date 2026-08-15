@@ -17,8 +17,9 @@ namespace :import do
 
     importer = AnalysisImporter.new(file, account).import
 
-    puts "Categories created:     #{importer.categories_created}"
+    puts "Categories created:      #{importer.categories_created} (taken from the whole file)"
     puts "Import matchers created: #{importer.matchers_created} against #{account.name}"
+    puts "Rows for other accounts: #{importer.other_account_rows} (skipped)" if importer.other_account_rows.positive?
 
     if importer.ambiguous.any?
       puts "\nSkipped #{importer.ambiguous.count} descriptions filed under two categories equally often:"
