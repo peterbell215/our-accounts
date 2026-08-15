@@ -41,6 +41,3 @@
 /db/*.csv
 /db/*.xlsx
 /db/*.xlsx~
-
-# Local development setup. Names a real account, so it stays out of a public repository.
-/db/seeds.local.rb
