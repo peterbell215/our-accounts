@@ -31,4 +31,33 @@ namespace :import do
       importer.unusable.each { |description| puts "  #{description.inspect}" }
     end
   end
+
+  desc "Apply the hand-assigned categories from an analysis file to transactions already imported"
+  task :categorise, [ :input_file, :account_name ] => :environment do |_, args|
+    abort "Usage: bin/rails \"import:categorise[file.csv,Account Name]\"" if args[:input_file].blank? || args[:account_name].blank?
+
+    file = Rails.root.join("db", args[:input_file])
+    abort "#{file} does not exist." unless File.exist?(file)
+
+    account = Account.find_by(name: args[:account_name])
+    abort "No account named #{args[:account_name].inspect}." if account.nil?
+
+    result = AnalysisCategoriser.new(file, account).apply
+
+    puts "Categories applied:  #{result.assigned}"
+    puts "Already correct:     #{result.unchanged}"
+    puts "Corrected a rule:    #{result.corrected.count}"
+    puts "No matching trx:     #{result.not_found.count}"
+
+    if result.corrected.any?
+      puts "\nWhere your analysis disagreed with the rules:"
+      result.corrected.first(25).each { |description, was, now| puts "  #{description[0, 34].ljust(34)} #{was} -> #{now}" }
+      puts "  ... and #{result.corrected.count - 25} more" if result.corrected.count > 25
+    end
+
+    if result.not_found.any?
+      puts "\nAnalysis rows with no matching transaction (first 10):"
+      result.not_found.first(10).each { |date, description, balance| puts "  #{date} #{description[0, 30].ljust(30)} #{balance}" }
+    end
+  end
 end

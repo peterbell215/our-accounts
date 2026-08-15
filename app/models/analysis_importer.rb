@@ -12,10 +12,7 @@ require "csv"
 # Note the asymmetry: categories are global, so they are taken from the whole file, but rules belong to
 # an account and are built only from that account's rows.
 class AnalysisImporter
-  CATEGORY_COLUMN = "Category".freeze
-  DESCRIPTION_COLUMN = "Transaction Description".freeze
-  SORTCODE_COLUMN = "Sort Code".freeze
-  ACCOUNT_NUMBER_COLUMN = "Account Number".freeze
+  include AnalysisFile
 
   # Account#name is validated as 3 to 50 characters, and descriptions run from 2 to 76.
   NAME_RANGE = (3..50).freeze
@@ -71,26 +68,6 @@ class AnalysisImporter
     end
   end
 
-  # An analysis spreadsheet may consolidate several accounts, as the household one does: the current
-  # account, two credit cards and a store card all in the same sheet.  Rules therefore have to be
-  # restricted to the account being built, or one card's payees become rules against another account.
-  #
-  # Only columns the file actually carries, and that the account actually has a value for, are used;
-  # an empty result means the file gives us nothing to discriminate on and every row is accepted.
-  # @param [CSV::Table] csv
-  # @return [Hash{String => String}]
-  def account_identifiers(csv)
-    { SORTCODE_COLUMN => account.sortcode, ACCOUNT_NUMBER_COLUMN => account.account_number }
-      .select { |column, value| csv.headers.include?(column) && value.present? }
-  end
-
-  # @param [CSV::Row] row
-  # @param [Hash{String => String}] identifiers
-  # @return [Boolean]
-  def belongs_to_account?(row, identifiers)
-    identifiers.all? { |column, value| strip_leading_quote(row[column]) == value }
-  end
-
   # One rule per description.  A description that was filed under several categories takes the most
   # frequent, since the analysis was done by hand and the occasional slip is expected; an outright tie
   # is recorded and skipped rather than guessed at.
@@ -139,11 +116,5 @@ class AnalysisImporter
     end
 
     TradingAccount.find_or_create_by!(name: name)
-  end
-
-  # @param [String, nil] value
-  # @return [String, nil]
-  def strip_leading_quote(value)
-    value&.start_with?("'") ? value[1..] : value
   end
 end
