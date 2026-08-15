@@ -30,6 +30,13 @@ bin/rails "import:analysis[outgoings-analysis-apr-to-jun24.csv,Lloyds Account]" 
 bin/rails data:create_sample_data   # populate dev db with a Lloyds + Barclaycard account and transactions
 ```
 
+`db/seeds.local.rb` is gitignored, because it names a real account, and rebuilds a development database
+end to end from the statement files in `db/`: it creates the account and its `ImportColumnsDefinition`,
+derives the rules (form A), imports the statement (form B) and applies the hand-assigned categories.
+Run it with `bin/rails runner db/seeds.local.rb`; it is safe to re-run. If it is missing, the account and
+its column definition have to be recreated by hand, through `/accounts/new` and
+`/import_columns_definitions/new`.
+
 Ruby is managed by rvm; `.ruby-version` selects `ruby-4.0.6`. Note that on Ruby 4.0 the `rack` gem must be
 >= 3.2 — 3.1.x requires `cgi/cookie`, which Ruby 4 removed — and RuboCop must be >= ~1.89 to recognise
 `4.0` in `.ruby-version`. Both are pinned accordingly in `Gemfile.lock`.
