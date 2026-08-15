@@ -26,6 +26,7 @@ bin/rubocop                     # lint (rubocop-rails-omakase)
 bin/brakeman --no-pager         # security scan
 bin/importmap audit             # JS dependency audit
 bin/rails db:seed               # imports categories from any db/*.csv with a Category column; no-op in test
+bin/rails "import:analysis[outgoings-analysis-apr-to-jun24.csv,Lloyds Account]"   # form A, see below
 bin/rails data:create_sample_data   # populate dev db with a Lloyds + Barclaycard account and transactions
 ```
 
@@ -69,7 +70,39 @@ money 7 changed both defaults, so deleting them as redundant would quietly alter
 and formats. Formatting is also barely covered by the specs — only one asserts on a rendered amount — so
 verify formatting changes by hand.
 
-### The import pipeline
+### Importing has two distinct forms
+
+Do not conflate these. They read superficially similar CSVs but do opposite things.
+
+**Form A — bootstrap from previous analysis.** Before the app existed, expenditure was categorised by
+hand in a spreadsheet. `db/outgoings-analysis-apr-to-jun24.csv` is a Lloyds statement export for the
+current account with a `Category` column added by hand. It is not a statement to be loaded as history;
+it is *labelled training data*, used to derive the `Category` list and the `ImportMatcher` rules that
+form B then relies on. Run once per analysis file, via `AnalysisImporter` / `import:analysis`.
+
+`AnalysisImporter` keys one rule per distinct description, literal rather than regex, leaving `trx_type`
+unset so a rule is not tied to one transaction type. Two judgement calls are worth knowing: a
+description filed under several categories takes the **most frequent**, and an outright **tie is skipped**
+rather than guessed at; and since `ImportMatcher.other_party_id` is `NOT NULL`, each rule gets a
+`TradingAccount` named after its description, trimmed to the 50 characters `Account` allows. Those
+counterparty names are therefore raw statement text ("TESCO STORES 2889"), not tidy payee names — worth
+consolidating by hand if `other_party` ever gets surfaced in the UI. Skipped rows are reported, not
+silently dropped, and the whole thing is idempotent.
+
+**Form B — ongoing raw imports.** Raw downloads from the Lloyds and Barclaycard websites, with no
+`Category` column, loaded as actual transactions and categorised automatically by the matchers form A
+produced. This is the routine path, described below.
+
+`db/` holds one example of each, which is a useful reference when working on either
+(all three are gitignored, being real account data):
+
+| File | Form | Shape |
+| --- | --- | --- |
+| `outgoings-analysis-apr-to-jun24.csv` | A | Lloyds columns **plus** a hand-added `Category` |
+| `00370982_20240914_0712.csv` | B | raw Lloyds download, same columns, no `Category` |
+| `statement_20250106220148.csv` | B | raw Barclaycard download, no header row, index-based |
+
+### The import pipeline (form B)
 
 This is the heart of the app. Reading `FileImporter`, `ImportColumnsDefinition` and
 `ImportedTransactionFactory` together is the fastest way to understand it.
@@ -158,9 +191,8 @@ Dates are emitted as ISO-8601 in data attributes and reformatted client-side to 
 - `data:create_sample_data` appends to whatever is already in the development database — its
   `Rake::Task["db:truncate_all"]` "clear out the database" step is missing an `.invoke` and so does
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
-- `lib/tasks/import_analysis.rake` contains dead helper methods (`build_import`,
-  `build_import_column_definitions`) that reference removed columns such as `transaction_type_column`;
-  only the `import:extract_categories` task works.
+- The analysis file (form A) is the only import with a runnable entry point. **Form B has no UI or
+  route** — see above.
 - `TradingAccount` has no routes or views — counterparties can currently only be created in the console
   or via factories.
 - `TransactionPresenter` is mostly gutted (its methods were moved into views) and is barely used.

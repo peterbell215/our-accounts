@@ -1,50 +1,33 @@
-require "csv"
-
 namespace :import do
   desc "Import categories from previous analysis data"
   task :extract_categories, [ :input_file ] => :environment do |_, args|
     created = Category.import_from_csv(Rails.root.join("db", args[:input_file]))
     puts "Created #{created} categories."
   end
-end
 
-# Build the importers for the Lloyds Bank CSV file
-# @param csv [CSV] the CSV file to build the importers from
-# @return [void]
-def build_import(csv)
-  account_id = Account.where(name: "Joint").select(:id).first.id
+  desc "Derive categories and import matcher rules from a hand-analysed statement"
+  task :analysis, [ :input_file, :account_name ] => :environment do |_, args|
+    abort "Usage: bin/rails \"import:analysis[file.csv,Account Name]\"" if args[:input_file].blank? || args[:account_name].blank?
 
-  common_parameters = build_common_parameters(csv)
+    file = Rails.root.join("db", args[:input_file])
+    abort "#{file} does not exist." unless File.exist?(file)
 
-  csv.each do |row|
-    category = Category.where(name: row["Category"]).select(:id).first
-    next if category.nil?
-    category_id = category.id
+    account = Account.find_by(name: args[:account_name])
+    abort "No account named #{args[:account_name].inspect}. Known: #{Account.order(:name).pluck(:name).join(', ')}" if account.nil?
 
+    importer = AnalysisImporter.new(file, account).import
 
-    common_parameters[:account_id] = account_id
-    common_parameters[:category_id] = category_id
-    common_parameters[:transaction_type_column] = row
+    puts "Categories created:     #{importer.categories_created}"
+    puts "Import matchers created: #{importer.matchers_created} against #{account.name}"
 
-    ImportMatcher.find_or_create_by!(common_parameters)
+    if importer.ambiguous.any?
+      puts "\nSkipped #{importer.ambiguous.count} descriptions filed under two categories equally often:"
+      importer.ambiguous.each { |description, counts| puts "  #{description.squish.inspect} -> #{counts.inspect}" }
+    end
+
+    if importer.unusable.any?
+      puts "\nSkipped #{importer.unusable.count} descriptions too short to name a counterparty:"
+      importer.unusable.each { |description| puts "  #{description.inspect}" }
+    end
   end
-end
-
-# Build the common parameters used for the Lloyds Bank CSV importer
-
-# @return [Hash] the common parameters used for the Lloyds Bank CSV importer
-# @param [Object] headers
-def build_import_column_definitions(headers, account)
-  ImportColumnsDefinition.create!(
-    account_id: account.id,
-    date_column: headers.index("Date"),
-    date_format: "%d/%m/%Y",
-    transaction_type_column: headers.index("Transaction Type"),
-    sortcode_column: headers.index("Sort Code"),
-    account_number_column: headers.index("Account Number"),
-    other_party_column: headers.index("Transaction Description"),
-    debit_column: headers.index("Debit"),
-    credit_column: headers.index("Credit"),
-    balance_column: headers.index("Balance")
-  )
 end
