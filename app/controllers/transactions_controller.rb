@@ -2,9 +2,22 @@
 class TransactionsController < ApplicationController
   before_action :set_account
   before_action :set_transaction, only: [ :update, :destroy ] # Add :destroy here
-  before_action :load_categories, only: [ :new, :create, :update ] # Ensure categories are loaded
+  before_action :load_categories, only: [ :index, :new, :create, :update ] # Ensure categories are loaded
 
-  # ... (index action remains the same) ...
+  # GET /accounts/:account_id/transactions
+  #
+  # Serves the pages after the first — the account page renders page one itself.  Answers with a Turbo
+  # Stream that appends the rows and swaps the end-of-table marker for one carrying the next cursor, so
+  # the list stays a flat sequence of rows rather than nested frames (the div-table layout depends on
+  # its rows being direct children of the body).
+  def index
+    @page = TransactionPage.new(account: @account, anchor: params[:as_of], cursor: cursor_param)
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to account_path(@account, as_of: params[:as_of]) }
+    end
+  end
 
   # GET /accounts/:account_id/transactions/new
   def new
@@ -79,5 +92,13 @@ class TransactionsController < ApplicationController
   def transaction_params
     # Permit all the fields submitted by the single form
     params.require(:transaction).permit(:category_id, :date, :description, :amount)
+  end
+
+  # The last row the browser already has, so the next page resumes immediately after it.
+  # @return [Hash, nil]
+  def cursor_param
+    return nil if params[:before_date].blank?
+
+    { date: params[:before_date], day_index: params[:before_day_index].to_i, id: params[:before_id].to_i }
   end
 end

@@ -15,7 +15,9 @@
 <%= link_to "Add New Transaction", new_account_transaction_path(@account), data: { turbo_stream: true }, class: "pure-button pure-button-primary" %>
 <br><br> <%# Add some spacing %>
 
-<% if @account.transactions.any? %>
+<% if @page.any? %>
+  <%= render "transactions/navigation", account: @account, page: @page %>
+
   <div id="trx-div-table" class="div-table">
     <%# Header Row %>
     <div class="div-table-header div-table-row">
@@ -28,14 +30,18 @@
       <div class="div-table-col header-col">Actions</div>
     </div>
 
-    <%# Body Rows %>
+    <%# Body Rows.  Only the first page is rendered here; the pager at the end loads the rest as the
+        reader scrolls. %>
     <div id="transactions_div_body" class="div-table-body" data-controller="dateinlocale">
-      <% @account.transactions.order(date: :desc, day_index: :desc).each do |transaction| %>
+      <% @page.transactions.each do |transaction| %>
         <%= render "transactions/transaction_as_row", transaction: transaction, categories: @categories, account: @account %>
       <% end %>
-      <div id="end-of-table-marker" class="div-table-row"></div> <%# Marker for Turbo Stream %>
+      <%= render "transactions/pager", account: @account, page: @page %>
     </div>
   </div>
+<% elsif @account.transactions.any? %>
+  <%= render "transactions/navigation", account: @account, page: @page %>
+  <p>No transactions on or before that date.</p>
 <% else %>
   <p>No transactions found for this account.</p>
 <% end %>

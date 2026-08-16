@@ -12,6 +12,28 @@ class Transaction < ApplicationRecord
   monetize :amount_pence
   monetize :balance_pence, allow_nil: true
 
+  # Statement order: newest first, with day_index separating transactions that share a date and id as a
+  # final tiebreaker so the ordering is total.  day_index is null on transactions added by hand through
+  # the UI, which never run #sequence, so it is coalesced rather than compared directly — a null would
+  # otherwise drop those rows out of every keyset comparison below.
+  ORDER = "transactions.date DESC, COALESCE(transactions.day_index, 0) DESC, transactions.id DESC".freeze
+
+  scope :newest_first, -> { order(Arel.sql(ORDER)) }
+
+  scope :on_or_before, ->(date) { where(date: ..date) }
+
+  # Everything strictly older than one row, in the ordering above.  Keyset rather than offset paging, so
+  # that adding a transaction while someone is scrolling neither repeats nor skips a row.
+  scope :older_than, ->(date, day_index, id) {
+    where(
+      "transactions.date < :date
+       OR (transactions.date = :date AND COALESCE(transactions.day_index, 0) < :day_index)
+       OR (transactions.date = :date AND COALESCE(transactions.day_index, 0) = :day_index
+           AND transactions.id < :id)",
+      date: date, day_index: day_index, id: id
+    )
+  }
+
   # Find if a match for this trx exists using the ImportMatcher class.
   # @return [Transaction]
   def find_match

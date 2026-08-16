@@ -201,9 +201,26 @@ are gitignored for the same reason.
 Conventional Rails: seven controllers, ERB views, no client-side framework.
 
 **Turbo Streams for transactions.** `TransactionsController` renders Turbo Stream responses exclusively
-for new/create/update/destroy, all targeting one partial, `transactions/_transaction_as_row`. New rows
-are inserted with `turbo_stream.before("end-of-table-marker", ...)`, and unsaved rows are addressed by
-`dom_id(@transaction, "new")` — so the DOM ids in `accounts/show.html.erb` are part of the contract.
+for index/new/create/update/destroy, all targeting one partial, `transactions/_transaction_as_row`. New
+rows are inserted with `turbo_stream.before("end-of-table-marker", ...)`, and unsaved rows are addressed
+by `dom_id(@transaction, "new")` — so the DOM ids in `accounts/show.html.erb` are part of the contract.
+
+**The transaction list is windowed.** An account holds thousands of rows, so `TransactionPage` serves one
+page at a time. It combines two ideas: an *anchor* date bounding the window, which the day/week/month
+buttons move and which is clamped to the account's own range so navigation cannot strand the reader on an
+empty list; and a *keyset cursor* — `(date, day_index, id)` — for paging, so that adding a transaction
+mid-scroll neither repeats a row nor hides one. `day_index` is coalesced in both the ordering and the
+cursor comparison, because rows added by hand through the UI never run `#sequence` and so have none.
+
+Older pages load from the `transactions#index` action as the reader scrolls. The response is a Turbo
+Stream that appends rows and swaps the end-of-table marker for one carrying the next cursor — rather than
+the more usual nested lazy `<turbo-frame>` per page, because the list is a CSS `display: table` and its
+rows have to remain direct children of the `table-row-group`. When the history runs out the replacement
+marker carries no Stimulus controller, and the loading stops.
+
+One trap worth recording: the query parameter is `as_of`, not `anchor`. Rails reserves `anchor:` in its
+URL helpers for the fragment identifier, so `account_path(account, anchor: date)` silently produces
+`/accounts/9#2024-06-05` and the value never reaches `params`.
 
 **Four Stimulus controllers**, each small:
 

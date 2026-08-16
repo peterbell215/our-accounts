@@ -39,3 +39,26 @@
 .div-table-col.negative {
     color: red;
 }
+
+/* Date navigation above the transaction list */
+.transaction-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5em 1em;
+    margin-top: 1em;
+}
+.transaction-nav-buttons {
+    display: flex;
+    gap: 0.25em;
+}
+.transaction-nav-position {
+    color: #555;
+}
+
+/* The end-of-table marker, while it is still loading older rows */
+.transactions-pager-status {
+    color: #777;
+    font-style: italic;
+}

@@ -1,0 +1,22 @@
+<%# Moves the whole window rather than scrolling it: each button re-anchors the list on a new date.
+    Buttons that would not move — because the window already reaches the end of the account's history —
+    are rendered disabled rather than hidden, so the row of controls does not jump about. %>
+<div class="transaction-nav">
+  <div class="transaction-nav-buttons">
+    <%= transaction_anchor_link "&laquo; Month".html_safe, account, page, :back, :month %>
+    <%= transaction_anchor_link "&laquo; Week".html_safe, account, page, :back, :week %>
+    <%= transaction_anchor_link "&laquo; Day".html_safe, account, page, :back, :day %>
+    <%= transaction_anchor_link "Day &raquo;".html_safe, account, page, :forward, :day %>
+    <%= transaction_anchor_link "Week &raquo;".html_safe, account, page, :forward, :week %>
+    <%= transaction_anchor_link "Month &raquo;".html_safe, account, page, :forward, :month %>
+  </div>
+
+  <div class="transaction-nav-position">
+    <% if page.anchor %>
+      Showing transactions on or before <strong><%= page.anchor.strftime("%d/%m/%Y") %></strong>
+      <% unless page.at_latest? %>
+        &mdash; <%= link_to "jump to latest", account_path(account) %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

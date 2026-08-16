@@ -91,9 +91,18 @@ Everything else — Accounts, Categories, Input Columns Definitions — works no
 ### Accounts
 
 The landing page lists your accounts with their number, sort code, opening date and opening balance.
-**Show this account** opens the account, where you get the details at the top and every transaction
+**Show this account** opens the account, where you get the details at the top and the transactions
 below, newest first: date, description, category, amount, and the running balance after that
 transaction. Money out is red, money in is green.
+
+An account soon holds thousands of transactions, so the list does not load all of them at once. You get
+the most recent page, and older ones load by themselves as you scroll toward the bottom.
+
+To move somewhere further back, use the buttons above the list rather than scrolling for a long time:
+**« Month**, **« Week** and **« Day** step the list backwards, and **Day »**, **Week »** and **Month »**
+step it forwards again. The line to their right tells you where you are — *Showing transactions on or
+before 13/12/2024* — and once you have moved away from the present, a **jump to latest** link brings you
+straight back. Buttons that would take you past the beginning or end of the account are greyed out.
 
 You can edit a transaction's category straight from the list using the dropdown in its row, and save it
 with the button at the end of the row. **Add New Transaction** adds a row you can fill in by hand, for
