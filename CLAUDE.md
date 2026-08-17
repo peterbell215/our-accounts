@@ -2,21 +2,40 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Other documentation to read
+## The two other documents
 
-Two documents cover the same ground as this file in more depth. Read the relevant one before starting
-work on anything it describes, rather than working from this summary alone:
+Two documents cover the same ground as this file in more depth:
 
 - **`design_docs/architecture.md`** — why the system is shaped the way it is: the domain model, both
   import forms and how they close the loop, the windowed transaction list, and the deliberate
-  constraints. Read it before changing the import pipeline, the transaction/balance logic, or the
-  transaction list, and update it when a design decision changes.
+  constraints.
 - **`README.md`** — the user guide: the screens, how an account is set up, how statements are imported
-  and categorised in practice, and the known broken parts (the Import Matcher screens). Read it before
-  changing anything user-facing, and update it when behaviour a user would notice changes.
+  and categorised in practice, and the known broken parts (the Import Matcher screens).
 
-Where they disagree with this file, they are the more detailed account; treat the discrepancy as
-something to fix rather than to pick a side on.
+### Read the relevant one first
+
+Before starting work on anything either of them describes, read it rather than working from the summary
+here — the architecture document before changing the import pipeline, the transaction/balance logic or
+the transaction list; the README before changing anything user-facing. Where they disagree with this
+file, they are the more detailed account; treat the discrepancy as something to fix rather than to pick
+a side on.
+
+### Keep them up to date, in the same change
+
+Documenting a change is part of making it, not a follow-up task:
+
+- **Any change to the system design goes in `design_docs/architecture.md`** — a new or removed model or
+  table, a change to a relationship, a new stage or component in the import pipeline, a change to how
+  balances or ordering work, a new page-level mechanism in the web layer, or a decision reversed. Record
+  the *reason*, in the style of the document: what the alternative was and why it lost. Also update
+  **Where it stands** when a gap listed there is closed or a new one opens.
+- **Any change a user would notice goes in `README.md`** — a new or altered screen, a changed or renamed
+  command, different behaviour on import or categorisation, a fixed or newly broken feature. Keep it in
+  the user's language: no class names, no code.
+
+Update the surrounding prose so the document still reads as one piece; do not append a changelog entry
+or leave the old description standing next to the new one. A change that needs neither document does not
+need an explanation — but say so in the summary if it is not obvious.
 
 ## What this app is
 
