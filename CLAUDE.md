@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Other documentation to read
+
+Two documents cover the same ground as this file in more depth. Read the relevant one before starting
+work on anything it describes, rather than working from this summary alone:
+
+- **`design_docs/architecture.md`** — why the system is shaped the way it is: the domain model, both
+  import forms and how they close the loop, the windowed transaction list, and the deliberate
+  constraints. Read it before changing the import pipeline, the transaction/balance logic, or the
+  transaction list, and update it when a design decision changes.
+- **`README.md`** — the user guide: the screens, how an account is set up, how statements are imported
+  and categorised in practice, and the known broken parts (the Import Matcher screens). Read it before
+  changing anything user-facing, and update it when behaviour a user would notice changes.
+
+Where they disagree with this file, they are the more detailed account; treat the discrepancy as
+something to fix rather than to pick a side on.
+
 ## What this app is
 
 A personal finance tool ("our-accounts") for importing CSV statements from UK banks and credit-card
