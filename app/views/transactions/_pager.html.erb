@@ -1,18 +1,7 @@
-<%# The end of the loaded rows.  Doubles as the insertion point for newly created transactions (see
-    TransactionsController) and, while older rows remain, as the sentinel that loads the next page when
-    it scrolls into view. %>
+<%# The end of the list.  Two jobs: it is the insertion point for newly created transactions (see
+    TransactionsController#new and #create), and it carries the URL of the next page for the
+    transactions_list controller to fetch when the reader reaches the bottom. %>
 <div id="end-of-table-marker"
      class="div-table-row"
-     <% if page.more? %>
-       data-controller="transactions-pager"
-       data-transactions-pager-url-value="<%= account_transactions_path(
-             account,
-             as_of: page.anchor,
-             before_date: page.next_cursor[:date],
-             before_day_index: page.next_cursor[:day_index],
-             before_id: page.next_cursor[:id]) %>"
-     <% end %>>
-  <% if page.more? %>
-    <div class="div-table-col transactions-pager-status" role="status">Loading older transactions…</div>
-  <% end %>
+     data-next-url="<%= transactions_next_page_url(account, page) %>">
 </div>

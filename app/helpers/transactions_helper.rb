@@ -1,4 +1,21 @@
 module TransactionsHelper
+  # Where to ask for the page after this one, or nil at the end of the account's history.  `rows` asks
+  # for a bare fragment rather than a redirect back to the account page.
+  #
+  # @param [Account] account
+  # @param [TransactionPage] page
+  # @return [String, nil]
+  def transactions_next_page_url(account, page)
+    return nil unless page.more?
+
+    cursor = page.next_cursor
+
+    account_transactions_path(account, rows: 1, as_of: page.anchor,
+                                       before_date: cursor[:date],
+                                       before_day_index: cursor[:day_index],
+                                       before_id: cursor[:id])
+  end
+
   # One button in the date navigation.  A step that cannot move the window — because the anchor is
   # already clamped to the end of the account's history — renders as a disabled button rather than a
   # link, so the controls keep their positions.

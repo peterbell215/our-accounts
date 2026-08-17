@@ -95,8 +95,14 @@ The landing page lists your accounts with their number, sort code, opening date 
 below, newest first: date, description, category, amount, and the running balance after that
 transaction. Money out is red, money in is green.
 
-An account soon holds thousands of transactions, so the list does not load all of them at once. You get
-the most recent page, and older ones load by themselves as you scroll toward the bottom.
+An account soon holds thousands of transactions, so the list shows a window of twenty at a time inside
+its own scrolling box, with the column headings staying put above them. Scroll to the bottom of the box
+and the window slides on to older transactions; scroll back up and the earlier ones return. Only twenty
+rows are ever on the page, however long you spend scrolling, so it stays quick.
+
+Transactions you have already scrolled past are kept in the browser's memory, so coming back to them is
+instant and does not go back to the server. Anything you had changed but not yet saved — a category you
+picked from a dropdown, say — is still there when you scroll back to it.
 
 To move somewhere further back, use the buttons above the list rather than scrolling for a long time:
 **« Month**, **« Week** and **« Day** step the list backwards, and **Day »**, **Week »** and **Month »**

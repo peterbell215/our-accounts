@@ -6,16 +6,20 @@ class TransactionsController < ApplicationController
 
   # GET /accounts/:account_id/transactions
   #
-  # Serves the pages after the first — the account page renders page one itself.  Answers with a Turbo
-  # Stream that appends the rows and swaps the end-of-table marker for one carrying the next cursor, so
-  # the list stays a flat sequence of rows rather than nested frames (the div-table layout depends on
-  # its rows being direct children of the body).
+  # Serves the pages after the first — the account page renders page one itself.
+  #
+  # With `rows`, answers a bare fragment of rows for the transactions_list controller to hold in memory
+  # and render a window of.  Deliberately not a Turbo Stream: a stream would insert the rows into the
+  # table on arrival, and the whole point is that the browser decides which of them to render.
   def index
     @page = TransactionPage.new(account: @account, anchor: params[:as_of], cursor: cursor_param)
 
-    respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_to account_path(@account, as_of: params[:as_of]) }
+    if params[:rows].present?
+      render partial: "transactions/rows",
+             locals: { page: @page, account: @account, categories: @categories },
+             layout: false
+    else
+      redirect_to account_path(@account, as_of: params[:as_of])
     end
   end
 

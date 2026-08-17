@@ -57,8 +57,21 @@
     color: #555;
 }
 
-/* The end-of-table marker, while it is still loading older rows */
-.transactions-pager-status {
-    color: #777;
-    font-style: italic;
+/* The transaction list scrolls inside a box: only a window of rows is ever in the document, so there
+   would be nothing for the page itself to scroll. */
+.transaction-scroll {
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid #cbcbcb;
+}
+.transaction-scroll .div-table {
+    border: 0;
+    margin-top: 0;
+}
+/* Keep the column headings in view while the rows move underneath them. */
+.transaction-scroll .header-col {
+    position: sticky;
+    top: 0;
+    background-color: #efefef;
+    z-index: 1;
 }

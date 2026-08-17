@@ -9,7 +9,8 @@
 # - The **cursor** identifies the last row already shown.  Paging is keyset rather than offset, so a
 #   transaction added while someone is part-way down the list neither repeats a row nor hides one.
 class TransactionPage
-  SIZE = 50
+  # Matches the number of rows the browser keeps rendered, so one fetch fills exactly one window.
+  SIZE = 20
 
   STEPS = { day: 1.day, week: 1.week, month: 1.month }.freeze
 

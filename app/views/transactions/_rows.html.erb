@@ -1,0 +1,8 @@
+<%# A page of rows, plus where to ask for the one after it.  The browser takes the rows out of this
+    wrapper, keeps them in memory, and renders only the part of the list currently in view. %>
+<div data-rows data-next-url="<%= transactions_next_page_url(account, page) %>">
+  <% page.transactions.each do |transaction| %>
+    <%= render "transactions/transaction_as_row",
+               transaction: transaction, categories: categories, account: account %>
+  <% end %>
+</div>

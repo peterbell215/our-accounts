@@ -18,25 +18,32 @@
 <% if @page.any? %>
   <%= render "transactions/navigation", account: @account, page: @page %>
 
-  <div id="trx-div-table" class="div-table">
-    <%# Header Row %>
-    <div class="div-table-header div-table-row">
-      <div class="div-table-col header-col">Date</div>
-      <div class="div-table-col header-col">Description</div>
-      <div class="div-table-col header-col">Category</div>
-      <div class="div-table-col header-col">Other Party</div>
-      <div class="div-table-col header-col">Amount</div>
-      <div class="div-table-col header-col">Balance</div>
-      <div class="div-table-col header-col">Actions</div>
-    </div>
+  <%# The list scrolls within this box rather than with the page, because only a window of rows is ever
+      in the document — page scrolling would have nothing to move. %>
+  <div class="transaction-scroll"
+       data-controller="transactions-list"
+       data-transactions-list-size-value="<%= TransactionPage::SIZE %>"
+       data-transactions-list-step-value="<%= TransactionPage::SIZE / 2 %>">
+    <div id="trx-div-table" class="div-table">
+      <%# Header Row %>
+      <div class="div-table-header div-table-row">
+        <div class="div-table-col header-col">Date</div>
+        <div class="div-table-col header-col">Description</div>
+        <div class="div-table-col header-col">Category</div>
+        <div class="div-table-col header-col">Other Party</div>
+        <div class="div-table-col header-col">Amount</div>
+        <div class="div-table-col header-col">Balance</div>
+        <div class="div-table-col header-col">Actions</div>
+      </div>
 
-    <%# Body Rows.  Only the first page is rendered here; the pager at the end loads the rest as the
-        reader scrolls. %>
-    <div id="transactions_div_body" class="div-table-body" data-controller="dateinlocale">
-      <% @page.transactions.each do |transaction| %>
-        <%= render "transactions/transaction_as_row", transaction: transaction, categories: @categories, account: @account %>
-      <% end %>
-      <%= render "transactions/pager", account: @account, page: @page %>
+      <%# Body Rows.  Only the first page is rendered here; the transactions_list controller fetches
+          further pages, keeps them in memory, and renders whichever window is in view. %>
+      <div id="transactions_div_body" class="div-table-body" data-controller="dateinlocale">
+        <% @page.transactions.each do |transaction| %>
+          <%= render "transactions/transaction_as_row", transaction: transaction, categories: @categories, account: @account %>
+        <% end %>
+        <%= render "transactions/pager", account: @account, page: @page %>
+      </div>
     </div>
   </div>
 <% elsif @account.transactions.any? %>

@@ -212,11 +212,25 @@ empty list; and a *keyset cursor* — `(date, day_index, id)` — for paging, so
 mid-scroll neither repeats a row nor hides one. `day_index` is coalesced in both the ordering and the
 cursor comparison, because rows added by hand through the UI never run `#sequence` and so have none.
 
-Older pages load from the `transactions#index` action as the reader scrolls. The response is a Turbo
-Stream that appends rows and swaps the end-of-table marker for one carrying the next cursor — rather than
-the more usual nested lazy `<turbo-frame>` per page, because the list is a CSS `display: table` and its
-rows have to remain direct children of the `table-row-group`. When the history runs out the replacement
-marker carries no Stimulus controller, and the loading stops.
+**Rendered rows are capped, not merely paged.** Appending each fetched page would leave the document
+growing without bound — a reader who scrolled for a while ended up with every row they had passed still
+in the DOM. The `transactions_list` Stimulus controller instead keeps every fetched row in a JavaScript
+array and renders only a window of `TransactionPage::SIZE` of them, sliding it by half a window at either
+edge of the scroll box. Rows leaving the window are **detached rather than discarded**, so scrolling back
+re-attaches the same elements: no second request, and any unsaved state in them — a category chosen from
+a dropdown — survives, because a detached node keeps its own DOM state.
+
+Sliding the window changes the height above the visible rows, so `scrollTop` is corrected by the same
+amount afterwards, or the content jumps under the reader. Rows are one line each, so a single measurement
+stands for all of them.
+
+The list therefore scrolls inside a fixed-height box rather than with the page: with only twenty rows in
+the document there would be nothing for the page to scroll. That also lets the column headings be sticky.
+
+`transactions#index` answers a bare fragment of rows with the next cursor in a data attribute —
+deliberately **not** a Turbo Stream, because a stream would insert the rows into the table on arrival and
+the whole point is that the browser decides which of them to render. The end-of-table marker carries the
+next page's URL, and an empty one is what stops the scrolling.
 
 One trap worth recording: the query parameter is `as_of`, not `anchor`. Rails reserves `anchor:` in its
 URL helpers for the fragment identifier, so `account_path(account, anchor: date)` silently produces
