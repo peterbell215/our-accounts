@@ -90,6 +90,9 @@ The landing page lists your accounts with their number, sort code, opening date 
 below, newest first: date, description, category, counterparty, amount, and the running balance after
 that transaction. Money out is red, money in is green.
 
+The details at the top spread across the width of the window — three to a line on a wide screen, so an
+account fits on two lines — and fold down to one field per line as the window narrows.
+
 An account soon holds thousands of transactions, so the list shows a window of twenty at a time inside
 its own scrolling box, with the column headings staying put above them. Scroll to the bottom of the box
 and the window slides on to older transactions; scroll back up and the earlier ones return. Only twenty
@@ -105,9 +108,12 @@ step it forwards again. The line to their right tells you where you are — *Sho
 before 13/12/2024* — and once you have moved away from the present, a **jump to latest** link brings you
 straight back. Buttons that would take you past the beginning or end of the account are greyed out.
 
-You can edit a transaction's category straight from the list using the dropdown in its row, and save it
-with the button at the end of the row. **Add New Transaction** adds a row you can fill in by hand, for
-anything that did not come from a statement.
+You can edit a transaction's category straight from the list using the dropdown in its row. A save
+button appears at the end of that row as soon as you change something, and goes again if you put it
+back as it was, so at a glance you can see which rows are waiting to be saved. Each row also has a
+delete button; both are icons, and hovering over either one says what it does. **Add New Transaction**
+adds a row you can fill in by hand, for anything that did not come from a statement — it offers its save
+button straight away.
 
 The **Other Party** column names the counterparty, where one is known. Start typing in it and your
 existing counterparties are offered as completions; pick one and save, and the transaction is linked to
@@ -294,7 +300,8 @@ practice one might be a holiday and the next a work trip, and only you know whic
 
 Two ways to fix this.
 
-**One at a time, on the account screen.** Change the dropdown in the transaction's row and press save.
+**One at a time, on the account screen.** Change the dropdown in the transaction's row and press the
+save button that appears at the end of it.
 
 **In bulk, from your hand analysis.** If your spreadsheet already has the right answer for a period you
 have just imported, apply it wholesale:

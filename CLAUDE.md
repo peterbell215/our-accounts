@@ -2,6 +2,41 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## The two other documents
+
+Two documents cover the same ground as this file in more depth:
+
+- **`design_docs/architecture.md`** — why the system is shaped the way it is: the domain model, both
+  import forms and how they close the loop, the windowed transaction list, and the deliberate
+  constraints.
+- **`README.md`** — the user guide: the screens, how an account is set up, how statements are imported
+  and categorised in practice, and what is not built yet.
+
+### Read the relevant one first
+
+Before starting work on anything either of them describes, read it rather than working from the summary
+here — the architecture document before changing the import pipeline, the transaction/balance logic or
+the transaction list; the README before changing anything user-facing. Where they disagree with this
+file, they are the more detailed account; treat the discrepancy as something to fix rather than to pick
+a side on.
+
+### Keep them up to date, in the same change
+
+Documenting a change is part of making it, not a follow-up task:
+
+- **Any change to the system design goes in `design_docs/architecture.md`** — a new or removed model or
+  table, a change to a relationship, a new stage or component in the import pipeline, a change to how
+  balances or ordering work, a new page-level mechanism in the web layer, or a decision reversed. Record
+  the *reason*, in the style of the document: what the alternative was and why it lost. Also update
+  **Where it stands** when a gap listed there is closed or a new one opens.
+- **Any change a user would notice goes in `README.md`** — a new or altered screen, a changed or renamed
+  command, different behaviour on import or categorisation, a fixed or newly broken feature. Keep it in
+  the user's language: no class names, no code.
+
+Update the surrounding prose so the document still reads as one piece; do not append a changelog entry
+or leave the old description standing next to the new one. A change that needs neither document does not
+need an explanation — but say so in the summary if it is not obvious.
+
 ## What this app is
 
 A personal finance tool ("our-accounts") for importing CSV statements from UK banks and credit-card
@@ -39,6 +74,22 @@ The three strings identifying a real account — the account name and the two fi
 encrypted credentials under `seed_data` (`bin/rails credentials:edit`), so seeding needs
 `config/master.key` and the statement files, both gitignored. Where any of that is absent it reports why
 and does nothing, rather than failing, so a deploy does not fall over before the statements are in place.
+
+### Setting up a new worktree
+
+`config/master.key` and `db/*.csv` are gitignored, so a new worktree has neither, and `db:seed` will
+report that it cannot find them and do nothing — which reads like a broken seed the first time you meet
+it. Symlink them from the main checkout rather than copying, so the real statements exist once on disk:
+
+```sh
+MAIN=$(dirname "$(git rev-parse --git-common-dir)")     # the main checkout, from any worktree
+ln -sfn "$MAIN/config/master.key" config/master.key
+for f in "$MAIN"/db/*.csv; do ln -sfn "$f" "db/$(basename "$f")"; done
+```
+
+Then `bin/rails db:prepare`, which creates `storage/development.sqlite3` **and runs the seed** — a
+freshly created database is seeded automatically, so there is no need to call `db:seed` separately. The
+worktree gets its own `storage/`, so none of this touches the main checkout's development database.
 
 **Before deploying, note that `.dockerignore` does not exclude `db/*.csv`.** Docker's build context is
 the filesystem rather than git, so those files are baked into the image and pushed to whatever registry

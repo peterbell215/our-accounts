@@ -46,6 +46,20 @@ body div.container {
     margin-bottom: 1em; /* Adjust the value as needed */
 }
 
+.account-grid .account-field {
+    display: flex;
+    gap: 0.5em;
+    /* border-box, or the gutter is added to the grid unit's width and a column no longer fits. */
+    box-sizing: border-box;
+    padding-right: 2em;
+    margin-bottom: 0.5em;
+}
+
+/* A fixed label width keeps the values aligned down each column of the grid. */
+.account-grid .account-field-label {
+    flex: 0 0 9.5em;
+}
+
 .credit-sign-container {
     display: inline-flex;
     align-items: center;
