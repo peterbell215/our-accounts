@@ -27,7 +27,8 @@ namespace :import do
     end
 
     if importer.counterparties_unnamed.any?
-      puts "\n#{importer.counterparties_unnamed.count} rules created without a counterparty, the description being too short to name one:"
+      count = importer.counterparties_unnamed.count
+      puts "\n#{count} #{'rule'.pluralize(count)} created without a counterparty, the description being too short to name one:"
       importer.counterparties_unnamed.each { |description| puts "  #{description.inspect}" }
     end
   end

@@ -244,12 +244,15 @@ It tells you what it did, and importantly what it refused to do:
 
 ```
 Categories created:      28
-Import matchers created: 281 against Joint
+Import matchers created: 282 against Joint
 
 Skipped 10 descriptions filed under two categories equally often:
   "WATERSTONES" -> {"Dine Out" => 1, "Gifts" => 1}
   "SAINSBURYS PETROL" -> {"Food" => 1, "Car" => 1}
   ...
+
+1 rule created without a counterparty, the description being too short to name one:
+  "O2"
 ```
 
 Where you filed the same shop under two different categories, it takes whichever you used more often.
