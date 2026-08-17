@@ -26,9 +26,9 @@ namespace :import do
       importer.ambiguous.each { |description, counts| puts "  #{description.squish.inspect} -> #{counts.inspect}" }
     end
 
-    if importer.unusable.any?
-      puts "\nSkipped #{importer.unusable.count} descriptions too short to name a counterparty:"
-      importer.unusable.each { |description| puts "  #{description.inspect}" }
+    if importer.counterparties_unnamed.any?
+      puts "\n#{importer.counterparties_unnamed.count} rules created without a counterparty, the description being too short to name one:"
+      importer.counterparties_unnamed.each { |description| puts "  #{description.inspect}" }
     end
   end
 

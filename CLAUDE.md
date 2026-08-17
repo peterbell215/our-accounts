@@ -71,7 +71,14 @@ therefore filters to `BankAccount`/`CreditCardAccount` only.
 
 `AccountsController` serves all three of `/accounts`, `/bank_accounts` and `/credit_card_accounts`
 (see `config/routes.rb`), which is why `account_params` picks the permitted-params list and the wrapped
-param key off the concrete class of `@account`.
+param key off the concrete class of `@account`. `TradingAccount` deliberately does **not** go through it —
+`account_params` returns `nil` for any other class, and the shared form and detail partial are about sort
+codes and opening balances. Counterparties have their own `TradingAccountsController` and views.
+
+`Account#transactions` is the `account_id` side only, so on a `TradingAccount` it is always empty. The
+counterparty side is `Account#counterparty_transactions` and `#counterparty_matchers`, both
+`dependent: :nullify` — deleting a counterparty releases its transactions rather than deleting them, and a
+rule with no counterparty still assigns its category.
 
 ### Money
 
@@ -98,10 +105,11 @@ form B then relies on. Run once per analysis file, via `AnalysisImporter` / `imp
 `AnalysisImporter` keys one rule per distinct description, literal rather than regex, leaving `trx_type`
 unset so a rule is not tied to one transaction type. Two judgement calls are worth knowing: a
 description filed under several categories takes the **most frequent**, and an outright **tie is skipped**
-rather than guessed at; and since `ImportMatcher.other_party_id` is `NOT NULL`, each rule gets a
-`TradingAccount` named after its description, trimmed to the 50 characters `Account` allows. Those
-counterparty names are therefore raw statement text ("TESCO STORES 2889"), not tidy payee names — worth
-consolidating by hand if `other_party` ever gets surfaced in the UI. Skipped rows are reported, not
+rather than guessed at; and each rule gets a `TradingAccount` named after its description, trimmed to the
+50 characters `Account` allows. Those counterparty names are therefore raw statement text
+("TESCO STORES 2889"), not tidy payee names — the counterparties screen orders by total spend so the ones
+worth renaming come first. `ImportMatcher.other_party_id` is nullable, so a description too short to be a
+name (`O2`) still gets its rule, reported through `counterparties_unnamed`. Skipped rows are reported, not
 silently dropped, and the whole thing is idempotent.
 
 **Form B — ongoing raw imports.** Raw downloads from the Lloyds and Barclaycard websites, with no
@@ -126,7 +134,8 @@ This is the heart of the app. Reading `FileImporter`, `ImportColumnsDefinition` 
    `Transaction`: which column holds the date, description, debit/credit or single amount, balance, etc.
 2. `FileImporter.new(path, account).import` reads the CSV and, for each row, calls
    `ImportedTransactionFactory.build` → `Transaction#find_match` → `Transaction#sequence` → `save!`.
-3. `ImportMatcher.find_match` walks the matchers for that account and returns the first whose
+3. `ImportMatcher.find_match` walks the matchers for that account **in `in_match_order`** —
+   `(description_is_regex, id)`, so a literal description beats a regex — and returns the first whose
    `description` (literal or regex, per `description_is_regex`) and optional `trx_type` match. A hit
    fills in `category_id`, `other_party` and `import_matcher_id` on the transaction.
 
@@ -136,6 +145,16 @@ Quirks that live in this pipeline and are easy to break:
   false they hold integer column indexes. `ImportColumnsDefinition` metaprograms an override for every
   attribute in `CSV_HEADERS` that casts the value to `Integer` when `header` is false. Access these
   through the reader methods, not `self[...]`, unless you deliberately want the raw value.
+- **`CSV_HEADERS` is spelled out by hand and its order is load-bearing** — `#csv_header` maps it straight
+  onto CSV columns, so it is the layout of every statement the app writes back out. Do not "simplify" it
+  back to `attribute_names.grep(/_column\z/)`: that follows the table's *physical* column order, and Rails
+  8.1's schema dumper sorts columns alphabetically, so the next migration would silently reorder every
+  exported CSV. A spec asserts the list still matches the table's `_column` attributes as a set.
+- **`ImportMatcher#trx_type` is normalised so blank becomes `nil`.** `nil` means "any transaction type";
+  an empty string would be a rule requiring an empty type, which nothing has, so it would never fire — and
+  an empty form field is exactly what would produce one.
+- **A regex `description` is validated on save**, so a bad pattern is refused at the form rather than
+  raising `RegexpError` part-way through a few thousand rows.
 - **`reversed`** means the CSV is in reverse date order, so `FileImporter` iterates the rows backwards
   to keep running balances correct.
 - **`credit_sign`** (1 or -1) flips the sign for providers such as Barclaycard that report spending as
@@ -168,6 +187,16 @@ checkbox based on what the analysis found.
 targeting the `transactions/_transaction_as_row` partial. New rows are inserted with
 `turbo_stream.before("end-of-table-marker", ...)`; unsaved rows are addressed by
 `dom_id(@transaction, "new")`. Keep those DOM ids in sync with `app/views/accounts/show.html.erb`.
+
+That partial takes `transaction:`, `account:` and `categories:` as **locals** — it used to read `@account`
+and `@categories` as well, which is how a local gets dropped. Every caller passes all three.
+
+The Other Party cell is a text field backed by one shared `<datalist id="counterparty-names">`, written
+through `Transaction#other_party_name=` (a name, not an id; an unknown name is a validation error, not a new
+`TradingAccount`). The datalist is rendered **once** in `accounts/show.html.erb` and must not be added to
+`transactions/_rows.html.erb`, or every fetched page appends another element with the same id. Its error is
+shown as a red border plus a `title` on the input, never as a message beneath it: `transactions_list_controller.js`
+measures one row's height and applies it to all of them, so a row that grows breaks the scroll arithmetic.
 
 Transaction rows are rendered as CSS div-tables (`app/assets/stylesheets/div-tables.css`), not `<table>`.
 Dates are emitted as ISO-8601 in data attributes and reformatted client-side to the browser locale by the
@@ -208,6 +237,10 @@ Dates are emitted as ISO-8601 in data attributes and reformatted client-side to 
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
 - The analysis file (form A) is the only import with a runnable entry point. **Form B has no UI or
   route** — see above.
-- `TradingAccount` has no routes or views — counterparties can currently only be created in the console
-  or via factories.
-- `TransactionPresenter` is mostly gutted (its methods were moved into views) and is barely used.
+- There is **no way to merge two counterparties**, which is what the raw statement-text names most want.
+  Renaming one and deleting the other leaves the other's transactions to be re-pointed by hand.
+- A rule cannot be created **from** a transaction you are looking at — its description has to be retyped
+  on the rules screen.
+- `TransactionPresenter` is now **entirely unreferenced**. It was instantiated once in
+  `transactions/_transaction_as_row.html.erb` and its return value never used; that line is gone, so the
+  class is dead code kept only because deleting it was outside the change that orphaned it.

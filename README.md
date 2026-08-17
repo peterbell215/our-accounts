@@ -77,23 +77,18 @@ Four items in the navigation bar:
 | --- | --- |
 | **Accounts** | Your bank and credit-card accounts, and the transactions in each |
 | **Categories** | The list of spending categories |
+| **Counterparties** | The suppliers and vendors you deal with, and everything you have spent with each |
 | **Input Columns Definition** | How to read each institution's CSV layout |
-| **Import Matcher** | The rules that assign a category to a transaction — **currently broken, see below** |
 
-⚠️ **The Import Matcher screens do not work.** The list page fails with an error once any rules exist,
-and the "New import matcher" form shows the wrong fields entirely — it asks about CSV columns rather
-than about descriptions and categories, and nothing you enter there can be saved. Rules are created for
-you by the process in [Teaching it your categories](#teaching-it-your-categories); avoid this screen
-until it is fixed.
-
-Everything else — Accounts, Categories, Input Columns Definitions — works normally.
+The rules that categorise transactions are reached from the account they belong to, rather than from the
+navigation bar — see [Import rules](#import-rules) below.
 
 ### Accounts
 
 The landing page lists your accounts with their number, sort code, opening date and opening balance.
 **Show this account** opens the account, where you get the details at the top and the transactions
-below, newest first: date, description, category, amount, and the running balance after that
-transaction. Money out is red, money in is green.
+below, newest first: date, description, category, counterparty, amount, and the running balance after
+that transaction. Money out is red, money in is green.
 
 An account soon holds thousands of transactions, so the list shows a window of twenty at a time inside
 its own scrolling box, with the column headings staying put above them. Scroll to the bottom of the box
@@ -114,6 +109,14 @@ You can edit a transaction's category straight from the list using the dropdown 
 with the button at the end of the row. **Add New Transaction** adds a row you can fill in by hand, for
 anything that did not come from a statement.
 
+The **Other Party** column names the counterparty, where one is known. Start typing in it and your
+existing counterparties are offered as completions; pick one and save, and the transaction is linked to
+it. The small icon beside the name opens that counterparty's own page. Clearing the field unlinks it.
+
+A name that is not already a counterparty is **refused**, and the field turns red rather than the row
+saving. That is deliberate: counterparty names imported from statements are already untidy, and quietly
+creating a new one from a typo would make it worse. Create it on the Counterparties screen first.
+
 ### Categories
 
 A flat list of names with optional descriptions — "Groceries", "Utilities", "Dine Out". Categories are
@@ -121,6 +124,52 @@ shared across all accounts. You can add, rename and delete them freely.
 
 Most of your categories will be created for you the first time you load a hand-categorised statement,
 so it is usually easier to do that first and tidy the list afterwards than to type them all in.
+
+### Counterparties
+
+A counterparty is whoever a transaction was with — Tesco, Octopus Energy, the water company. Giving one a
+record of its own means every transaction with that supplier is linked together, across all your accounts:
+the current account and the credit card you sometimes paid them with show up on one page, with a total.
+
+Not every transaction has one. A one-off purchase, or a description too cryptic to identify, simply has no
+counterparty, and that is expected rather than a gap to fill.
+
+The list is ordered by how much you have spent with each, largest first, and shows how many transactions
+and how many rules point at it. That ordering is the useful part: counterparties created by the analysis
+step are named after **raw statement text** — `TESCO STORES 2889` rather than `Tesco` — and the ones worth
+renaming are the ones at the top. Renaming is the main thing you will do here.
+
+Deleting a counterparty keeps its transactions; they simply stop naming anyone.
+
+### Import rules
+
+These are what categorise a transaction automatically, and they belong to a particular account — a rule
+learned from your current account should not be applied to a credit card whose statements read differently.
+So they live under the account: open an account and follow **Import rules for this account**.
+
+Each rule says: when a transaction's description looks like *this*, give it *this* category and *this*
+counterparty.
+
+| Field | Meaning |
+| --- | --- |
+| **Description** | The text to look for, exactly as the statement writes it |
+| **Treat as a pattern** | Match a regular expression anywhere in the description instead of the whole thing, so `AMAZON` catches `AMAZON* 204-813115` |
+| **Transaction type** | Restrict the rule to one type — `DD`, `DEB`. Leave blank to match any, which is usually what you want |
+| **Category** | Required. This is what the rule is for |
+| **Counterparty** | Optional. Leave it as *none* for a vendor you cannot identify |
+
+When more than one rule matches, **an exact description always beats a pattern**. So you can have a broad
+`AMAZON` pattern and still write an exact rule for one particular Amazon charge that belongs elsewhere.
+
+The list shows a **Matched** count against each rule: how many transactions it has actually caught. A rule
+matching nothing usually has a typo, or trailing spaces in its description — the list marks those with ⚠,
+because a literal rule compares the description exactly, spaces included.
+
+A pattern that is not a valid regular expression is refused when you save it, rather than failing part-way
+through your next import.
+
+Most rules are created for you in bulk by [Teaching it your categories](#teaching-it-your-categories).
+This screen is for correcting those and adding the ones it could not work out.
 
 ### Input Columns Definition
 
@@ -200,6 +249,15 @@ Skipped 10 descriptions filed under two categories equally often:
 Where you filed the same shop under two different categories, it takes whichever you used more often.
 Where it is an exact tie it makes no rule at all and lists the description, because guessing would be
 worse than leaving it to you. You can categorise those transactions by hand afterwards.
+
+It also creates a counterparty for each rule, named after the description — so those names are raw
+statement text, and worth tidying on the [Counterparties](#counterparties) screen. Where a description is
+too short to be a name at all (`O2`), you get the rule without a counterparty, and it says so:
+
+```
+2 rules created without a counterparty, the description being too short to name one:
+  "O2"
+```
 
 Running it again changes nothing, so it is safe to repeat.
 
@@ -305,8 +363,10 @@ try again.
 Either no rules exist yet — run the analysis step — or the rules belong to a different account. Rules
 are per-account, so a rule learned on your current account will not categorise card transactions.
 
-**The Import Matcher page shows an error**
-Expected; that screen is broken. See [The screens](#the-screens).
+**A rule I wrote never categorises anything**
+Check its **Matched** count on the rules list. If it is zero, the usual causes are a description with
+leading or trailing spaces — a literal rule matches exactly, and the list marks those with ⚠ — or a
+**Transaction type** that does not match the statement's. Leave the type blank unless you mean it.
 
 **`db:seed` says it is not seeding anything**
 It cannot find the statement files in `db/`, or the credentials naming them are not set. It reports
@@ -327,11 +387,12 @@ Being honest about the gaps, in the order they matter:
 2. **No analysis or prediction.** No charts, no totals by category or by month, no forecasting — which
    is awkward, because that was the point of the application. Everything needed to build it is in place:
    transactions are loaded, categorised and reconciled.
-3. **The Import Matcher screens are broken**, as described above. Rules can only be created by the
-   analysis step or from the console.
-4. **Counterparties have no screens.** The application records who each transaction was with, but there
-   is no way to view or tidy that list, and the account screen shows a placeholder in that column rather
-   than the actual name.
+3. **No way to merge two counterparties.** If the same supplier arrived under two descriptions, you get
+   two counterparties, and the only way to unite them is to rename one, delete the other, and re-point its
+   transactions by hand.
+4. **A rule cannot be created from a transaction you are looking at.** Having spotted an uncategorised
+   row, you have to go to the rules screen and retype its description rather than saying "make a rule from
+   this".
 
 How well the automatic categorisation does depends on how much hand analysis you feed it. Against a
 year of real statements with one quarter analysed by hand, roughly two thirds of transactions were

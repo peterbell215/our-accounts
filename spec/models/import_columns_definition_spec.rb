@@ -1,6 +1,20 @@
 require 'rails_helper'
 
 RSpec.describe ImportColumnsDefinition, type: :model do
+  # CSV_HEADERS is written out by hand, because its order is the layout of an exported statement and must
+  # not follow the table's physical column order.  This is what stops the two drifting apart if a column is
+  # added or renamed.
+  describe "CSV_HEADERS" do
+    it "names every _column attribute the table has, and no others" do
+      expect(described_class::CSV_HEADERS)
+        .to match_array(described_class.attribute_names.grep(/_column\z/))
+    end
+
+    it "starts with the date, as the Lloyds and Barclaycard layouts both do" do
+      expect(described_class::CSV_HEADERS.first).to eq "date_column"
+    end
+  end
+
   describe "factory" do
     subject(:lloyds_defs) { FactoryBot.create(:lloyds_import_columns_definition) }
 

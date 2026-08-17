@@ -18,6 +18,54 @@ RSpec.describe Transaction do
     specify("category") { expect(trx.category_id).to eql Category.find_by_name("Utilities").id }
   end
 
+  # How the transaction list writes the counterparty: it offers the existing names through a datalist, so
+  # what arrives is a name rather than an id.
+  describe '#other_party_name=' do
+    let!(:octopus) { TradingAccount.find_by_name("Octopus Energy") || create(:octopus_energy_account) }
+
+    it 'links the counterparty of that name' do
+      trx.other_party_name = "Octopus Energy"
+
+      expect(trx).to be_valid
+      expect(trx.other_party).to eq octopus
+    end
+
+    it 'does not care about case or surrounding space' do
+      trx.other_party_name = "  octopus energy  "
+
+      expect(trx).to be_valid
+      expect(trx.other_party).to eq octopus
+    end
+
+    it 'clears the counterparty when left blank' do
+      trx.other_party = octopus
+      trx.other_party_name = ""
+
+      expect(trx).to be_valid
+      expect(trx.other_party).to be_nil
+    end
+
+    # Silently creating one would add to the sprawl of raw statement names the analysis import already left.
+    context 'with a name no counterparty has' do
+      it 'is invalid and says so against the field that was typed into' do
+        trx.other_party_name = "Ocotpus Enrgy"
+
+        expect(trx).not_to be_valid
+        expect(trx.errors[:other_party_name].first).to eq('"Ocotpus Enrgy" is not a counterparty')
+      end
+
+      it 'does not create one' do
+        expect { trx.other_party_name = "Ocotpus Enrgy" }.not_to change(TradingAccount, :count)
+      end
+    end
+
+    it 'will not match one of the household’s own accounts' do
+      trx.other_party_name = "Lloyds Account"
+
+      expect(trx).not_to be_valid
+    end
+  end
+
   describe '#sequence' do
     context 'when no previous transaction in account' do
       it "sets the sequence to 0" do

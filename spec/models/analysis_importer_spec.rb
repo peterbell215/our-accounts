@@ -97,9 +97,20 @@ RSpec.describe AnalysisImporter, type: :model do
     context 'when a description is too short to name a counterparty' do
       let(:rows) { [ [ "O2", "Utilities" ] ] }
 
-      it 'skips it and reports it' do
-        expect { importer }.not_to change(ImportMatcher, :count)
-        expect(importer.unusable).to eq([ "O2" ])
+      it 'still creates the rule, since the category is the point of it' do
+        expect { importer }.to change(ImportMatcher, :count).by(1)
+
+        matcher = ImportMatcher.find_by(description: "O2")
+        expect(matcher.category.name).to eq("Utilities")
+        expect(matcher.other_party).to be_nil
+      end
+
+      it 'reports that it could not name a counterparty' do
+        expect(importer.counterparties_unnamed).to eq([ "O2" ])
+      end
+
+      it 'does not create a counterparty' do
+        expect { importer }.not_to change(TradingAccount, :count)
       end
     end
 

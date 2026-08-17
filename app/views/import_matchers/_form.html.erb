@@ -1,97 +1,70 @@
-<%= form_with(model: import_matcher, local: true, class: 'form-horizontal') do |form| %>
+<%# The url is explicit because account is an STI subclass: form_with would derive
+    bank_account_import_matchers_path from its class, and the route is nested under :accounts. %>
+<% url = import_matcher.persisted? ? account_import_matcher_path(account, import_matcher)
+                                   : account_import_matchers_path(account) %>
+<%= form_with(model: import_matcher, url: url, local: true,
+              html: { class: "pure-form pure-form-aligned" }) do |form| %>
   <% if import_matcher.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(import_matcher.errors.count, "error") %> prohibited this import_matcher from being saved:</h2>
+    <div id="error_explanation">
+      <h2><%= pluralize(import_matcher.errors.count, "error") %> prohibited this rule from being saved:</h2>
       <ul>
-        <% import_matcher.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+        <% import_matcher.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
         <% end %>
       </ul>
     </div>
   <% end %>
 
-  <div class="form-group.row">
-    <div class="col-sm-2">
-      <%= form.label :account_id, class: "control-label col-sm-2" %>
+  <fieldset>
+    <div class="pure-control-group">
+      <%= form.label :description %>
+      <%= form.text_field :description, class: "pure-input-1-2" %>
+      <span class="pure-form-message-inline">
+        As it appears in the statement.  Matched exactly, spaces included, unless you tick the box below.
+      </span>
     </div>
-    <div class="col-sm-10">
-      <%= form.text_field :account_id, class: "form-control" %>
-    </div>
-  </div>
 
-  <div class="form-group">
-    <%= form.label :date_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :date_column, class: "form-control" %>
+    <div class="pure-control-group">
+      <%= form.label :description_is_regex, "Treat as a pattern" %>
+      <%= form.check_box :description_is_regex %>
+      <span class="pure-form-message-inline">
+        A regular expression matched anywhere in the description, so <code>AMAZON</code> catches
+        <code>AMAZON* 204-813115</code>.  An exact description always wins over a pattern.
+      </span>
     </div>
-  </div>
 
-  <div class="form-group">
-    <%= form.label :date_format, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.text_field :date_format, class: "form-control" %>
+    <div class="pure-control-group">
+      <%= form.label :trx_type, "Transaction type" %>
+      <%# Free text rather than a select: the values come straight from the statement, and differ by
+          institution — Lloyds prints DEB and DD, Barclaycard puts a merchant category in the same column.
+          The datalist offers whatever this account has actually seen. %>
+      <%= form.text_field :trx_type, list: "trx-types-#{account.id}", class: "pure-input-1-4" %>
+      <datalist id="trx-types-<%= account.id %>">
+        <% account.transactions.distinct.pluck(:trx_type).compact_blank.sort.each do |trx_type| %>
+          <option value="<%= trx_type %>"></option>
+        <% end %>
+      </datalist>
+      <span class="pure-form-message-inline">Leave blank to match any transaction type.</span>
     </div>
-  </div>
 
-  <div class="form-group">
-    <%= form.label :transaction_type_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :transaction_type_column, class: "form-control" %>
+    <div class="pure-control-group">
+      <%= form.label :category_id, "Category" %>
+      <%= form.collection_select :category_id, Category.order(:name), :id, :name,
+                                 { include_blank: true }, { class: "pure-input-1-3" } %>
     </div>
-  </div>
 
-  <div class="form-group">
-    <%= form.label :sortcode_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :sortcode_column, class: "form-control" %>
+    <div class="pure-control-group">
+      <%= form.label :other_party_id, "Counterparty" %>
+      <%= form.collection_select :other_party_id, TradingAccount.order(:name), :id, :name,
+                                 { include_blank: "— none —" }, { class: "pure-input-1-3" } %>
+      <span class="pure-form-message-inline">
+        Optional — leave it as none for a vendor you cannot identify.
+        <%= link_to "Add a counterparty", new_trading_account_path %>.
+      </span>
     </div>
-  </div>
 
-  <div class="form-group">
-    <%= form.label :account_number_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :account_number_column, class: "form-control" %>
+    <div class="pure-controls">
+      <%= form.submit class: "pure-button pure-button-primary" %>
     </div>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :other_party_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :other_party_column, class: "form-control" %>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :amount_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :amount_column, class: "form-control" %>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :debit_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :debit_column, class: "form-control" %>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :credit_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :credit_column, class: "form-control" %>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :balance_column, class: "control-label col-sm-2" %>
-    <div class="col-sm-10">
-      <%= form.number_field :balance_column, class: "form-control" %>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <div class="col-sm-offset-2 col-sm-10">
-      <%= form.submit class: "btn btn-primary" %>
-    </div>
-  </div>
+  </fieldset>
 <% end %>

@@ -34,7 +34,7 @@ Five tables carry the whole model.
                     ▲
                     │ import_matcher
         ┌───────────┴──────────────┐
-        │      ImportMatcher       │──── category, other_party
+        │      ImportMatcher       │──── category, other_party (optional)
         └──────────────────────────┘
 
         ImportColumnsDefinition ──── account
@@ -58,6 +58,20 @@ different kinds of row, which is why `AccountsController#index` filters to
 The subclass routes exist so that Rails' form helpers generate the right wrapped parameter key, which is
 why `account_params` picks both the permitted-parameter list and the expected key off the concrete class
 of `@account`.
+
+`TradingAccount` deliberately does **not** join that arrangement: it has its own `TradingAccountsController`
+and views. Sharing would have meant a third branch in `account_params` (which returns `nil` for any other
+class, so `update(nil)` would raise), hiding the sort-code, account-number, opening-date, opening-balance
+and type fields in the shared form, and guarding `accounts/_account.html.erb` against the nil `opening_date`
+a counterparty has. A counterparty is only a name, so a small separate controller is less code than bending
+three shared views.
+
+The reverse side of `other_party` needed naming, too. `Account#transactions` is the `account_id` side, so on
+a `TradingAccount` it is always empty — a counterparty's dealings belong to the household's accounts, not to
+it. `Account#counterparty_transactions` and `#counterparty_matchers` are the `other_party_id` side, and both
+are `dependent: :nullify`: deleting a counterparty must not delete the household's transactions, and a rule
+with no counterparty still assigns its category. That also stopped `Account#destroy` tripping over the
+foreign key on `transactions.other_party_id`, which it previously did.
 
 ### Money is never a float
 
@@ -130,10 +144,13 @@ distinct transaction description. Three judgement calls are baked in:
 - **A description filed under several categories takes the most frequent**, because the analysis was done
   by hand and the occasional slip is expected. An outright tie is skipped and reported rather than
   guessed at.
-- **Each rule needs a counterparty**, because `ImportMatcher.other_party_id` is `NOT NULL`. The statement
-  only gives us the description, so that is what the `TradingAccount` is named after, trimmed to the
-  fifty characters `Account` permits. Those names are therefore raw statement text — `TESCO STORES 2889`
-  rather than `Tesco` — and would want consolidating if `other_party` is ever surfaced in the UI.
+- **A counterparty is derived where one can be named.** The statement only gives us the description, so
+  that is what the `TradingAccount` is named after, trimmed to the fifty characters `Account` permits.
+  Those names are therefore raw statement text — `TESCO STORES 2889` rather than `Tesco` — which is why the
+  counterparties screen orders by total spend: the ones worth renaming are the ones at the top. Where the
+  description is too short to be a name at all (`O2`), the rule is still created with no counterparty and
+  the description is reported. `ImportMatcher.other_party_id` was `NOT NULL` until that changed, which is
+  the only reason such a rule used to be discarded — its category was never in doubt.
 
 The spreadsheet also turns out to consolidate several accounts — a current account, two credit cards and
 a store card — so rows are filtered on the sort-code and account-number columns before rules are built.
@@ -149,6 +166,14 @@ amount, the balance, and so on. `FileImporter` walks the file and, for each row,
 `ImportMatcher.find_match` walks the matchers for that account and returns the first whose description
 (literal or regex, per `description_is_regex`) and optional `trx_type` match. A hit fills in
 `category_id`, `other_party` and `import_matcher_id`.
+
+**Rule precedence is explicit.** `find_match` orders by `in_match_order` — `(description_is_regex, id)` —
+so a literal description beats a regex, and the outcome does not depend on what order the database happens
+to return rows in. That went unnoticed for as long as every rule was a literal derived from the analysis
+file; it became load-bearing the moment the UI let someone write a pattern by hand. `trx_type` is normalised
+so blank becomes `nil`, because `nil` means "any type" and a rule demanding an empty string would silently
+never fire — which is exactly what a form leaving the field empty would otherwise store. The regex is also
+validated on save rather than being left to raise `RegexpError` part-way through a 2,600-row import.
 
 Four quirks live in this pipeline, all of them driven by what the banks actually emit:
 
@@ -198,7 +223,25 @@ are gitignored for the same reason.
 
 ## The web layer
 
-Conventional Rails: seven controllers, ERB views, no client-side framework.
+Conventional Rails: eight controllers, ERB views, no client-side framework.
+
+**Rules are nested under the account.** `ImportMatchersController` lives at
+`/accounts/:account_id/import_matchers`, and `account_id` is deliberately absent from its permitted
+parameters — the account comes from the route, so a rule cannot be filed against the wrong one. The rule
+form sets `url:` explicitly, because `form_with(model: [account, matcher])` would derive
+`bank_account_import_matchers_path` from the STI subclass and the route is nested under `:accounts`.
+
+**The counterparty is edited as a name, not an id.** `Transaction#other_party_name=` resolves a typed name
+against `TradingAccount`, case-insensitively, and records an unresolved one as a validation error rather than
+creating a record — counterparty names are already sprawling and a typo would add to it. The transaction list
+therefore renders a text field against a single shared `<datalist>`: a `<select>` per row over several
+hundred counterparties would put thousands of `<option>` elements on one page, and the datalist is one list
+however many rows are on screen, with no JavaScript. The datalist is rendered once in
+`accounts/show.html.erb` and **not** in `transactions/_rows.html.erb`, or every fetched page would append
+another element with the same id.
+
+That row's validation error is shown as a red border and a `title` on the input, not as a message beneath it,
+because of the row-height assumption recorded below.
 
 **Turbo Streams for transactions.** `TransactionsController` renders Turbo Stream responses exclusively
 for index/new/create/update/destroy, all targeting one partial, `transactions/_transaction_as_row`. New
@@ -303,8 +346,8 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
 ## Where it stands
 
 Working: the account model, both import forms, the categorisation rules and their per-transaction
-corrections, the CSV analysis screen, transaction CRUD over Turbo, and seeding that rebuilds a
-development database end to end.
+corrections, the rules and counterparty screens, the CSV analysis screen, transaction CRUD over Turbo, and
+seeding that rebuilds a development database end to end.
 
 The two gaps that matter:
 
@@ -316,9 +359,17 @@ The two gaps that matter:
 - **No analysis or prediction exists yet** — no reporting views, no aggregation by category or period.
   This is the point of the application and none of it is built.
 
-Smaller ones: `TradingAccount` has no routes or views, so counterparties can only be created through the
-console or by the import; the transactions table shows a hardcoded placeholder where `other_party` should
-be; and the accounts index renders raw ISO dates while the show page renders localised ones.
+Smaller ones: there is no way to **merge** two counterparties, which is the operation the raw-text names
+most want — renaming one and deleting the other leaves its transactions to be re-pointed by hand; a rule
+cannot be created from a transaction you are looking at, so its description has to be retyped; and the
+accounts index renders raw ISO dates while the show page renders localised ones.
+
+One trap worth recording for whoever writes the next migration: **Rails 8.1's schema dumper sorts columns
+alphabetically**, unconditionally. `ImportColumnsDefinition::CSV_HEADERS` used to be derived from
+`attribute_names`, which follows the table's physical column order — so the first migration run under 8.1
+silently reordered the layout of every CSV the application writes, and broke the CSV analysis system spec.
+`CSV_HEADERS` is now spelled out by hand, with a spec asserting it still names exactly the `_column`
+attributes the table has.
 
 Until form B gets a UI, the entry points are rake tasks — `import:analysis` to derive the rules,
 `import:categorise` to apply the hand labels, and `db:seed` to run the whole chain through

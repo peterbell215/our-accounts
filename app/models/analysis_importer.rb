@@ -17,8 +17,8 @@ class AnalysisImporter
   # Account#name is validated as 3 to 50 characters, and descriptions run from 2 to 76.
   NAME_RANGE = (3..50).freeze
 
-  attr_reader :file, :account, :categories_created, :matchers_created, :ambiguous, :unusable,
-              :other_account_rows
+  attr_reader :file, :account, :categories_created, :matchers_created, :ambiguous,
+              :counterparties_unnamed, :other_account_rows
 
   # @param [Pathname, String] file the analysis CSV
   # @param [Account] account the account the derived rules apply to
@@ -28,7 +28,7 @@ class AnalysisImporter
     @categories_created = 0
     @matchers_created = 0
     @ambiguous = []
-    @unusable = []
+    @counterparties_unnamed = []
     @other_account_rows = 0
   end
 
@@ -82,10 +82,7 @@ class AnalysisImporter
         next
       end
 
-      other_party = trading_account_for(description)
-      next if other_party.nil?
-
-      build_matcher(description, ranked.first.first, other_party)
+      build_matcher(description, ranked.first.first, trading_account_for(description))
     end
   end
 
@@ -102,16 +99,19 @@ class AnalysisImporter
     @matchers_created += 1 if was_new
   end
 
-  # ImportMatcher#other_party is NOT NULL, so every rule needs a counterparty.  The statement only tells
-  # us the description, so that is what the TradingAccount is named after, trimmed to fit Account's name
-  # validation.  Descriptions too short to make a valid name are recorded and skipped.
+  # The statement only tells us the description, so that is what the counterparty is named after, trimmed
+  # to fit Account's name validation.  Those names are therefore raw statement text ("TESCO STORES 2889"),
+  # worth consolidating by hand on the counterparties screen.
+  #
+  # A description too short to make a valid name still gets its rule — the rule's job is the category, and
+  # ImportMatcher#other_party is optional — but is recorded so the caller can report it.
   # @param [String] description
   # @return [TradingAccount, nil]
   def trading_account_for(description)
     name = description.squish[0, NAME_RANGE.max]
 
     if name.length < NAME_RANGE.min
-      @unusable << description
+      @counterparties_unnamed << description
       return nil
     end
 

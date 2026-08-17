@@ -1,0 +1,43 @@
+<%= render "layouts/notice", notice: notice %>
+
+<% content_for :title, "Counterparties" %>
+
+<h1>Counterparties</h1>
+
+<p>
+  The suppliers and vendors behind your transactions, the ones you spend most with first.  Names taken from
+  a statement import are raw statement text — rename them here to something you would recognise.
+</p>
+
+<table id="trading_accounts" class="pure-table pure-table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Transactions</th>
+      <th>Total</th>
+      <th>Rules</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @trading_accounts.each do |trading_account| %>
+      <tr id="<%= dom_id trading_account %>">
+        <td><%= link_to trading_account.name, trading_account_path(trading_account) %></td>
+        <td><%= @counts[trading_account.id] || 0 %></td>
+        <td class="currency">
+          <%= humanized_money_with_symbol Money.new(@totals[trading_account.id] || 0) %>
+        </td>
+        <td><%= @rule_counts[trading_account.id] || 0 %></td>
+        <td><%= link_to "Edit", edit_trading_account_path(trading_account) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @trading_accounts.empty? %>
+  <p>No counterparties yet.</p>
+<% end %>
+
+<div style="margin-top: 1rem">
+  <%= link_to "New counterparty", new_trading_account_path, class: "pure-button" %>
+</div>

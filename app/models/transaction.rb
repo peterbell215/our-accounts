@@ -3,11 +3,14 @@ class Transaction < ApplicationRecord
   belongs_to :account, optional: false
 
   belongs_to :category, optional: true
-  belongs_to :other_party, class_name: "Account", foreign_key: "other_party_id", optional: true
+  belongs_to :other_party, class_name: "Account", foreign_key: "other_party_id",
+             inverse_of: :counterparty_transactions, optional: true
   belongs_to :import_matcher, optional: true
 
   validates :date, presence: true
   validates :amount, presence: true
+
+  validate :other_party_name_resolved
 
   monetize :amount_pence
   monetize :balance_pence, allow_nil: true
@@ -33,6 +36,28 @@ class Transaction < ApplicationRecord
       date: date, day_index: day_index, id: id
     )
   }
+
+  # The counterparty as typed into the transaction list, which offers the existing names through a datalist
+  # rather than a select — twenty selects over a few hundred counterparties would be thousands of options on
+  # one page.
+  attr_reader :other_party_name
+
+  # Blank clears the counterparty.  A name matching none is an error rather than a new TradingAccount:
+  # counterparty names are already sprawling, because AnalysisImporter derived them from raw statement text,
+  # and creating one on a typo would add to that.  Counterparties are created deliberately, on their own
+  # screen.
+  # @param [String, nil] value
+  def other_party_name=(value)
+    @other_party_name = value
+    @unresolved_other_party = nil
+
+    if value.blank?
+      self.other_party = nil
+    else
+      match = TradingAccount.where("LOWER(name) = ?", value.strip.downcase).first
+      match ? self.other_party = match : @unresolved_other_party = value
+    end
+  end
 
   # Find if a match for this trx exists using the ImportMatcher class.
   # @return [Transaction]
@@ -60,5 +85,13 @@ class Transaction < ApplicationRecord
     else
       self.balance = calculated_balance
     end
+  end
+
+  private
+
+  def other_party_name_resolved
+    return if @unresolved_other_party.blank?
+
+    errors.add(:other_party_name, "#{@unresolved_other_party.strip.inspect} is not a counterparty")
   end
 end

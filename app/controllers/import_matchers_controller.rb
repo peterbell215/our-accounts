@@ -1,32 +1,46 @@
+# The rules that categorise imported transactions and link them to a counterparty.
+#
+# A rule belongs to an account, so this is nested under one: the account comes from the route and is never
+# a permitted parameter, which is what stops a rule being filed against the wrong account.  Most rules were
+# derived wholesale by AnalysisImporter from a hand-analysed statement; these screens are for correcting
+# them and adding the ones it could not work out.
 class ImportMatchersController < ApplicationController
+  before_action :set_account
   before_action :set_import_matcher, only: %i[ show edit update destroy ]
 
-  # GET /import_matchers or /import_matchers.json
+  # GET /accounts/:account_id/import_matchers
   def index
-    @import_matchers = ImportMatcher.all
+    @import_matchers = @account.import_matchers.includes(:category, :other_party).order(:description)
+    @import_matchers = @import_matchers.where("description LIKE ?", "%#{params[:q]}%") if params[:q].present?
+
+    # How many transactions each rule has actually caught, which is what says whether it earns its keep.
+    # One grouped query: an account can carry a few hundred rules.
+    @match_counts = @account.transactions.group(:import_matcher_id).count
   end
 
-  # GET /import_matchers/1 or /import_matchers/1.json
+  # GET /accounts/:account_id/import_matchers/1
   def show
   end
 
-  # GET /import_matchers/new
+  # GET /accounts/:account_id/import_matchers/new
   def new
-    @import_matcher = ImportMatcher.new
+    @import_matcher = @account.import_matchers.new
   end
 
-  # GET /import_matchers/1/edit
+  # GET /accounts/:account_id/import_matchers/1/edit
   def edit
   end
 
-  # POST /import_matchers or /import_matchers.json
+  # POST /accounts/:account_id/import_matchers
   def create
-    @import_matcher = ImportMatcher.new(import_matcher_params)
+    @import_matcher = @account.import_matchers.new(import_matcher_params)
 
     respond_to do |format|
       if @import_matcher.save
-        format.html { redirect_to @import_matcher, notice: "Import matcher was successfully created." }
-        format.json { render :show, status: :created, location: @import_matcher }
+        format.html do
+          redirect_to account_import_matchers_path(@account), notice: "Rule was successfully created."
+        end
+        format.json { render :show, status: :created, location: [ @account, @import_matcher ] }
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @import_matcher.errors, status: :unprocessable_entity }
@@ -34,12 +48,14 @@ class ImportMatchersController < ApplicationController
     end
   end
 
-  # PATCH/PUT /import_matchers/1 or /import_matchers/1.json
+  # PATCH/PUT /accounts/:account_id/import_matchers/1
   def update
     respond_to do |format|
       if @import_matcher.update(import_matcher_params)
-        format.html { redirect_to @import_matcher, notice: "Import matcher was successfully updated." }
-        format.json { render :show, status: :ok, location: @import_matcher }
+        format.html do
+          redirect_to account_import_matchers_path(@account), notice: "Rule was successfully updated."
+        end
+        format.json { render :show, status: :ok, location: [ @account, @import_matcher ] }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @import_matcher.errors, status: :unprocessable_entity }
@@ -47,24 +63,32 @@ class ImportMatchersController < ApplicationController
     end
   end
 
-  # DELETE /import_matchers/1 or /import_matchers/1.json
+  # DELETE /accounts/:account_id/import_matchers/1
   def destroy
     @import_matcher.destroy!
 
     respond_to do |format|
-      format.html { redirect_to import_matchers_path, status: :see_other, notice: "Import matcher was successfully destroyed." }
+      format.html do
+        redirect_to account_import_matchers_path(@account), status: :see_other,
+                    notice: "Rule was successfully destroyed."
+      end
       format.json { head :no_content }
     end
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_import_matcher
-      @import_matcher = ImportMatcher.find(params.expect(:id))
+    def set_account
+      @account = Account.find(params[:account_id])
     end
 
-    # Only allow a list of trusted parameters through.
+    # Found through the association, so a rule belonging to another account is not found at all.
+    def set_import_matcher
+      @import_matcher = @account.import_matchers.find(params.expect(:id))
+    end
+
+    # account_id is deliberately absent: it comes from the route.
     def import_matcher_params
-      params.expect(import_matcher: [ :account_id, :date_column, :date_format ])
+      params.expect(import_matcher: [ :description, :description_is_regex, :trx_type,
+                                      :category_id, :other_party_id ])
     end
 end

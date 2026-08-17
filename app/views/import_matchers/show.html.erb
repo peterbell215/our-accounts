@@ -1,10 +1,36 @@
-<p style="color: green"><%= notice %></p>
+<%= render "layouts/notice", notice: notice %>
 
-<%= render @import_matcher %>
+<% content_for :title, "Rule" %>
+
+<h1>Rule for <%= @account.name %></h1>
+
+<dl>
+  <dt>Description</dt>
+  <dd><%= @import_matcher.description %></dd>
+
+  <dt>Matched</dt>
+  <dd><%= @import_matcher.description_is_regex ? "as a pattern" : "exactly" %></dd>
+
+  <dt>Transaction type</dt>
+  <dd><%= @import_matcher.trx_type.presence || "any" %></dd>
+
+  <dt>Category</dt>
+  <dd><%= @import_matcher.category.name %></dd>
+
+  <dt>Counterparty</dt>
+  <dd>
+    <% if @import_matcher.other_party %>
+      <%= link_to @import_matcher.other_party.name, trading_account_path(@import_matcher.other_party) %>
+    <% else %>
+      none
+    <% end %>
+  </dd>
+</dl>
 
 <div>
-  <%= link_to "Edit this import matcher", edit_import_matcher_path(@import_matcher) %> |
-  <%= link_to "Back to import matchers", import_matchers_path %>
+  <%= link_to "Edit this rule", edit_account_import_matcher_path(@account, @import_matcher) %> |
+  <%= link_to "Back to rules", account_import_matchers_path(@account) %>
 
-  <%= button_to "Destroy this import matcher", @import_matcher, method: :delete %>
+  <%= button_to "Destroy this rule", account_import_matcher_path(@account, @import_matcher),
+                method: :delete, class: "pure-button" %>
 </div>

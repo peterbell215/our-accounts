@@ -11,6 +11,17 @@ FactoryBot.define do
       description_is_regex { false }
     end
 
+    # A rule that categorises without naming a counterparty, which is all AnalysisImporter can derive when
+    # the description is too short to be an Account name.
+    factory :import_matcher_without_counterparty do
+      category             { Category.find_by(name: 'Utilities') }
+      other_party          { nil }
+
+      trx_type             { nil }
+      description          { 'O2' }
+      description_is_regex { false }
+    end
+
     factory :import_matcher_amazon do
       category             { Category.find_by(name: 'Shopping') }
       other_party          { TradingAccount.find_by(name: "Amazon") || FactoryBot.create(:amazon_account) }
