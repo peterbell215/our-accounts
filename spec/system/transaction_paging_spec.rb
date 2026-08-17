@@ -23,7 +23,31 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
       box.scrollTop = #{to == :bottom ? 'box.scrollHeight' : '0'};
       box.dispatchEvent(new Event('scroll'));
     JS
-    sleep 0.3
+    sleep 0.15
+  end
+
+  # Scrolls repeatedly until the block is satisfied.
+  #
+  # The number of scrolls needed is not fixed: a scroll that arrives while a fetch is still in flight
+  # slides nothing, and how often that happens depends on how quickly the machine answers. Polling on the
+  # outcome keeps the spec honest about what it is asserting instead of tuning an iteration count to one
+  # machine.
+  def scroll_until(to:, description:, limit: 60)
+    limit.times do
+      return if yield
+
+      scroll_list to: to
+    end
+
+    raise "gave up waiting for #{description}; rendered #{rendered_payees.inspect}"
+  end
+
+  def scroll_to_oldest
+    scroll_until(to: :bottom, description: "the oldest transaction") { page.has_content?("PAYEE 01", wait: 0.1) }
+  end
+
+  def scroll_to_newest
+    scroll_until(to: :top, description: "the newest transaction") { page.has_content?("PAYEE 30", wait: 0.1) }
   end
 
   # Indexed among the cells rather than by nth-child, because form_with emits its hidden inputs as the
@@ -47,15 +71,15 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
     end
 
     it 'never exceeds one window, however far the reader scrolls' do
-      8.times do
+      12.times do
         scroll_list to: :bottom
         expect(page.all(".transaction-row").count).to be <= window
       end
     end
 
     it 'still holds one window after scrolling back up again' do
-      4.times { scroll_list to: :bottom }
-      4.times { scroll_list to: :top }
+      scroll_to_oldest
+      scroll_to_newest
 
       expect(page).to have_css(".transaction-row", count: window)
     end
@@ -80,13 +104,14 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
     end
 
     it 'reaches the oldest transaction eventually' do
-      10.times { scroll_list to: :bottom }
+      scroll_to_oldest
 
       expect(page).to have_content("PAYEE 01")
     end
 
     it 'stops at the oldest transaction rather than emptying the list' do
-      15.times { scroll_list to: :bottom }
+      scroll_to_oldest
+      3.times { scroll_list to: :bottom }
 
       expect(page).to have_css(".transaction-row", count: window)
       expect(page).to have_content("PAYEE 01")
@@ -96,7 +121,7 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
       3.times { scroll_list to: :bottom }
       expect(page).to have_no_content("PAYEE 30")
 
-      6.times { scroll_list to: :top }
+      scroll_to_newest
 
       expect(page).to have_content("PAYEE 30")
     end
@@ -109,11 +134,11 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
     end
 
     it 'are kept in memory, so scrolling back asks the server for nothing' do
-      3.times { scroll_list to: :bottom }
+      scroll_to_oldest
       after_scrolling_down = fetch_count
       expect(after_scrolling_down).to be > 0
 
-      6.times { scroll_list to: :top }
+      scroll_to_newest
 
       expect(fetch_count).to eq(after_scrolling_down)
       expect(page).to have_content("PAYEE 30")
@@ -127,7 +152,7 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
       end
 
       2.times { scroll_list to: :bottom }
-      4.times { scroll_list to: :top }
+      scroll_to_newest
 
       expect(page.all(".transaction-row").first.find("select").value).to eq(travel.id.to_s)
     end
@@ -159,7 +184,7 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
     end
 
     it 'does not accumulate rows across a jump' do
-      3.times { scroll_list to: :bottom }
+      scroll_to_oldest
       click_link "« Week"
 
       expect(page).to have_css(".transaction-row", count: window)
