@@ -40,6 +40,12 @@
     color: red;
 }
 
+/* A row's save button only means anything once the row has been edited. It keeps its space so the
+   delete button beside it does not move when it appears. */
+.save-button.is-unchanged {
+    visibility: hidden;
+}
+
 /* Date navigation above the transaction list */
 .transaction-nav {
     display: flex;
