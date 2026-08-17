@@ -224,6 +224,24 @@ Sliding the window changes the height above the visible rows, so `scrollTop` is 
 amount afterwards, or the content jumps under the reader. Rows are one line each, so a single measurement
 stands for all of them.
 
+**The box is only just taller than the rows in it, and that governs both movements.** A window of rows
+barely overflows its box, so there is rarely a step's worth of scrolling to give back, and the two
+consequences of that were a real defect rather than a detail:
+
+- *Which way to slide is the reader's direction, not proximity to an edge.* A box within the threshold
+  of the bottom is often within the threshold of the top at the same time, and testing the bottom first
+  made the list a one-way street — a reader on a tall screen was carried to the oldest transaction and
+  could not get back. The controller compares each scroll against the last position and slides only the
+  way the reader actually went.
+- *A slide never parks the box against an edge that still has rows beyond it.* A box at its own limit
+  cannot be scrolled further that way: nothing moves, no event fires, and the window never slides again.
+  Correcting `scrollTop` by the height of the rows just detached drove it to exactly that. It is now
+  clamped to leave a scroll's worth of room at any end that has more rows — half the available room
+  where the geometry is too tight for that.
+
+The controller's own correction is remembered as the last position, so the scroll event it fires reads
+as no movement and does not slide the window a second time.
+
 The list therefore scrolls inside a fixed-height box rather than with the page: with only twenty rows in
 the document there would be nothing for the page to scroll. That also lets the column headings be sticky.
 

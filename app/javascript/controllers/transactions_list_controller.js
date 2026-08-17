@@ -10,6 +10,11 @@ import { get } from "@rails/request.js"
 //
 // Sliding the window changes the height above the visible rows, so scrollTop is adjusted by the same
 // amount afterwards; without that the content jumps under the reader's cursor.
+//
+// How far the box can scroll is only a little more than the rows in it, so both of those movements have
+// to leave the box somewhere it can still be scrolled — see `check` and `park`.
+const THRESHOLD = 40
+
 export default class extends Controller {
     static values = {
         size: { type: Number, default: 20 },
@@ -24,6 +29,7 @@ export default class extends Controller {
         this.startValue = 0
         this.render()
 
+        this.lastScrollTop = this.element.scrollTop
         this.onScroll = () => this.scheduleCheck()
         this.element.addEventListener("scroll", this.onScroll, { passive: true })
     }
@@ -63,13 +69,21 @@ export default class extends Controller {
         })
     }
 
+    // Which way the reader went decides which way the window moves.
+    //
+    // Reaching an edge is not enough on its own. A box only a little taller than the rows in it is within
+    // the threshold of *both* edges at once, and testing the bottom first then meant the window could only
+    // ever move forward: the reader was carried to the oldest transaction and could not get back. Sliding
+    // also corrects scrollTop, which fires a scroll event of its own — read as reader movement, that
+    // slid the window a second time, unasked.
     check() {
         const box = this.element
-        const threshold = 40
+        const moved = box.scrollTop - this.lastScrollTop
+        this.lastScrollTop = box.scrollTop
 
-        if (box.scrollTop + box.clientHeight >= box.scrollHeight - threshold) {
+        if (moved > 0 && box.scrollTop + box.clientHeight >= box.scrollHeight - THRESHOLD) {
             this.forward()
-        } else if (box.scrollTop <= threshold) {
+        } else if (moved < 0 && box.scrollTop <= THRESHOLD) {
             this.backward()
         }
     }
@@ -97,7 +111,37 @@ export default class extends Controller {
 
         this.startValue = start
         this.render()
-        this.element.scrollTop -= moved * rowHeight
+        this.park(this.element.scrollTop - moved * rowHeight)
+    }
+
+    // Leaves the box where the reader was looking, but never hard against an edge that still has rows
+    // beyond it.
+    //
+    // A box parked at its own limit cannot be scrolled further that way: the scroll does nothing, fires
+    // no event, and the window never moves again. Sliding forward used to do exactly that — the rows
+    // above had just been detached, so correcting scrollTop by their height drove it to zero and the
+    // reader could not get back to anything newer. A window of rows only just overflows the box, so
+    // there is rarely a step's worth of room to give back.
+    //
+    // The gap kept at each end is a scroll's worth where the geometry allows it, and half of what room
+    // there is where it does not.
+    park(desired) {
+        const box = this.element
+        const range = Math.max(0, box.scrollHeight - box.clientHeight)
+        const gap = Math.min(THRESHOLD + 1, Math.floor(range / 2))
+
+        const lowest = this.startValue > 0 ? gap : 0
+        const highest = this.hasMoreBelow ? range - gap : range
+
+        box.scrollTop = Math.min(Math.max(desired, lowest), highest)
+
+        // Our own correction, not the reader scrolling: remember where it left the box, so the scroll
+        // event it fires reads as no movement at all.
+        this.lastScrollTop = box.scrollTop
+    }
+
+    get hasMoreBelow() {
+        return this.startValue + this.sizeValue < this.rows.length || this.nextUrl !== null
     }
 
     // --- rendering -----------------------------------------------------------------------------------
