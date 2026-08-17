@@ -4,7 +4,10 @@
               url: url, # Explicitly set the URL
               id: dom_id(transaction, transaction.persisted? ? nil : 'new'),
               html: { class: "div-table-row transaction-row" },
-              data: { controller: "dateinlocale", transaction_id: transaction.id} do |f| %>
+              data: { controller: "dateinlocale transaction-row",
+                      action: "input->transaction-row#refresh change->transaction-row#refresh",
+                      transaction_row_unsaved_value: !transaction.persisted?,
+                      transaction_id: transaction.id} do |f| %>
 
   <% transaction_presenter = TransactionPresenter.new(transaction, self, @categories, @account) %>
 
@@ -64,9 +67,10 @@
 
   <%# Actions Column - Use submit button and add delete button %>
   <div class="div-table-col actions-col"> <%# Added a class for potential styling %>
-    <%# Show Save button only for new/editing rows within the form %>
-    <%# Replace text with Material Icon 'check' %>
-    <%= f.button type: :submit, class: "pure-button pure-button-primary pure-button-small", name: "save" do %>
+    <%# Shown by the transaction_row controller once the row has an edit to save %>
+    <%= f.button type: :submit, class: "pure-button pure-button-primary pure-button-small save-button",
+                 name: "save", title: "Save Transaction",
+                 data: { transaction_row_target: "save" } do %>
       <span class="material-symbols-outlined">save</span>
     <% end %>
 
@@ -74,6 +78,7 @@
     <% if transaction.persisted? %>
       <%= link_to account_transaction_path(@account, transaction),
                   class: "pure-button pure-button-error pure-button-small",
+                  title: "Delete Transaction",
                   data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this transaction?" } do %>
         <span class="material-symbols-outlined">delete</span>
       <% end %>

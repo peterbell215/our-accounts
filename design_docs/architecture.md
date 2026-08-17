@@ -236,13 +236,23 @@ One trap worth recording: the query parameter is `as_of`, not `anchor`. Rails re
 URL helpers for the fragment identifier, so `account_path(account, anchor: date)` silently produces
 `/accounts/9#2024-06-05` and the value never reaches `params`.
 
+**A row's save button follows that row's state.** Every row is its own form, and a saved transaction
+exposes only its category, so a button standing on every row said nothing about which rows had been
+edited. The `transaction_row` controller hides it until a field differs from what the server rendered.
+What counts as a difference is recomputed from the fields themselves — `defaultValue` and
+`defaultSelected` hold the rendered state, and the browser keeps them — rather than being remembered on
+the controller instance: windowing detaches and re-attaches rows, which disconnects and reconnects the
+controller over an edit that has not been saved, so a flag held on the instance would be lost in exactly
+the case that matters. The button keeps its space while hidden, so the delete button beside it does not
+move as the reader works down the list.
+
 **Four Stimulus controllers**, each small:
 
 | Controller | Job |
 | --- | --- |
 | `dateinlocale` | Reformats ISO-8601 dates in data attributes to the browser's locale |
 | `csv_analyzer` | Drag-and-drop of detected CSV columns into the definition form |
-| `transaction_row` | Inline editing of a transaction row |
+| `transaction_row` | Offers a row's save button only once the row has an edit to save |
 | `account` | Shows/hides the sort-code field by account type |
 
 **The CSV analysis screen** is the one piece of real interaction design.

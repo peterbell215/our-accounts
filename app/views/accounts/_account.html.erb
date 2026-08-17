@@ -1,30 +1,33 @@
-<div id="<%= dom_id account %>" class="account-grid">
-  <div class="pure-g">
-    <div class="pure-u-1-6"><strong>Name:</strong></div>
-    <div class="pure-u-1-4"><%= account.name %></div>
+<%# The details sit in one grid so they flow across the width available: one field per line on a
+    phone, two from the medium breakpoint, three from the large one — which puts the five fields of a
+    bank account on two lines. %>
+<div id="<%= dom_id account %>" class="account-grid pure-g">
+  <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 account-field">
+    <strong class="account-field-label">Name:</strong>
+    <span><%= account.name %></span>
   </div>
 
-  <div class="pure-g">
-    <div class="pure-u-1-6"><strong>Account Number:</strong></div>
-    <div class="pure-u-1-4"><%= account.account_number %></div>
+  <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 account-field">
+    <strong class="account-field-label">Account Number:</strong>
+    <span><%= account.account_number %></span>
   </div>
 
   <% if account.is_a? BankAccount %>
-    <div class="pure-g">
-      <div class="pure-u-1-6"><strong>Sort Code:</strong></div>
-      <div class="pure-u-1-4"><%= account.sortcode %></div>
+    <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 account-field">
+      <strong class="account-field-label">Sort Code:</strong>
+      <span><%= account.sortcode %></span>
     </div>
   <% end %>
 
-  <div class="pure-g" data-controller="dateinlocale">
-    <div class="pure-u-1-6"><strong>Opening Date:</strong></div>
-    <div class="pure-u-1-4" data-dateinlocale-target="date" data-date="<%= account.opening_date.iso8601 %>">
+  <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 account-field" data-controller="dateinlocale">
+    <strong class="account-field-label">Opening Date:</strong>
+    <span data-dateinlocale-target="date" data-date="<%= account.opening_date.iso8601 %>">
       <span></span>
-    </div>
+    </span>
   </div>
 
-  <div class="pure-g">
-    <div class="pure-u-1-6"><strong>Opening Balance:</strong></div>
-    <div class="pure-u-1-4"><%= humanized_money_with_symbol(account.opening_balance) %></div>
+  <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 account-field">
+    <strong class="account-field-label">Opening Balance:</strong>
+    <span><%= humanized_money_with_symbol(account.opening_balance) %></span>
   </div>
 </div>
