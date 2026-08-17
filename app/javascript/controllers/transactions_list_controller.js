@@ -27,6 +27,7 @@ export default class extends Controller {
     connect() {
         this.rows = Array.from(this.rowElements())
         this.startValue = 0
+        this.tallestBox = parseFloat(getComputedStyle(this.element).maxHeight) || Infinity
         this.render()
 
         this.lastScrollTop = this.element.scrollTop
@@ -42,6 +43,10 @@ export default class extends Controller {
 
     get body() {
         return this.element.querySelector("#transactions_div_body")
+    }
+
+    get table() {
+        return this.element.querySelector(".div-table")
     }
 
     get marker() {
@@ -162,6 +167,26 @@ export default class extends Controller {
                 this.body.insertBefore(row, marker)
             }
         }
+
+        this.fitBox()
+    }
+
+    // Keeps the box shorter than the rows in it, so that it can be scrolled at all.
+    //
+    // A box tall enough to show its whole window has nothing to scroll, and a box with nothing to scroll
+    // fires no scroll events — so the window would never slide and the reader would be left with
+    // whichever rows they first landed on, with no way to reach the rest. Twenty rows overflow any
+    // ordinary screen, but a shorter window on a taller screen does not, and the specs stub exactly that.
+    //
+    // Only while rows sit outside the window: a list that fits entirely in the box has nowhere to slide
+    // to, and should simply be shown.
+    fitBox() {
+        const room = 2 * THRESHOLD + 2
+        const content = this.table.getBoundingClientRect().height
+        const slides = this.startValue > 0 || this.hasMoreBelow
+
+        this.element.style.maxHeight =
+            slides ? `${Math.max(room, Math.min(this.tallestBox, content - room))}px` : ""
     }
 
     // Rows are a single line each, so one measurement stands for all of them.

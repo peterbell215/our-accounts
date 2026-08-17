@@ -224,9 +224,15 @@ Sliding the window changes the height above the visible rows, so `scrollTop` is 
 amount afterwards, or the content jumps under the reader. Rows are one line each, so a single measurement
 stands for all of them.
 
-**The box is only just taller than the rows in it, and that governs both movements.** A window of rows
-barely overflows its box, so there is rarely a step's worth of scrolling to give back, and the two
-consequences of that were a real defect rather than a detail:
+**The box is deliberately shorter than the rows in it.** All of the sliding is driven by scroll events,
+and a box tall enough to show its whole window has nothing to scroll, fires none, and strands the reader
+on the rows they first landed on. Twenty rows overflow any ordinary screen, so this went unnoticed until
+a spec stubbed a smaller window; the controller now caps the box's height against the height of the rows
+it holds, while any of them sit outside the window. A list short enough to fit is simply shown.
+
+That leaves the box only just taller than the rows in it, which governs both movements. There is rarely a
+step's worth of scrolling to give back, and the two consequences of that were a real defect rather than a
+detail:
 
 - *Which way to slide is the reader's direction, not proximity to an edge.* A box within the threshold
   of the bottom is often within the threshold of the top at the same time, and testing the bottom first

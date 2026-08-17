@@ -167,12 +167,12 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
       expect(page.all(".transaction-row").first.find("select").value).to eq(travel.id.to_s)
     end
 
-    # A box barely taller than the rows in it used to be a one-way street: it sat within reach of both
-    # edges at once, the bottom was tested first, and sliding forward then parked it hard against the
-    # top — where scrolling up moves nothing and fires no event. The reader was carried down to the
-    # oldest transaction and could not get back.
-    it 'come back even when the window is barely taller than the rows in it' do
-      resize_window_to(1200, 750)
+    # A screen tall enough to show the whole window at once used to be a one-way street: the box sat
+    # within reach of both edges, the bottom was tested first, and sliding forward parked it hard against
+    # the top — where scrolling up moves nothing and fires no event. The reader was carried down to the
+    # oldest transaction and could not get back. Taller still and nothing moved at all.
+    it 'come back on a screen tall enough to show the whole window at once' do
+      resize_window_to(1200, 1000)
       visit account_path(account)
 
       travel = Category.find_by!(name: "Travel")
