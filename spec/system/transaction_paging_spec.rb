@@ -8,6 +8,16 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
 
   before { stub_const("TransactionPage::SIZE", window) }
 
+  # How far the box can be scrolled is what a scroll to its top or bottom actually means, and that
+  # follows from the height of the browser window: the box is 60vh, and the rows in it are a stubbed
+  # six rather than the usual twenty. Left to the ambient window size, these specs asserted different
+  # things locally and on CI. Pinning it keeps the box comfortably shorter than the rows it holds.
+  before { resize_window_to(1200, 600) }
+
+  def resize_window_to(width, height)
+    page.driver.browser.manage.window.resize_to(width, height)
+  end
+
   # Thirty transactions, one a day, newest 2024-06-30.
   def thirty_days_of_transactions
     30.downto(1) do |day|
@@ -154,6 +164,24 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
       2.times { scroll_list to: :bottom }
       scroll_to_newest
 
+      expect(page.all(".transaction-row").first.find("select").value).to eq(travel.id.to_s)
+    end
+
+    # A screen tall enough to show the whole window at once used to be a one-way street: the box sat
+    # within reach of both edges, the bottom was tested first, and sliding forward parked it hard against
+    # the top — where scrolling up moves nothing and fires no event. The reader was carried down to the
+    # oldest transaction and could not get back. Taller still and nothing moved at all.
+    it 'come back on a screen tall enough to show the whole window at once' do
+      resize_window_to(1200, 1000)
+      visit account_path(account)
+
+      travel = Category.find_by!(name: "Travel")
+      within(page.all(".transaction-row").first) { find("select").select(travel.name) }
+
+      scroll_to_oldest
+      scroll_to_newest
+
+      expect(rendered_payees.first).to eq("PAYEE 30")
       expect(page.all(".transaction-row").first.find("select").value).to eq(travel.id.to_s)
     end
   end
