@@ -40,7 +40,7 @@ class ImportMatchersController < ApplicationController
         format.html do
           redirect_to account_import_matchers_path(@account), notice: "Rule was successfully created."
         end
-        format.json { render :show, status: :created, location: [ @account, @import_matcher ] }
+        format.json { render :show, status: :created, location: account_import_matcher_url(@account, @import_matcher) }
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @import_matcher.errors, status: :unprocessable_entity }
@@ -55,7 +55,7 @@ class ImportMatchersController < ApplicationController
         format.html do
           redirect_to account_import_matchers_path(@account), notice: "Rule was successfully updated."
         end
-        format.json { render :show, status: :ok, location: [ @account, @import_matcher ] }
+        format.json { render :show, status: :ok, location: account_import_matcher_url(@account, @import_matcher) }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @import_matcher.errors, status: :unprocessable_entity }

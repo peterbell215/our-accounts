@@ -161,7 +161,7 @@ counterparty.
 
 | Field | Meaning |
 | --- | --- |
-| **Description** | The text to look for, exactly as the statement writes it |
+| **Description** | Required. The text to look for, exactly as the statement writes it |
 | **Treat as a pattern** | Match a regular expression anywhere in the description instead of the whole thing, so `AMAZON` catches `AMAZON* 204-813115` |
 | **Transaction type** | Restrict the rule to one type — `DD`, `DEB`. Leave blank to match any, which is usually what you want |
 | **Category** | Required. This is what the rule is for |
@@ -175,7 +175,9 @@ matching nothing usually has a typo, or trailing spaces in its description — t
 because a literal rule compares the description exactly, spaces included.
 
 A pattern that is not a valid regular expression is refused when you save it, rather than failing part-way
-through your next import.
+through your next import. So is an empty description: ticked as a pattern it would match every
+transaction and quietly categorise everything nothing else caught, and left as plain text it could never
+match at all.
 
 Most rules are created for you in bulk by [Teaching it your categories](#teaching-it-your-categories).
 This screen is for correcting those and adding the ones it could not work out.

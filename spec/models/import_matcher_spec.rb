@@ -17,6 +17,19 @@ RSpec.describe ImportMatcher, type: :model do
       expect(build(:import_matcher_amazon, description: 'AMAZON(', description_is_regex: false)).to be_valid
     end
 
+    # Blank and ticked as a pattern, the description compiles to //, which matches everything and would
+    # claim every transaction no other rule caught.
+    it 'rejects a blank description offered as a pattern' do
+      matcher = build(:import_matcher_amazon, description: '')
+
+      expect(matcher).not_to be_valid
+      expect(matcher.errors[:description]).to include("can't be blank")
+    end
+
+    it 'rejects a blank description offered as a literal, which nothing could equal' do
+      expect(build(:import_matcher_amazon, description: '', description_is_regex: false)).not_to be_valid
+    end
+
     it 'rejects a second rule for the same account, description and transaction type' do
       create(:import_matcher_octopus_energy)
 

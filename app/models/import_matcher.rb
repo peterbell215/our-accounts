@@ -20,7 +20,10 @@ class ImportMatcher < ApplicationRecord
   # so blank has to become nil rather than being stored as typed.
   normalizes :trx_type, with: ->(trx_type) { trx_type.presence }
 
-  validates :description, uniqueness: { scope: [ :account_id, :trx_type ] }
+  # A rule with a blank description is never what was meant: as a literal it is a rule no transaction can
+  # equal, and as a regex it compiles to //, which matches every description and so quietly claims every
+  # transaction no other rule caught.  The form makes both reachable, so refuse them here.
+  validates :description, presence: true, uniqueness: { scope: [ :account_id, :trx_type ] }
 
   validate :description_compiles, if: :description_is_regex?
 

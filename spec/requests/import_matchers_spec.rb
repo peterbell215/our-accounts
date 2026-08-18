@@ -59,6 +59,16 @@ RSpec.describe "ImportMatchers", type: :request do
       expect(ImportMatcher.last.account).to eq account
     end
 
+    # The route is nested under :accounts only, so a polymorphic [ account, matcher ] location would look
+    # for bank_account_import_matcher_url and raise after the rule had already been saved.
+    it "returns the nested URL of the new rule as JSON" do
+      post account_import_matchers_path(account, format: :json),
+           params: { import_matcher: { description: "TESCO STORES 2889", category_id: utilities.id } }
+
+      expect(response).to have_http_status(:created)
+      expect(response.headers["Location"]).to eq account_import_matcher_url(account, ImportMatcher.last)
+    end
+
     it "re-renders the form when the regex will not compile" do
       expect {
         post account_import_matchers_path(account),
@@ -79,6 +89,16 @@ RSpec.describe "ImportMatchers", type: :request do
             params: { import_matcher: { trx_type: "" } }
 
       expect(matcher.reload.trx_type).to be_nil
+    end
+
+    it "returns the nested URL of the rule as JSON" do
+      matcher = create(:import_matcher_octopus_energy, account: account)
+
+      patch account_import_matcher_path(account, matcher, format: :json),
+            params: { import_matcher: { trx_type: "DEB" } }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Location"]).to eq account_import_matcher_url(account, matcher)
     end
 
     it "does not reach a rule belonging to another account" do
