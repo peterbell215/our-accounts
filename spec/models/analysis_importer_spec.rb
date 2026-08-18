@@ -94,6 +94,48 @@ RSpec.describe AnalysisImporter, type: :model do
       end
     end
 
+    # The real statements write one vendor both ways, because the spelling comes from the card terminal:
+    # "TWO MAGPIES BAKERY" and "Two Magpies Bakery" appear on the same day.  One vendor, one counterparty.
+    context 'when two descriptions differ only in case' do
+      let(:rows) { [ [ "TWO MAGPIES BAKERY", "Dine Out" ], [ "Two Magpies Bakery", "Dine Out" ] ] }
+
+      it 'keeps a rule for each spelling, since a literal rule matches the text as written' do
+        expect(importer.matchers_created).to eq 2
+        expect(ImportMatcher.pluck(:description)).to contain_exactly("TWO MAGPIES BAKERY", "Two Magpies Bakery")
+      end
+
+      it 'gives them one counterparty between them' do
+        expect { importer }.to change(Counterparty, :count).by(1)
+      end
+
+      it 'names it with the spelling that is not shouted' do
+        expect(importer && Counterparty.last.name).to eq "Two Magpies Bakery"
+      end
+
+      it 'reports one counterparty for the pair, not two' do
+        expect(importer.counterparties_unnamed).to be_empty
+        expect(Counterparty.named("two magpies bakery").count).to eq 1
+      end
+    end
+
+    context 'when the tidier spelling comes first' do
+      let(:rows) { [ [ "Two Magpies Bakery", "Dine Out" ], [ "TWO MAGPIES BAKERY", "Dine Out" ] ] }
+
+      it 'keeps it rather than being overwritten by the shouted one' do
+        expect(importer && Counterparty.last.name).to eq "Two Magpies Bakery"
+      end
+    end
+
+    # Two shouted spellings can only differ in spacing, since upcasing is idempotent — and #name is squished,
+    # so they still land on one counterparty.
+    context 'when neither spelling is tidier than the other' do
+      let(:rows) { [ [ "ZETTLE_*HCP GELATI", "Dine Out" ], [ "ZETTLE_*HCP  GELATI", "Dine Out" ] ] }
+
+      it 'keeps the first, having nothing to prefer' do
+        expect(importer && Counterparty.last.name).to eq "ZETTLE_*HCP GELATI"
+      end
+    end
+
     context 'when a description is too short to name a counterparty' do
       let(:rows) { [ [ "O2", "Utilities" ] ] }
 

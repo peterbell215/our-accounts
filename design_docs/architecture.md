@@ -151,6 +151,17 @@ distinct transaction description. Three judgement calls are baked in:
   description is too short to be a name at all (`O2`), the rule is still created with no counterparty and
   the description is reported. `ImportMatcher.counterparty_id` was `NOT NULL` until that changed, which is
   the only reason such a rule used to be discarded — its category was never in doubt.
+- **Descriptions differing only in case share one counterparty**, and the spelling that is not shouted
+  wins. The real statements write `TWO MAGPIES BAKERY` and `Two Magpies Bakery` for one bakery, twice on
+  the same day in one instance, because the spelling comes from the card terminal rather than the bank. Two
+  counterparties would split that vendor's page and total in half. Each spelling keeps its own rule, since
+  a literal rule has to match the text as written, so both point at the one counterparty. Preferring the
+  tidier spelling in that one direction only also keeps repeated runs from flip-flopping between them.
+
+`Account#name` is squished on write and **case-insensitively unique**, which is what makes the above
+compulsory rather than a nicety: a second spelling would fail validation and abort the import. The same
+pair of rules serves the lookup that resolves a name typed into a transaction row, so both go through one
+scope, `Account.named`.
 
 The spreadsheet also turns out to consolidate several accounts — a current account, two credit cards and
 a store card — so rows are filtered on the sort-code and account-number columns before rules are built.

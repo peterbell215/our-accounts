@@ -27,5 +27,10 @@ class Account < ApplicationRecord
   validates :name, presence: true, uniqueness: { case_sensitive: false },
             length: { minimum: 3, maximum: 50 }
 
+  # How a name typed or read from a statement is looked up: case is insignificant, and so is stray space,
+  # since #name is squished on write.  Ordered so that a legacy pair differing only in case — which the
+  # validation above now prevents, but older data may still hold — resolves to the same one every time.
+  scope :named, ->(name) { where("LOWER(name) = ?", name.to_s.squish.downcase).order(:id) }
+
   monetize :opening_balance_pence, allow_nil: true
 end

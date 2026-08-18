@@ -110,6 +110,13 @@ class AnalysisImporter
   # to fit Account's name validation.  Those names are therefore raw statement text ("TESCO STORES 2889"),
   # worth consolidating by hand on the counterparties screen.
   #
+  # Descriptions differing only in case are one vendor: the real statements write both "TWO MAGPIES BAKERY"
+  # and "Two Magpies Bakery", twice on the same day in one instance, because the spelling comes from the
+  # card terminal rather than from the bank.  Each spelling still gets its own rule — a literal rule has to
+  # match the text as written — but they share one counterparty, so the vendor has one page and one total
+  # instead of two halves.  Account#name being case-insensitively unique means this is not optional: a
+  # second spelling would otherwise fail validation and abort the import.
+  #
   # A description too short to make a valid name still gets its rule — the rule's job is the category, and
   # ImportMatcher#counterparty is optional — but is recorded so the caller can report it.
   # @param [String] description
@@ -122,6 +129,20 @@ class AnalysisImporter
       return nil
     end
 
-    Counterparty.find_or_create_by!(name: name)
+    existing = Counterparty.named(name).first
+    return Counterparty.create!(name: name) if existing.nil?
+
+    existing.update!(name: name) if shouty?(existing.name) && !shouty?(name)
+    existing
+  end
+
+  # Which of two spellings of one name to keep: the one that is not shouted.  "Two Magpies Bakery" is
+  # closer to what a person would write than "TWO MAGPIES BAKERY", and tidying these names by hand is the
+  # main reason the counterparties screen exists — so where the statement offers a tidier spelling, take it.
+  # Upgrading in one direction only also keeps repeated runs from flip-flopping between the two.
+  # @param [String] name
+  # @return [Boolean]
+  def shouty?(name)
+    name == name.upcase
   end
 end

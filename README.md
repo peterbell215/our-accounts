@@ -269,10 +269,15 @@ Where you filed the same shop under two different categories, it takes whichever
 Where it is an exact tie it makes no rule at all and lists the description, because guessing would be
 worse than leaving it to you. You can categorise those transactions by hand afterwards.
 
-It also creates a counterparty for each rule, named after the description — so those names are raw
+It also creates a counterparty for each vendor, named after the description — so those names are raw
 statement text, and worth tidying on the [Counterparties](#counterparties) screen. Where a description is
 too short to be a name at all (`O2`), you get the rule without a counterparty, which is what the last line
 of that report is telling you.
+
+Where the same vendor appears in two spellings that differ only in case — `TWO MAGPIES BAKERY` and
+`Two Magpies Bakery`, which real statements do produce, sometimes on the same day — you get **one**
+counterparty, named with the tidier spelling, and a rule for each spelling pointing at it. So the vendor
+has one page and one total rather than two halves.
 
 Running it again is safe: it creates nothing twice, and any rule you have since retuned by hand is left
 exactly as it is rather than being reset to what the spreadsheet said. It counts those separately:

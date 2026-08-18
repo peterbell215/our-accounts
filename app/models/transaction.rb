@@ -60,7 +60,7 @@ class Transaction < ApplicationRecord
     if value.blank?
       self.counterparty = nil
     elsif !counterparty&.name&.casecmp?(value.squish)
-      match = Counterparty.where("LOWER(name) = ?", value.squish.downcase).order(:id).first
+      match = Counterparty.named(value).first
       match ? self.counterparty = match : @unresolved_counterparty = value
     end
   end
