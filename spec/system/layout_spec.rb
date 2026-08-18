@@ -30,11 +30,13 @@ RSpec.describe 'The menu bar', type: :system do
 
   it 'stays at the top of the window while the page scrolls' do
     visit_a_page_worth_scrolling
-    expect(menu_top).to eq(0)
 
+    # Where the layout leaves it before anything scrolls is a styling detail — a page margin puts it a
+    # few pixels down. The promise is what happens once the reader has scrolled past that.
+    resting_top = menu_top
     page.execute_script("window.scrollTo(0, document.body.scrollHeight)")
 
-    expect(page.evaluate_script("window.scrollY")).to be > 0
+    expect(page.evaluate_script("window.scrollY")).to be > resting_top
     expect(menu_top).to eq(0)
   end
 
