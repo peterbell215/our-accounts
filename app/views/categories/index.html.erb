@@ -4,11 +4,13 @@
 
 <h1>Categories</h1>
 
+<p>Click a column heading to reorder the list, and again to reverse it.</p>
+
 <table id="categories" class="pure-table pure-table-striped">
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Description</th>
+      <th><%= sort_link "name", "Name" %></th>
+      <th><%= sort_link "description", "Description" %></th>
       <th>Actions</th>
     </tr>
   </thead>

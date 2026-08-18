@@ -271,6 +271,19 @@ throughout so that the many counterparties sharing a count still come out in a r
 name because finding a particular one is the common errand; ordering by total, which is what shows where
 renaming pays off, is one click away.
 
+**The categories list sorts in SQL, and shares the heading.** Both its columns are columns on the table,
+so there is a real `ORDER BY` to write and no reason to load the table into memory for it. The ordering is
+built through Arel rather than as a string — the column arrives as a query parameter, and although the
+whitelist already confines it to two values, a hand-spelled `ORDER BY` reads to Brakeman as an injection
+and to a reader as one worth checking. `LOWER()` on both sides, or SQLite's binary collation would file
+every capitalised name before every lowercase one.
+
+The heading itself — the link, the reversing, the arrow marking which column is in force — is
+`ApplicationHelper#sort_link`, shared with the counterparties list rather than written twice. It builds
+its link with `url_for` and nothing but the two parameters, so it returns to whichever list rendered it,
+and it reads the `@sort` and `@direction` that a sortable list's controller sets. What differs between the
+two lists is only how the ordering is *done*, which is where it belongs: in each controller.
+
 **Turbo Streams for transactions.** `TransactionsController` renders Turbo Stream responses exclusively
 for index/new/create/update/destroy, all targeting one partial, `transactions/_transaction_as_row`. New
 rows are inserted with `turbo_stream.before("end-of-table-marker", ...)`, and unsaved rows are addressed
