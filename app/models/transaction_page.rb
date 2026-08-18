@@ -69,7 +69,8 @@ class TransactionPage
   def load(cursor)
     return [ [], false ] if anchor.nil?
 
-    scope = account.transactions.on_or_before(anchor).newest_first
+    # :counterparty is eager-loaded because every row names its counterparty.
+    scope = account.transactions.includes(:counterparty).on_or_before(anchor).newest_first
     scope = scope.older_than(cursor[:date], cursor[:day_index], cursor[:id]) if cursor.present?
 
     rows = scope.limit(@size + 1).to_a

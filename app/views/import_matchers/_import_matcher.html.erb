@@ -1,17 +1,37 @@
-<div id="<%= dom_id import_matcher %>">
-  <p>
-    <strong>Account:</strong>
-    <%= import_matcher.account_id %>
-  </p>
+<div id="<%= dom_id import_matcher %>" class="div-table-row">
+  <div class="div-table-col">
+    <%= import_matcher.description %>
+    <%# A literal rule compares the description exactly, so surrounding space it is easy to add by hand and
+        impossible to see would stop the rule ever firing. %>
+    <% if import_matcher.description != import_matcher.description.strip %>
+      <span title="This description has leading or trailing spaces, which a literal rule matches exactly.">⚠</span>
+    <% end %>
+  </div>
 
-  <p>
-    <strong>Date column:</strong>
-    <%= import_matcher.date_column %>
-  </p>
+  <div class="div-table-col"><%= import_matcher.description_is_regex ? "pattern" : "exact" %></div>
 
-  <p>
-    <strong>Date format:</strong>
-    <%= import_matcher.date_format %>
-  </p>
+  <div class="div-table-col"><%= import_matcher.trx_type.presence || "any" %></div>
 
+  <div class="div-table-col"><%= import_matcher.category.name %></div>
+
+  <div class="div-table-col">
+    <% if import_matcher.counterparty %>
+      <%= link_to import_matcher.counterparty.name, counterparty_path(import_matcher.counterparty) %>
+    <% else %>
+      —
+    <% end %>
+  </div>
+
+  <div class="div-table-col"><%= match_count %></div>
+
+  <div class="div-table-col actions-col">
+    <%= link_to "Edit", edit_account_import_matcher_path(account, import_matcher),
+                class: "pure-button pure-button-small" %>
+    <%= link_to account_import_matcher_path(account, import_matcher),
+                class: "pure-button pure-button-error pure-button-small",
+                data: { turbo_method: :delete,
+                        turbo_confirm: "Delete this rule? Transactions it already categorised keep their category." } do %>
+      <span class="material-symbols-outlined">delete</span>
+    <% end %>
+  </div>
 </div>

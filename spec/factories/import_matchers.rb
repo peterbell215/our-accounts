@@ -4,16 +4,27 @@ FactoryBot.define do
 
     factory :import_matcher_octopus_energy do
       category             { Category.find_by(name: 'Utilities') }
-      other_party          { TradingAccount.find_by(name: "Octopus Energy") || FactoryBot.create(:octopus_energy_account) }
+      counterparty          { Counterparty.find_by(name: "Octopus Energy") || FactoryBot.create(:octopus_energy) }
 
       trx_type             { 'DD' }
       description          { 'OCTOPUS ENERGY' }
       description_is_regex { false }
     end
 
+    # A rule that categorises without naming a counterparty, which is all AnalysisImporter can derive when
+    # the description is too short to be an Account name.
+    factory :import_matcher_without_counterparty do
+      category             { Category.find_by(name: 'Utilities') }
+      counterparty          { nil }
+
+      trx_type             { nil }
+      description          { 'O2' }
+      description_is_regex { false }
+    end
+
     factory :import_matcher_amazon do
       category             { Category.find_by(name: 'Shopping') }
-      other_party          { TradingAccount.find_by(name: "Amazon") || FactoryBot.create(:amazon_account) }
+      counterparty          { Counterparty.find_by(name: "Amazon") || FactoryBot.create(:amazon) }
 
       trx_type             { 'DEB' }
       description          { 'AMAZON' }

@@ -1,11 +1,11 @@
 FactoryBot.define do
-  factory :trading_account do
-    factory :octopus_energy_account do
+  factory :counterparty do
+    factory :octopus_energy do
       name            { "Octopus Energy" }
       account_number  { '01234567' }
     end
 
-    factory :amazon_account do
+    factory :amazon do
       name            { "Amazon" }
     end
   end

@@ -1,0 +1,12 @@
+<% content_for :title, "Editing counterparty" %>
+
+<h1>Editing counterparty</h1>
+
+<%= render "form", counterparty: @counterparty %>
+
+<br>
+
+<div>
+  <%= link_to "Show this counterparty", @counterparty %> |
+  <%= link_to "Back to counterparties", counterparties_path %>
+</div>

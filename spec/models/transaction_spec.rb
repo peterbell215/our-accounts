@@ -14,8 +14,56 @@ RSpec.describe Transaction do
   describe "#find_match" do
     before { trx.find_match }
 
-    specify("other_party") { expect(trx.other_party_id).to eql TradingAccount.find_by_name("Octopus Energy").id }
+    specify("counterparty") { expect(trx.counterparty_id).to eql Counterparty.find_by_name("Octopus Energy").id }
     specify("category") { expect(trx.category_id).to eql Category.find_by_name("Utilities").id }
+  end
+
+  # How the transaction list writes the counterparty: it offers the existing names through a datalist, so
+  # what arrives is a name rather than an id.
+  describe '#counterparty_name=' do
+    let!(:octopus) { Counterparty.find_by_name("Octopus Energy") || create(:octopus_energy) }
+
+    it 'links the counterparty of that name' do
+      trx.counterparty_name = "Octopus Energy"
+
+      expect(trx).to be_valid
+      expect(trx.counterparty).to eq octopus
+    end
+
+    it 'does not care about case or surrounding space' do
+      trx.counterparty_name = "  octopus energy  "
+
+      expect(trx).to be_valid
+      expect(trx.counterparty).to eq octopus
+    end
+
+    it 'clears the counterparty when left blank' do
+      trx.counterparty = octopus
+      trx.counterparty_name = ""
+
+      expect(trx).to be_valid
+      expect(trx.counterparty).to be_nil
+    end
+
+    # Silently creating one would add to the sprawl of raw statement names the analysis import already left.
+    context 'with a name no counterparty has' do
+      it 'is invalid and says so against the field that was typed into' do
+        trx.counterparty_name = "Ocotpus Enrgy"
+
+        expect(trx).not_to be_valid
+        expect(trx.errors[:counterparty_name].first).to eq('"Ocotpus Enrgy" is not a counterparty')
+      end
+
+      it 'does not create one' do
+        expect { trx.counterparty_name = "Ocotpus Enrgy" }.not_to change(Counterparty, :count)
+      end
+    end
+
+    it 'will not match one of the household’s own accounts' do
+      trx.counterparty_name = "Lloyds Account"
+
+      expect(trx).not_to be_valid
+    end
   end
 
   describe '#sequence' do

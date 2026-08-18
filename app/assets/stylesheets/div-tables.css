@@ -40,6 +40,13 @@
     color: red;
 }
 
+/* A field whose value was rejected.  Marked on the input rather than with a message beneath it, so the row
+   keeps its height — transactions_list_controller measures one row and applies it to all of them. */
+.div-table-col input.field-error {
+    border-color: red;
+    background-color: #fff0f0;
+}
+
 /* A row's save button only means anything once the row has been edited. It keeps its space so the
    delete button beside it does not move when it appears. */
 .save-button.is-unchanged {
