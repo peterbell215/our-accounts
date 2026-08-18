@@ -54,12 +54,12 @@
     </div>
 
     <div class="pure-control-group">
-      <%= form.label :other_party_id, "Counterparty" %>
-      <%= form.collection_select :other_party_id, TradingAccount.order(:name), :id, :name,
+      <%= form.label :counterparty_id, "Counterparty" %>
+      <%= form.collection_select :counterparty_id, Counterparty.order(:name), :id, :name,
                                  { include_blank: "— none —" }, { class: "pure-input-1-3" } %>
       <span class="pure-form-message-inline">
         Optional — leave it as none for a vendor you cannot identify.
-        <%= link_to "Add a counterparty", new_trading_account_path %>.
+        <%= link_to "Add a counterparty", new_counterparty_path %>.
       </span>
     </div>
 

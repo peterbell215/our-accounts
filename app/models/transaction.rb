@@ -3,14 +3,14 @@ class Transaction < ApplicationRecord
   belongs_to :account, optional: false
 
   belongs_to :category, optional: true
-  belongs_to :other_party, class_name: "Account", foreign_key: "other_party_id",
+  belongs_to :counterparty, class_name: "Account", foreign_key: "counterparty_id",
              inverse_of: :counterparty_transactions, optional: true
   belongs_to :import_matcher, optional: true
 
   validates :date, presence: true
   validates :amount, presence: true
 
-  validate :other_party_name_resolved
+  validate :counterparty_name_resolved
 
   monetize :amount_pence
   monetize :balance_pence, allow_nil: true
@@ -40,22 +40,22 @@ class Transaction < ApplicationRecord
   # The counterparty as typed into the transaction list, which offers the existing names through a datalist
   # rather than a select — twenty selects over a few hundred counterparties would be thousands of options on
   # one page.
-  attr_reader :other_party_name
+  attr_reader :counterparty_name
 
-  # Blank clears the counterparty.  A name matching none is an error rather than a new TradingAccount:
+  # Blank clears the counterparty.  A name matching none is an error rather than a new Counterparty:
   # counterparty names are already sprawling, because AnalysisImporter derived them from raw statement text,
   # and creating one on a typo would add to that.  Counterparties are created deliberately, on their own
   # screen.
   # @param [String, nil] value
-  def other_party_name=(value)
-    @other_party_name = value
-    @unresolved_other_party = nil
+  def counterparty_name=(value)
+    @counterparty_name = value
+    @unresolved_counterparty = nil
 
     if value.blank?
-      self.other_party = nil
+      self.counterparty = nil
     else
-      match = TradingAccount.where("LOWER(name) = ?", value.strip.downcase).first
-      match ? self.other_party = match : @unresolved_other_party = value
+      match = Counterparty.where("LOWER(name) = ?", value.strip.downcase).first
+      match ? self.counterparty = match : @unresolved_counterparty = value
     end
   end
 
@@ -66,7 +66,7 @@ class Transaction < ApplicationRecord
 
     if match
       self.import_matcher_id = match.id
-      self.other_party = match.other_party
+      self.counterparty = match.counterparty
       self.category_id = match.category_id
     end
   end
@@ -89,9 +89,9 @@ class Transaction < ApplicationRecord
 
   private
 
-  def other_party_name_resolved
-    return if @unresolved_other_party.blank?
+  def counterparty_name_resolved
+    return if @unresolved_counterparty.blank?
 
-    errors.add(:other_party_name, "#{@unresolved_other_party.strip.inspect} is not a counterparty")
+    errors.add(:counterparty_name, "#{@unresolved_counterparty.strip.inspect} is not a counterparty")
   end
 end

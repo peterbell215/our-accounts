@@ -4,7 +4,7 @@ RSpec.describe "ImportMatchers", type: :request do
   let(:account) { create(:lloyds_account) }
   let(:other_account) { create(:barclay_card_account) }
   let(:utilities) { Category.find_by!(name: "Utilities") }
-  let(:octopus) { TradingAccount.find_by(name: "Octopus Energy") || create(:octopus_energy_account) }
+  let(:octopus) { Counterparty.find_by(name: "Octopus Energy") || create(:octopus_energy) }
 
   describe "GET /accounts/:account_id/import_matchers" do
     it "lists only this account's rules" do
@@ -34,7 +34,7 @@ RSpec.describe "ImportMatchers", type: :request do
       expect {
         post account_import_matchers_path(account),
              params: { import_matcher: { description: "TESCO STORES 2889", category_id: utilities.id,
-                                         other_party_id: octopus.id, trx_type: "DEB" } }
+                                         counterparty_id: octopus.id, trx_type: "DEB" } }
       }.to change(ImportMatcher, :count).by(1)
 
       expect(response).to redirect_to(account_import_matchers_path(account))
@@ -44,10 +44,10 @@ RSpec.describe "ImportMatchers", type: :request do
     it "creates a rule with no counterparty" do
       expect {
         post account_import_matchers_path(account),
-             params: { import_matcher: { description: "O2", category_id: utilities.id, other_party_id: "" } }
+             params: { import_matcher: { description: "O2", category_id: utilities.id, counterparty_id: "" } }
       }.to change(ImportMatcher, :count).by(1)
 
-      expect(ImportMatcher.last.other_party).to be_nil
+      expect(ImportMatcher.last.counterparty).to be_nil
     end
 
     # The account is taken from the route, so a body naming another one cannot move the rule.

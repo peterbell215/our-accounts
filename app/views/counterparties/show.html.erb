@@ -1,14 +1,14 @@
 <%= render "layouts/notice", notice: notice %>
 
-<%= render @trading_account %>
+<%= render @counterparty %>
 
 <div>
-  <%= link_to "Edit this counterparty", edit_trading_account_path(@trading_account) %> |
-  <%= link_to "Back to counterparties", trading_accounts_path %>
+  <%= link_to "Edit this counterparty", edit_counterparty_path(@counterparty) %> |
+  <%= link_to "Back to counterparties", counterparties_path %>
 
-  <%= button_to "Destroy this counterparty", @trading_account, method: :delete,
+  <%= button_to "Destroy this counterparty", @counterparty, method: :delete,
                 class: "pure-button",
-                data: { turbo_confirm: "Delete #{@trading_account.name}? Its transactions are kept, but they will no longer name a counterparty." } %>
+                data: { turbo_confirm: "Delete #{@counterparty.name}? Its transactions are kept, but they will no longer name a counterparty." } %>
 </div>
 
 <h2>Transactions</h2>

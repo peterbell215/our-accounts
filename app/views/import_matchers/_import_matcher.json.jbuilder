@@ -1,3 +1,3 @@
 json.extract! import_matcher, :id, :account_id, :description, :description_is_regex, :trx_type,
-              :category_id, :other_party_id, :created_at, :updated_at
+              :category_id, :counterparty_id, :created_at, :updated_at
 json.url account_import_matcher_url(import_matcher.account, import_matcher, format: :json)

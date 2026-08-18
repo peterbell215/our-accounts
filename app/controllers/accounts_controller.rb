@@ -9,7 +9,7 @@ class AccountsController < ApplicationController
   # GET /accounts/1 or /accounts/1.json
   def show
     @categories = Category.order(:name).all
-    @counterparties = TradingAccount.order(:name)
+    @counterparties = Counterparty.order(:name)
     @page = TransactionPage.new(account: @account, anchor: params[:as_of])
   end
 

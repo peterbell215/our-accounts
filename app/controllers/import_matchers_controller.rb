@@ -10,7 +10,7 @@ class ImportMatchersController < ApplicationController
 
   # GET /accounts/:account_id/import_matchers
   def index
-    @import_matchers = @account.import_matchers.includes(:category, :other_party).order(:description)
+    @import_matchers = @account.import_matchers.includes(:category, :counterparty).order(:description)
     @import_matchers = @import_matchers.where("description LIKE ?", "%#{params[:q]}%") if params[:q].present?
 
     # How many transactions each rule has actually caught, which is what says whether it earns its keep.
@@ -89,6 +89,6 @@ class ImportMatchersController < ApplicationController
     # account_id is deliberately absent: it comes from the route.
     def import_matcher_params
       params.expect(import_matcher: [ :description, :description_is_regex, :trx_type,
-                                      :category_id, :other_party_id ])
+                                      :category_id, :counterparty_id ])
     end
 end

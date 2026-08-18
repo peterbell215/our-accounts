@@ -7,10 +7,10 @@ Rails.application.routes.draw do
 
   resources :categories
 
-  # Counterparties.  A TradingAccount is an Account, but not one of the household's, so it does not go
+  # Counterparties.  A Counterparty is an Account, but not one of the household's, so it does not go
   # through AccountsController: the shared form and detail partial are about sort codes and opening
   # balances, none of which a counterparty has.
-  resources :trading_accounts
+  resources :counterparties
 
   resources :accounts do
     resources :transactions, only: [ :index, :new, :create, :edit, :update, :destroy ]

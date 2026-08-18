@@ -1,9 +1,9 @@
-<%= form_with(model: trading_account, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
-  <% if trading_account.errors.any? %>
+<%= form_with(model: counterparty, local: true, html: { class: "pure-form pure-form-aligned" }) do |form| %>
+  <% if counterparty.errors.any? %>
     <div id="error_explanation">
-      <h2><%= pluralize(trading_account.errors.count, "error") %> prohibited this counterparty from being saved:</h2>
+      <h2><%= pluralize(counterparty.errors.count, "error") %> prohibited this counterparty from being saved:</h2>
       <ul>
-        <% trading_account.errors.full_messages.each do |message| %>
+        <% counterparty.errors.full_messages.each do |message| %>
           <li><%= message %></li>
         <% end %>
       </ul>

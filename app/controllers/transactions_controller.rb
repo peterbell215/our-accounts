@@ -96,7 +96,7 @@ class TransactionsController < ApplicationController
   def transaction_params
     # Permit all the fields submitted by the single form.  The counterparty arrives as a name, not an id —
     # the row offers the existing names through a datalist.
-    params.require(:transaction).permit(:category_id, :date, :description, :amount, :other_party_name)
+    params.require(:transaction).permit(:category_id, :date, :description, :amount, :counterparty_name)
   end
 
   # The last row the browser already has, so the next page resumes immediately after it.

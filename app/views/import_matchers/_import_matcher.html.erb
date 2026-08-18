@@ -15,8 +15,8 @@
   <div class="div-table-col"><%= import_matcher.category.name %></div>
 
   <div class="div-table-col">
-    <% if import_matcher.other_party %>
-      <%= link_to import_matcher.other_party.name, trading_account_path(import_matcher.other_party) %>
+    <% if import_matcher.counterparty %>
+      <%= link_to import_matcher.counterparty.name, counterparty_path(import_matcher.counterparty) %>
     <% else %>
       —
     <% end %>

@@ -43,8 +43,8 @@ RSpec.describe AnalysisImporter, type: :model do
 
         expect(matcher.account).to eq(account)
         expect(matcher.category.name).to eq("Utilities")
-        expect(matcher.other_party).to be_a(TradingAccount)
-        expect(matcher.other_party.name).to eq("OCTOPUS ENERGY")
+        expect(matcher.counterparty).to be_a(Counterparty)
+        expect(matcher.counterparty.name).to eq("OCTOPUS ENERGY")
       end
 
       it 'leaves the rule general rather than tying it to one transaction type' do
@@ -102,7 +102,7 @@ RSpec.describe AnalysisImporter, type: :model do
 
         matcher = ImportMatcher.find_by(description: "O2")
         expect(matcher.category.name).to eq("Utilities")
-        expect(matcher.other_party).to be_nil
+        expect(matcher.counterparty).to be_nil
       end
 
       it 'reports that it could not name a counterparty' do
@@ -110,7 +110,7 @@ RSpec.describe AnalysisImporter, type: :model do
       end
 
       it 'does not create a counterparty' do
-        expect { importer }.not_to change(TradingAccount, :count)
+        expect { importer }.not_to change(Counterparty, :count)
       end
     end
 
@@ -123,7 +123,7 @@ RSpec.describe AnalysisImporter, type: :model do
         matcher = ImportMatcher.find_by(description: long)
 
         expect(matcher).to be_present
-        expect(matcher.other_party.name.length).to eq(50)
+        expect(matcher.counterparty.name.length).to eq(50)
       end
     end
 
@@ -190,7 +190,7 @@ RSpec.describe AnalysisImporter, type: :model do
       transaction.find_match
 
       expect(transaction.category.name).to eq("Utilities")
-      expect(transaction.other_party.name).to eq("OCTOPUS ENERGY")
+      expect(transaction.counterparty.name).to eq("OCTOPUS ENERGY")
     end
   end
 

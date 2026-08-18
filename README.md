@@ -115,7 +115,7 @@ delete button; both are icons, and hovering over either one says what it does. *
 adds a row you can fill in by hand, for anything that did not come from a statement — it offers its save
 button straight away.
 
-The **Other Party** column names the counterparty, where one is known. Start typing in it and your
+The **Counterparty** column names the supplier, where one is known. Start typing in it and your
 existing counterparties are offered as completions; pick one and save, and the transaction is linked to
 it. The small icon beside the name opens that counterparty's own page. Clearing the field unlinks it.
 

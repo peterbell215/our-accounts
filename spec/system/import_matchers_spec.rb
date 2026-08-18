@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'Import rules', type: :system do
   let(:account) { FactoryBot.create(:lloyds_account) }
-  let!(:octopus) { FactoryBot.create(:octopus_energy_account) }
+  let!(:octopus) { FactoryBot.create(:octopus_energy) }
 
   it 'is reachable from the account it belongs to' do
     visit account_path(account)
@@ -27,7 +27,7 @@ RSpec.describe 'Import rules', type: :system do
 
     matcher = account.import_matchers.sole
     expect(matcher.category.name).to eq 'Utilities'
-    expect(matcher.other_party).to eq octopus
+    expect(matcher.counterparty).to eq octopus
     expect(matcher.trx_type).to eq 'DD'
     expect(matcher.description_is_regex).to be false
   end
@@ -42,7 +42,7 @@ RSpec.describe 'Import rules', type: :system do
     click_button 'Create Import matcher'
 
     expect(page).to have_content('Rule was successfully created.')
-    expect(account.import_matchers.sole.other_party).to be_nil
+    expect(account.import_matchers.sole.counterparty).to be_nil
   end
 
   it 'leaves a blank transaction type meaning any type, rather than storing an empty one' do

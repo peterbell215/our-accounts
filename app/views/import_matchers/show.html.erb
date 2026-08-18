@@ -19,8 +19,8 @@
 
   <dt>Counterparty</dt>
   <dd>
-    <% if @import_matcher.other_party %>
-      <%= link_to @import_matcher.other_party.name, trading_account_path(@import_matcher.other_party) %>
+    <% if @import_matcher.counterparty %>
+      <%= link_to @import_matcher.counterparty.name, counterparty_path(@import_matcher.counterparty) %>
     <% else %>
       none
     <% end %>

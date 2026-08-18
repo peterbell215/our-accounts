@@ -4,9 +4,9 @@
 class ImportMatcher < ApplicationRecord
   belongs_to :account
   # Optional: a rule's job is to assign a category.  Naming the counterparty is a bonus, and for a one-off
-  # or an unidentifiable vendor there is no name to give — the same reason Transaction#other_party is
+  # or an unidentifiable vendor there is no name to give — the same reason Transaction#counterparty is
   # optional.
-  belongs_to :other_party, class_name: "Account", inverse_of: :counterparty_matchers, optional: true
+  belongs_to :counterparty, class_name: "Account", inverse_of: :counterparty_matchers, optional: true
   belongs_to :category
 
   # The order #find_match walks the rules in, and therefore which rule wins when two of them match.  A

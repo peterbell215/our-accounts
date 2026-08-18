@@ -57,7 +57,7 @@ RSpec.describe "Transactions", type: :system do
   end
 
   describe "the counterparty column" do
-    let!(:octopus) { TradingAccount.find_by(name: "Octopus Energy") || FactoryBot.create(:octopus_energy_account) }
+    let!(:octopus) { Counterparty.find_by(name: "Octopus Energy") || FactoryBot.create(:octopus_energy) }
 
     def first_row
       find('form.transaction-row', match: :first)
@@ -65,13 +65,13 @@ RSpec.describe "Transactions", type: :system do
 
     it "shows the counterparty of a transaction that has one, and links to it" do
       transaction = account.transactions.newest_first.first
-      transaction.update!(other_party: octopus)
+      transaction.update!(counterparty: octopus)
 
       visit account_path(account)
 
       within(first_row) do
-        expect(page).to have_field('transaction[other_party_name]', with: 'Octopus Energy')
-        expect(page).to have_link(href: trading_account_path(octopus))
+        expect(page).to have_field('transaction[counterparty_name]', with: 'Octopus Energy')
+        expect(page).to have_link(href: counterparty_path(octopus))
       end
     end
 
@@ -79,8 +79,8 @@ RSpec.describe "Transactions", type: :system do
       visit account_path(account)
 
       within(first_row) do
-        expect(page).to have_field('transaction[other_party_name]', with: '')
-        expect(page).to have_no_link(href: %r{/trading_accounts/})
+        expect(page).to have_field('transaction[counterparty_name]', with: '')
+        expect(page).to have_no_link(href: %r{/counterparties/})
       end
     end
 
@@ -90,27 +90,27 @@ RSpec.describe "Transactions", type: :system do
       transaction_id = first_row['data-transaction-id'].to_i
 
       within(first_row) do
-        fill_in 'transaction[other_party_name]', with: 'Octopus Energy'
+        fill_in 'transaction[counterparty_name]', with: 'Octopus Energy'
         click_button 'save'
       end
 
-      expect(page).to have_link(href: trading_account_path(octopus))
-      expect(Transaction.find(transaction_id).other_party).to eq octopus
+      expect(page).to have_link(href: counterparty_path(octopus))
+      expect(Transaction.find(transaction_id).counterparty).to eq octopus
     end
 
     it "clears the counterparty when the field is emptied" do
       transaction = account.transactions.newest_first.first
-      transaction.update!(other_party: octopus)
+      transaction.update!(counterparty: octopus)
 
       visit account_path(account)
 
       within(first_row) do
-        fill_in 'transaction[other_party_name]', with: ''
+        fill_in 'transaction[counterparty_name]', with: ''
         click_button 'save'
       end
 
-      expect(page).to have_no_link(href: trading_account_path(octopus))
-      expect(transaction.reload.other_party).to be_nil
+      expect(page).to have_no_link(href: counterparty_path(octopus))
+      expect(transaction.reload.counterparty).to be_nil
     end
 
     # Creating one on a typo would add to the sprawl of raw statement names the analysis import left behind.
@@ -120,13 +120,13 @@ RSpec.describe "Transactions", type: :system do
       transaction_id = first_row['data-transaction-id'].to_i
 
       within(first_row) do
-        fill_in 'transaction[other_party_name]', with: 'Ocotpus Enrgy'
+        fill_in 'transaction[counterparty_name]', with: 'Ocotpus Enrgy'
         click_button 'save'
       end
 
       expect(page).to have_selector('input.field-error')
-      expect(Transaction.find(transaction_id).other_party).to be_nil
-      expect(TradingAccount.find_by(name: 'Ocotpus Enrgy')).to be_nil
+      expect(Transaction.find(transaction_id).counterparty).to be_nil
+      expect(Counterparty.find_by(name: 'Ocotpus Enrgy')).to be_nil
     end
 
     it "offers the existing counterparties once for the whole page, not once per row" do

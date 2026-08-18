@@ -82,17 +82,17 @@ class AnalysisImporter
         next
       end
 
-      build_matcher(description, ranked.first.first, trading_account_for(description))
+      build_matcher(description, ranked.first.first, counterparty_for(description))
     end
   end
 
   # @return [void]
-  def build_matcher(description, category_name, other_party)
+  def build_matcher(description, category_name, counterparty)
     matcher = ImportMatcher.find_or_initialize_by(account: account, description: description)
     was_new = matcher.new_record?
 
     matcher.category = Category.find_or_create_by!(name: category_name)
-    matcher.other_party = other_party
+    matcher.counterparty = counterparty
     matcher.description_is_regex = false
     matcher.save!
 
@@ -104,10 +104,10 @@ class AnalysisImporter
   # worth consolidating by hand on the counterparties screen.
   #
   # A description too short to make a valid name still gets its rule — the rule's job is the category, and
-  # ImportMatcher#other_party is optional — but is recorded so the caller can report it.
+  # ImportMatcher#counterparty is optional — but is recorded so the caller can report it.
   # @param [String] description
-  # @return [TradingAccount, nil]
-  def trading_account_for(description)
+  # @return [Counterparty, nil]
+  def counterparty_for(description)
     name = description.squish[0, NAME_RANGE.max]
 
     if name.length < NAME_RANGE.min
@@ -115,6 +115,6 @@ class AnalysisImporter
       return nil
     end
 
-    TradingAccount.find_or_create_by!(name: name)
+    Counterparty.find_or_create_by!(name: name)
   end
 end

@@ -24,9 +24,9 @@ Five tables carry the whole model.
         Account (STI)
         ├── BankAccount          ─┐
         ├── CreditCardAccount    ─┤  the household's own accounts
-        └── TradingAccount       ─┘  counterparties (Tesco, Octopus Energy)
+        └── Counterparty         ─┘  counterparties (Tesco, Octopus Energy)
               ▲            ▲
-              │            │ other_party
+              │            │ counterparty
      account  │            │
         ┌─────┴────────────┴───────┐
         │       Transaction        │──── category ───▶ Category
@@ -34,7 +34,7 @@ Five tables carry the whole model.
                     ▲
                     │ import_matcher
         ┌───────────┴──────────────┐
-        │      ImportMatcher       │──── category, other_party (optional)
+        │      ImportMatcher       │──── category, counterparty (optional)
         └──────────────────────────┘
 
         ImportColumnsDefinition ──── account
@@ -42,15 +42,15 @@ Five tables carry the whole model.
 
 ### Accounts are single-table inheritance
 
-`Account` is the base class; `BankAccount`, `CreditCardAccount` and `TradingAccount` are subclasses
+`Account` is the base class; `BankAccount`, `CreditCardAccount` and `Counterparty` are subclasses
 discriminated by a `type` column. The first two are the household's own accounts and differ only in
 validation — a bank account requires a sort code in `nn-nn-nn` form and an eight-digit account number, a
 credit card requires a sixteen-digit card number and has no sort code.
 
-`TradingAccount` is the interesting one. It is **not** an account the household holds; it represents a
-counterparty — Tesco, Octopus Energy, the water company. Modelling counterparties as accounts means a
-transaction's `other_party` is just another `Account`, and a future double-entry view (money leaving one
-account and arriving at another) needs no new concept. The cost is that `Account` now holds two quite
+`Counterparty` is the interesting one. It is **not** an account the household holds; it is a supplier or
+vendor — Tesco, Octopus Energy, the water company. Modelling those as accounts means a transaction's
+`counterparty` is just another `Account`, and a future double-entry view (money leaving one account and
+arriving at another) needs no new concept. The cost is that `Account` now holds two quite
 different kinds of row, which is why `AccountsController#index` filters to
 `BankAccount`/`CreditCardAccount` — the counterparties would otherwise swamp the account list.
 
@@ -59,19 +59,19 @@ The subclass routes exist so that Rails' form helpers generate the right wrapped
 why `account_params` picks both the permitted-parameter list and the expected key off the concrete class
 of `@account`.
 
-`TradingAccount` deliberately does **not** join that arrangement: it has its own `TradingAccountsController`
+`Counterparty` deliberately does **not** join that arrangement: it has its own `CounterpartiesController`
 and views. Sharing would have meant a third branch in `account_params` (which returns `nil` for any other
 class, so `update(nil)` would raise), hiding the sort-code, account-number, opening-date, opening-balance
 and type fields in the shared form, and guarding `accounts/_account.html.erb` against the nil `opening_date`
 a counterparty has. A counterparty is only a name, so a small separate controller is less code than bending
 three shared views.
 
-The reverse side of `other_party` needed naming, too. `Account#transactions` is the `account_id` side, so on
-a `TradingAccount` it is always empty — a counterparty's dealings belong to the household's accounts, not to
-it. `Account#counterparty_transactions` and `#counterparty_matchers` are the `other_party_id` side, and both
+The reverse side of the association needed naming, too. `Account#transactions` is the `account_id` side, so on
+a `Counterparty` it is always empty — a counterparty's dealings belong to the household's accounts, not to
+it. `Account#counterparty_transactions` and `#counterparty_matchers` are the `counterparty_id` side, and both
 are `dependent: :nullify`: deleting a counterparty must not delete the household's transactions, and a rule
 with no counterparty still assigns its category. That also stopped `Account#destroy` tripping over the
-foreign key on `transactions.other_party_id`, which it previously did.
+foreign key on `transactions.counterparty_id`, which it previously did.
 
 ### Money is never a float
 
@@ -117,7 +117,7 @@ they do opposite things, and conflating them is the easiest mistake to make here
      AnalysisImporter                          FileImporter
             │                                        │
             ├──▶ Category                            ▼
-            ├──▶ TradingAccount            ImportedTransactionFactory
+            ├──▶ Counterparty              ImportedTransactionFactory
             └──▶ ImportMatcher  ──────────────▶  (find_match)
                                                      │
                                                      ▼
@@ -145,11 +145,11 @@ distinct transaction description. Three judgement calls are baked in:
   by hand and the occasional slip is expected. An outright tie is skipped and reported rather than
   guessed at.
 - **A counterparty is derived where one can be named.** The statement only gives us the description, so
-  that is what the `TradingAccount` is named after, trimmed to the fifty characters `Account` permits.
+  that is what the `Counterparty` is named after, trimmed to the fifty characters `Account` permits.
   Those names are therefore raw statement text — `TESCO STORES 2889` rather than `Tesco` — which is why the
   counterparties screen orders by total spend: the ones worth renaming are the ones at the top. Where the
   description is too short to be a name at all (`O2`), the rule is still created with no counterparty and
-  the description is reported. `ImportMatcher.other_party_id` was `NOT NULL` until that changed, which is
+  the description is reported. `ImportMatcher.counterparty_id` was `NOT NULL` until that changed, which is
   the only reason such a rule used to be discarded — its category was never in doubt.
 
 The spreadsheet also turns out to consolidate several accounts — a current account, two credit cards and
@@ -165,7 +165,7 @@ amount, the balance, and so on. `FileImporter` walks the file and, for each row,
 
 `ImportMatcher.find_match` walks the matchers for that account and returns the first whose description
 (literal or regex, per `description_is_regex`) and optional `trx_type` match. A hit fills in
-`category_id`, `other_party` and `import_matcher_id`.
+`category_id`, `counterparty` and `import_matcher_id`.
 
 **Rule precedence is explicit.** `find_match` orders by `in_match_order` — `(description_is_regex, id)` —
 so a literal description beats a regex, and the outcome does not depend on what order the database happens
@@ -231,8 +231,8 @@ parameters — the account comes from the route, so a rule cannot be filed again
 form sets `url:` explicitly, because `form_with(model: [account, matcher])` would derive
 `bank_account_import_matchers_path` from the STI subclass and the route is nested under `:accounts`.
 
-**The counterparty is edited as a name, not an id.** `Transaction#other_party_name=` resolves a typed name
-against `TradingAccount`, case-insensitively, and records an unresolved one as a validation error rather than
+**The counterparty is edited as a name, not an id.** `Transaction#counterparty_name=` resolves a typed name
+against `Counterparty`, case-insensitively, and records an unresolved one as a validation error rather than
 creating a record — counterparty names are already sprawling and a typo would add to it. The transaction list
 therefore renders a text field against a single shared `<datalist>`: a `<select>` per row over several
 hundred counterparties would put thousands of `<option>` elements on one page, and the datalist is one list

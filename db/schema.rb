@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_195339) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_064006) do
   create_table "accounts", force: :cascade do |t|
     t.string "account_number"
     t.datetime "created_at", null: false
@@ -53,15 +53,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_195339) do
   create_table "import_matchers", force: :cascade do |t|
     t.integer "account_id", null: false
     t.integer "category_id", null: false
+    t.integer "counterparty_id"
     t.datetime "created_at", null: false
     t.string "description", null: false
     t.boolean "description_is_regex", default: false, null: false
-    t.integer "other_party_id"
     t.string "trx_type"
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_import_matchers_on_account_id"
     t.index ["category_id"], name: "index_import_matchers_on_category_id"
-    t.index ["other_party_id"], name: "index_import_matchers_on_other_party_id"
+    t.index ["counterparty_id"], name: "index_import_matchers_on_counterparty_id"
   end
 
   create_table "transactions", force: :cascade do |t|
@@ -71,20 +71,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_195339) do
     t.string "balance_currency", default: "GBP", null: false
     t.integer "balance_pence"
     t.integer "category_id"
+    t.integer "counterparty_id"
     t.date "date", null: false
     t.integer "day_index"
     t.string "description"
     t.integer "import_matcher_id"
-    t.integer "other_party_id"
     t.string "trx_type"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
+    t.index ["counterparty_id"], name: "index_transactions_on_counterparty_id"
     t.index ["import_matcher_id"], name: "index_transactions_on_import_matcher_id"
-    t.index ["other_party_id"], name: "index_transactions_on_other_party_id"
   end
 
   add_foreign_key "import_matchers", "accounts"
-  add_foreign_key "import_matchers", "accounts", column: "other_party_id"
+  add_foreign_key "import_matchers", "accounts", column: "counterparty_id"
   add_foreign_key "import_matchers", "categories"
-  add_foreign_key "transactions", "accounts", column: "other_party_id"
+  add_foreign_key "transactions", "accounts", column: "counterparty_id"
 end
