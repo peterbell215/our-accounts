@@ -43,8 +43,8 @@ RSpec.describe AnalysisImporter, type: :model do
 
         expect(matcher.account).to eq(account)
         expect(matcher.category.name).to eq("Utilities")
-        expect(matcher.other_party).to be_a(TradingAccount)
-        expect(matcher.other_party.name).to eq("OCTOPUS ENERGY")
+        expect(matcher.counterparty).to be_a(Counterparty)
+        expect(matcher.counterparty.name).to eq("OCTOPUS ENERGY")
       end
 
       it 'leaves the rule general rather than tying it to one transaction type' do
@@ -94,12 +94,65 @@ RSpec.describe AnalysisImporter, type: :model do
       end
     end
 
+    # The real statements write one vendor both ways, because the spelling comes from the card terminal:
+    # "TWO MAGPIES BAKERY" and "Two Magpies Bakery" appear on the same day.  One vendor, one counterparty.
+    context 'when two descriptions differ only in case' do
+      let(:rows) { [ [ "TWO MAGPIES BAKERY", "Dine Out" ], [ "Two Magpies Bakery", "Dine Out" ] ] }
+
+      it 'keeps a rule for each spelling, since a literal rule matches the text as written' do
+        expect(importer.matchers_created).to eq 2
+        expect(ImportMatcher.pluck(:description)).to contain_exactly("TWO MAGPIES BAKERY", "Two Magpies Bakery")
+      end
+
+      it 'gives them one counterparty between them' do
+        expect { importer }.to change(Counterparty, :count).by(1)
+      end
+
+      it 'names it with the spelling that is not shouted' do
+        expect(importer && Counterparty.last.name).to eq "Two Magpies Bakery"
+      end
+
+      it 'reports one counterparty for the pair, not two' do
+        expect(importer.counterparties_unnamed).to be_empty
+        expect(Counterparty.named("two magpies bakery").count).to eq 1
+      end
+    end
+
+    context 'when the tidier spelling comes first' do
+      let(:rows) { [ [ "Two Magpies Bakery", "Dine Out" ], [ "TWO MAGPIES BAKERY", "Dine Out" ] ] }
+
+      it 'keeps it rather than being overwritten by the shouted one' do
+        expect(importer && Counterparty.last.name).to eq "Two Magpies Bakery"
+      end
+    end
+
+    # Two shouted spellings can only differ in spacing, since upcasing is idempotent — and #name is squished,
+    # so they still land on one counterparty.
+    context 'when neither spelling is tidier than the other' do
+      let(:rows) { [ [ "ZETTLE_*HCP GELATI", "Dine Out" ], [ "ZETTLE_*HCP  GELATI", "Dine Out" ] ] }
+
+      it 'keeps the first, having nothing to prefer' do
+        expect(importer && Counterparty.last.name).to eq "ZETTLE_*HCP GELATI"
+      end
+    end
+
     context 'when a description is too short to name a counterparty' do
       let(:rows) { [ [ "O2", "Utilities" ] ] }
 
-      it 'skips it and reports it' do
-        expect { importer }.not_to change(ImportMatcher, :count)
-        expect(importer.unusable).to eq([ "O2" ])
+      it 'still creates the rule, since the category is the point of it' do
+        expect { importer }.to change(ImportMatcher, :count).by(1)
+
+        matcher = ImportMatcher.find_by(description: "O2")
+        expect(matcher.category.name).to eq("Utilities")
+        expect(matcher.counterparty).to be_nil
+      end
+
+      it 'reports that it could not name a counterparty' do
+        expect(importer.counterparties_unnamed).to eq([ "O2" ])
+      end
+
+      it 'does not create a counterparty' do
+        expect { importer }.not_to change(Counterparty, :count)
       end
     end
 
@@ -112,7 +165,7 @@ RSpec.describe AnalysisImporter, type: :model do
         matcher = ImportMatcher.find_by(description: long)
 
         expect(matcher).to be_present
-        expect(matcher.other_party.name.length).to eq(50)
+        expect(matcher.counterparty.name.length).to eq(50)
       end
     end
 
@@ -165,6 +218,27 @@ RSpec.describe AnalysisImporter, type: :model do
         expect { described_class.new(write_analysis(rows), account).import }
           .not_to change(ImportMatcher, :count)
       end
+
+      # The rules screens let a rule be retuned by hand.  A second run must not undo that, or re-seeding
+      # would silently revert every correction to what the spreadsheet said.
+      it 'leaves a rule that has since been corrected by hand exactly as it is' do
+        described_class.new(write_analysis(rows), account).import
+        rule = ImportMatcher.find_by!(description: "OCTOPUS ENERGY")
+        rule.update!(category: Category.find_by!(name: "Travel"), counterparty: nil, description_is_regex: true)
+
+        described_class.new(write_analysis(rows), account).import
+
+        expect(rule.reload).to have_attributes(category: Category.find_by!(name: "Travel"),
+                                               counterparty: nil, description_is_regex: true)
+      end
+
+      it 'reports the rules it left alone rather than counting them as created' do
+        described_class.new(write_analysis(rows), account).import
+        importer = described_class.new(write_analysis(rows), account).import
+
+        expect(importer.matchers_created).to eq 0
+        expect(importer.matchers_kept).to eq 1
+      end
     end
   end
 
@@ -179,7 +253,7 @@ RSpec.describe AnalysisImporter, type: :model do
       transaction.find_match
 
       expect(transaction.category.name).to eq("Utilities")
-      expect(transaction.other_party.name).to eq("OCTOPUS ENERGY")
+      expect(transaction.counterparty.name).to eq("OCTOPUS ENERGY")
     end
   end
 

@@ -17,8 +17,8 @@ class AnalysisImporter
   # Account#name is validated as 3 to 50 characters, and descriptions run from 2 to 76.
   NAME_RANGE = (3..50).freeze
 
-  attr_reader :file, :account, :categories_created, :matchers_created, :ambiguous, :unusable,
-              :other_account_rows
+  attr_reader :file, :account, :categories_created, :matchers_created, :matchers_kept, :ambiguous,
+              :counterparties_unnamed, :other_account_rows
 
   # @param [Pathname, String] file the analysis CSV
   # @param [Account] account the account the derived rules apply to
@@ -27,8 +27,9 @@ class AnalysisImporter
     @account = account
     @categories_created = 0
     @matchers_created = 0
+    @matchers_kept = 0
     @ambiguous = []
-    @unusable = []
+    @counterparties_unnamed = []
     @other_account_rows = 0
   end
 
@@ -82,39 +83,66 @@ class AnalysisImporter
         next
       end
 
-      other_party = trading_account_for(description)
-      next if other_party.nil?
+      # A rule this account already has is left exactly as it is, and counted so the caller can say so.
+      # These rules are editable now, so a category or counterparty corrected by hand on the rules screen
+      # must survive the next run — otherwise re-running the analysis, which is documented as safe to
+      # repeat, would quietly revert the correction to whatever the spreadsheet said.
+      if account.import_matchers.exists?(description: description)
+        @matchers_kept += 1
+        next
+      end
 
-      build_matcher(description, ranked.first.first, other_party)
+      build_matcher(description, ranked.first.first, counterparty_for(description))
     end
   end
 
+  # Only ever called for a description this account has no rule for, so this creates rather than updates.
   # @return [void]
-  def build_matcher(description, category_name, other_party)
-    matcher = ImportMatcher.find_or_initialize_by(account: account, description: description)
-    was_new = matcher.new_record?
+  def build_matcher(description, category_name, counterparty)
+    ImportMatcher.create!(account: account, description: description, description_is_regex: false,
+                          category: Category.find_or_create_by!(name: category_name),
+                          counterparty: counterparty)
 
-    matcher.category = Category.find_or_create_by!(name: category_name)
-    matcher.other_party = other_party
-    matcher.description_is_regex = false
-    matcher.save!
-
-    @matchers_created += 1 if was_new
+    @matchers_created += 1
   end
 
-  # ImportMatcher#other_party is NOT NULL, so every rule needs a counterparty.  The statement only tells
-  # us the description, so that is what the TradingAccount is named after, trimmed to fit Account's name
-  # validation.  Descriptions too short to make a valid name are recorded and skipped.
+  # The statement only tells us the description, so that is what the counterparty is named after, trimmed
+  # to fit Account's name validation.  Those names are therefore raw statement text ("TESCO STORES 2889"),
+  # worth consolidating by hand on the counterparties screen.
+  #
+  # Descriptions differing only in case are one vendor: the real statements write both "TWO MAGPIES BAKERY"
+  # and "Two Magpies Bakery", twice on the same day in one instance, because the spelling comes from the
+  # card terminal rather than from the bank.  Each spelling still gets its own rule — a literal rule has to
+  # match the text as written — but they share one counterparty, so the vendor has one page and one total
+  # instead of two halves.  Account#name being case-insensitively unique means this is not optional: a
+  # second spelling would otherwise fail validation and abort the import.
+  #
+  # A description too short to make a valid name still gets its rule — the rule's job is the category, and
+  # ImportMatcher#counterparty is optional — but is recorded so the caller can report it.
   # @param [String] description
-  # @return [TradingAccount, nil]
-  def trading_account_for(description)
+  # @return [Counterparty, nil]
+  def counterparty_for(description)
     name = description.squish[0, NAME_RANGE.max]
 
     if name.length < NAME_RANGE.min
-      @unusable << description
+      @counterparties_unnamed << description
       return nil
     end
 
-    TradingAccount.find_or_create_by!(name: name)
+    existing = Counterparty.named(name).first
+    return Counterparty.create!(name: name) if existing.nil?
+
+    existing.update!(name: name) if shouty?(existing.name) && !shouty?(name)
+    existing
+  end
+
+  # Which of two spellings of one name to keep: the one that is not shouted.  "Two Magpies Bakery" is
+  # closer to what a person would write than "TWO MAGPIES BAKERY", and tidying these names by hand is the
+  # main reason the counterparties screen exists — so where the statement offers a tidier spelling, take it.
+  # Upgrading in one direction only also keeps repeated runs from flip-flopping between the two.
+  # @param [String] name
+  # @return [Boolean]
+  def shouty?(name)
+    name == name.upcase
   end
 end

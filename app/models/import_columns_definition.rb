@@ -11,7 +11,23 @@ class ImportColumnsDefinition < ApplicationRecord
   validate :validate_credit_debit_or_amount_column
   validate :validate_unique_csv_mappings
 
-  CSV_HEADERS = ImportColumnsDefinition.attribute_names.dup.keep_if { |a| a =~ /_column\z/ }.freeze
+  # The order matters: #csv_header maps it straight onto CSV columns, so it is the layout of any statement
+  # this class writes back out, and it is the order the fields appear in on the form.
+  #
+  # Spelled out rather than derived from attribute_names, which follows the *physical* column order of the
+  # table.  Rails 8.1's schema dumper sorts columns alphabetically, so from that version on any migration
+  # at all silently rewrote this list — and with it the layout of every exported CSV.
+  CSV_HEADERS = %w[
+    date_column
+    trx_type_column
+    sortcode_column
+    account_number_column
+    other_party_column
+    amount_column
+    debit_column
+    credit_column
+    balance_column
+  ].freeze
 
   # Generates an array of column names or column numbers.
   # @return [Array]

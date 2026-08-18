@@ -1,0 +1,44 @@
+<%= render "layouts/notice", notice: notice %>
+
+<% content_for :title, "Counterparties" %>
+
+<h1>Counterparties</h1>
+
+<p>
+  The suppliers and vendors behind your transactions.  Names taken from a statement import are raw statement
+  text — rename them here to something you would recognise.  Click a column heading to reorder the list;
+  <strong>Total</strong> puts the ones you spend most with first, which is where renaming is worth the effort.
+</p>
+
+<table id="counterparties" class="pure-table pure-table-striped">
+  <thead>
+    <tr>
+      <th><%= counterparty_sort_link "name", "Name" %></th>
+      <th><%= counterparty_sort_link "transactions", "Transactions" %></th>
+      <th><%= counterparty_sort_link "total", "Total" %></th>
+      <th><%= counterparty_sort_link "rules", "Rules" %></th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @counterparties.each do |counterparty| %>
+      <tr id="<%= dom_id counterparty %>">
+        <td><%= link_to counterparty.name, counterparty_path(counterparty) %></td>
+        <td><%= @counts[counterparty.id] || 0 %></td>
+        <td class="currency">
+          <%= humanized_money_with_symbol Money.new(@totals[counterparty.id] || 0) %>
+        </td>
+        <td><%= @rule_counts[counterparty.id] || 0 %></td>
+        <td><%= link_to "Edit", edit_counterparty_path(counterparty) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @counterparties.empty? %>
+  <p>No counterparties yet.</p>
+<% end %>
+
+<div style="margin-top: 1rem">
+  <%= link_to "New counterparty", new_counterparty_path, class: "pure-button" %>
+</div>

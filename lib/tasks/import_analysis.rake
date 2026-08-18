@@ -19,6 +19,7 @@ namespace :import do
 
     puts "Categories created:      #{importer.categories_created} (taken from the whole file)"
     puts "Import matchers created: #{importer.matchers_created} against #{account.name}"
+    puts "Rules already present:   #{importer.matchers_kept} (left exactly as they are)" if importer.matchers_kept.positive?
     puts "Rows for other accounts: #{importer.other_account_rows} (skipped)" if importer.other_account_rows.positive?
 
     if importer.ambiguous.any?
@@ -26,9 +27,10 @@ namespace :import do
       importer.ambiguous.each { |description, counts| puts "  #{description.squish.inspect} -> #{counts.inspect}" }
     end
 
-    if importer.unusable.any?
-      puts "\nSkipped #{importer.unusable.count} descriptions too short to name a counterparty:"
-      importer.unusable.each { |description| puts "  #{description.inspect}" }
+    if importer.counterparties_unnamed.any?
+      count = importer.counterparties_unnamed.count
+      puts "\n#{count} #{'rule'.pluralize(count)} created without a counterparty, the description being too short to name one:"
+      importer.counterparties_unnamed.each { |description| puts "  #{description.inspect}" }
     end
   end
 

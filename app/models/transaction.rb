@@ -3,11 +3,14 @@ class Transaction < ApplicationRecord
   belongs_to :account, optional: false
 
   belongs_to :category, optional: true
-  belongs_to :other_party, class_name: "Account", foreign_key: "other_party_id", optional: true
+  belongs_to :counterparty, class_name: "Account", foreign_key: "counterparty_id",
+             inverse_of: :counterparty_transactions, optional: true
   belongs_to :import_matcher, optional: true
 
   validates :date, presence: true
   validates :amount, presence: true
+
+  validate :counterparty_name_resolved
 
   monetize :amount_pence
   monetize :balance_pence, allow_nil: true
@@ -34,6 +37,34 @@ class Transaction < ApplicationRecord
     )
   }
 
+  # The counterparty as typed into the transaction list, which offers the existing names through a datalist
+  # rather than a select — twenty selects over a few hundred counterparties would be thousands of options on
+  # one page.
+  attr_reader :counterparty_name
+
+  # Blank clears the counterparty.  A name matching none is an error rather than a new Counterparty:
+  # counterparty names are already sprawling, because AnalysisImporter derived them from raw statement text,
+  # and creating one on a typo would add to that.  Counterparties are created deliberately, on their own
+  # screen.
+  #
+  # A value that already names this transaction's counterparty is left alone rather than resolved again.
+  # #counterparty is an Account, and import data or the console can point it at one of the household's own
+  # accounts; the cell then renders that account's name, which Counterparty does not contain, so submitting
+  # the row — even to change nothing but the category — used to fail on a name the user never typed.
+  # Resolving a *changed* name still goes through Counterparty only, so an own account cannot be chosen.
+  # @param [String, nil] value
+  def counterparty_name=(value)
+    @counterparty_name = value
+    @unresolved_counterparty = nil
+
+    if value.blank?
+      self.counterparty = nil
+    elsif !counterparty&.name&.casecmp?(value.squish)
+      match = Counterparty.named(value).first
+      match ? self.counterparty = match : @unresolved_counterparty = value
+    end
+  end
+
   # Find if a match for this trx exists using the ImportMatcher class.
   # @return [Transaction]
   def find_match
@@ -41,7 +72,7 @@ class Transaction < ApplicationRecord
 
     if match
       self.import_matcher_id = match.id
-      self.other_party = match.other_party
+      self.counterparty = match.counterparty
       self.category_id = match.category_id
     end
   end
@@ -60,5 +91,13 @@ class Transaction < ApplicationRecord
     else
       self.balance = calculated_balance
     end
+  end
+
+  private
+
+  def counterparty_name_resolved
+    return if @unresolved_counterparty.blank?
+
+    errors.add(:counterparty_name, "#{@unresolved_counterparty.squish.inspect} is not a counterparty")
   end
 end

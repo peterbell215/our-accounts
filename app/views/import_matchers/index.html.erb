@@ -1,16 +1,53 @@
-<p style="color: green"><%= notice %></p>
+<%= render "layouts/notice", notice: notice %>
 
-<% content_for :title, "Import matchers" %>
+<% content_for :title, "Import rules for #{@account.name}" %>
 
-<h1>Import matchers</h1>
+<h1>Import rules for <%= @account.name %></h1>
 
-<div id="import_matchers">
-  <% @import_matchers.each do |import_matcher| %>
-    <%= render import_matcher %>
-    <p>
-      <%= link_to "Show this import matcher", import_matcher %>
-    </p>
-  <% end %>
+<p>
+  When a statement is imported, each transaction is checked against these rules.  The first rule whose
+  description matches — and whose transaction type matches, if it names one — decides the transaction's
+  category and counterparty.  An exact description is tried before a pattern.
+</p>
+
+<div>
+  <%= link_to "Back to this account", account_path(@account) %>
 </div>
 
-<%= link_to "New import matcher", new_import_matcher_path %>
+<%= form_with url: account_import_matchers_path(@account), method: :get, local: true,
+              html: { class: "pure-form", style: "margin-top: 1rem" } do |form| %>
+  <%= form.search_field :q, value: params[:q], placeholder: "Filter by description",
+                        class: "pure-input-1-3" %>
+  <%= form.submit "Filter", class: "pure-button" %>
+  <%= link_to "Clear", account_import_matchers_path(@account), class: "pure-button" if params[:q].present? %>
+<% end %>
+
+<p><%= pluralize(@import_matchers.size, "rule") %><%= " matching #{params[:q].inspect}" if params[:q].present? %>.</p>
+
+<% if @import_matchers.any? %>
+  <%# The scrolling box the transaction list uses: an account can carry a few hundred rules. %>
+  <div class="transaction-scroll">
+    <div class="div-table">
+      <div class="div-table-header div-table-row">
+        <div class="div-table-col header-col">Description</div>
+        <div class="div-table-col header-col">Match</div>
+        <div class="div-table-col header-col">Type</div>
+        <div class="div-table-col header-col">Category</div>
+        <div class="div-table-col header-col">Counterparty</div>
+        <div class="div-table-col header-col">Matched</div>
+        <div class="div-table-col header-col">Actions</div>
+      </div>
+
+      <div class="div-table-body">
+        <% @import_matchers.each do |import_matcher| %>
+          <%= render "import_matchers/import_matcher", import_matcher: import_matcher,
+                     account: @account, match_count: @match_counts[import_matcher.id] || 0 %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<div style="margin-top: 1rem">
+  <%= link_to "New rule", new_account_import_matcher_path(@account), class: "pure-button" %>
+</div>

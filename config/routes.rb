@@ -5,11 +5,18 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :import_matchers
   resources :categories
+
+  # Counterparties.  A Counterparty is an Account, but not one of the household's, so it does not go
+  # through AccountsController: the shared form and detail partial are about sort codes and opening
+  # balances, none of which a counterparty has.
+  resources :counterparties
 
   resources :accounts do
     resources :transactions, only: [ :index, :new, :create, :edit, :update, :destroy ]
+    # Rules belong to an account, so nesting them is what keeps that from being a field you have to
+    # remember to set.
+    resources :import_matchers
   end
 
   resources :bank_accounts, controller: :accounts
