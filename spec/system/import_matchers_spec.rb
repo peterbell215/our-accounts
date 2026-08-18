@@ -4,10 +4,11 @@ RSpec.describe 'Import rules', type: :system do
   let(:account) { FactoryBot.create(:lloyds_account) }
   let!(:octopus) { FactoryBot.create(:octopus_energy) }
 
+  # Reached from beside the transaction list, since noticing a row is filed wrongly is what sends you here.
   it 'is reachable from the account it belongs to' do
     visit account_path(account)
 
-    click_link 'Import rules for this account'
+    click_link 'Manage Import Rules'
 
     expect(page).to have_content("Import rules for #{account.name}")
   end
