@@ -341,11 +341,27 @@ controller over an edit that has not been saved, so a flag held on the instance 
 the case that matters. The button keeps its space while hidden, so the delete button beside it does not
 move as the reader works down the list.
 
-**Four Stimulus controllers**, each small:
+**The menu bar is sticky, and owns the top of the stack.** It stays at the top of the window while the
+page scrolls under it, which is a layout property of every screen rather than anything a page arranges
+for itself, so it lives in the layout and one rule in `application.css`. Its `z-index` has to beat the
+transaction list's own sticky column headings, which pass underneath it; that is the only stacking
+relationship in the application, and it is why either number exists. The `nav` element also used to sit
+outside `<body>` — browsers moved it in silently, but a sticky element is better off where it says it is.
+
+**One date format, formatted on the server.** Every date the reader sees goes through the `short_date`
+helper and `Date::DATE_FORMATS[:short_date]`, and reads `1-Jan-23`. This reverses an earlier decision: a
+`dateinlocale` Stimulus controller used to emit dates as ISO-8601 in data attributes and rewrite them
+client-side in the browser's locale. Following the reader's locale sounds better than it read — the
+transaction list still printed `01/01/2023` server-side, the accounts index printed an ISO date, and the
+date navigation printed a third thing, so one screen showed the same date two ways. For a single-user
+application the owner's chosen format beats a locale that is always the same anyway, and the controller
+has gone. A date the reader can *edit* is still a native date field, which the browser draws in its own
+locale; that is the browser's business, not ours.
+
+**Three Stimulus controllers**, each small:
 
 | Controller | Job |
 | --- | --- |
-| `dateinlocale` | Reformats ISO-8601 dates in data attributes to the browser's locale |
 | `csv_analyzer` | Drag-and-drop of detected CSV columns into the definition form |
 | `transaction_row` | Offers a row's save button only once the row has an edit to save |
 | `account` | Shows/hides the sort-code field by account type |
@@ -380,9 +396,9 @@ It deliberately does not seed from the real statement files: those are gitignore
 would make the suite unrunnable on a fresh clone and in CI.
 
 System specs drive a real Chrome through Capybara. The browser locale is pinned to `en_GB` via the
-`LANGUAGE` environment variable, because the `dateinlocale` controller formats dates using the
-*browser's* locale — without pinning, the same spec passes in the UK and fails on a US-defaulted CI
-runner.
+`LANGUAGE` environment variable. Displayed dates no longer depend on it, but a date *field* is drawn by
+the browser in its own locale, and a spec filling one in types into whatever order that produces — day
+first in the UK, month first on a US-defaulted CI runner.
 
 CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system specs headless.
 

@@ -83,6 +83,12 @@ Four items in the navigation bar:
 The rules that categorise transactions are reached from the account they belong to, rather than from the
 navigation bar — see [Import rules](#import-rules) below.
 
+The menu bar stays at the top of the window wherever you have scrolled to, so moving to another screen
+never means scrolling back up first.
+
+Every date you are shown is written the same way throughout — `1-Jan-23`. The one exception is a date
+you can type into, which your browser draws in its own style.
+
 ### Accounts
 
 The landing page lists your accounts with their number, sort code, opening date and opening balance.
@@ -105,7 +111,7 @@ picked from a dropdown, say — is still there when you scroll back to it.
 To move somewhere further back, use the buttons above the list rather than scrolling for a long time:
 **« Month**, **« Week** and **« Day** step the list backwards, and **Day »**, **Week »** and **Month »**
 step it forwards again. The line to their right tells you where you are — *Showing transactions on or
-before 13/12/2024* — and once you have moved away from the present, a **jump to latest** link brings you
+before 13-Dec-24* — and once you have moved away from the present, a **jump to latest** link brings you
 straight back. Buttons that would take you past the beginning or end of the account are greyed out.
 
 You can edit a transaction's category straight from the list using the dropdown in its row. A save
@@ -398,10 +404,6 @@ leading or trailing spaces — a literal rule matches exactly, and the list mark
 **`db:seed` says it is not seeding anything**
 It cannot find the statement files in `db/`, or the credentials naming them are not set. It reports
 which file is missing.
-
-**Dates look wrong on the accounts list**
-The list shows raw dates like `2024-01-03` while the account page shows `3 January 2024`. A cosmetic
-inconsistency, not a data problem.
 
 ---
 

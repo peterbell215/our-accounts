@@ -21,7 +21,7 @@
         <td><%= account.name %></td>
         <td><%= account.account_number %></td>
         <td><%= account.sortcode %></td>
-        <td><%= account.opening_date.to_s %></td>
+        <td><%= short_date(account.opening_date) %></td>
         <td><%= humanized_money_with_symbol(account.opening_balance) %></td>
         <td><%= link_to "Show this account", account_path(account) %></td>
       </tr>

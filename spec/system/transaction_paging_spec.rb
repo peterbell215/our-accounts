@@ -193,22 +193,22 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
     end
 
     it 'starts at the most recent transaction' do
-      expect(page).to have_content("on or before 30/06/2024")
+      expect(page).to have_content("on or before 30-Jun-24")
     end
 
     it 'steps back a day' do
       click_link "« Day"
 
-      expect(page).to have_content("on or before 29/06/2024")
+      expect(page).to have_content("on or before 29-Jun-24")
       expect(rendered_payees.first).to eq("PAYEE 29")
     end
 
     it 'steps back a week, and forward again' do
       click_link "« Week"
-      expect(page).to have_content("on or before 23/06/2024")
+      expect(page).to have_content("on or before 23-Jun-24")
 
       click_link "Day »"
-      expect(page).to have_content("on or before 24/06/2024")
+      expect(page).to have_content("on or before 24-Jun-24")
     end
 
     it 'does not accumulate rows across a jump' do
@@ -222,7 +222,7 @@ RSpec.describe 'Paging through an account transaction list', type: :system do
       click_link "« Week"
       click_link "jump to latest"
 
-      expect(page).to have_content("on or before 30/06/2024")
+      expect(page).to have_content("on or before 30-Jun-24")
     end
 
     it 'disables the steps that would leave the account range' do

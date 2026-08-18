@@ -22,6 +22,6 @@ class TransactionPresenter
 
   # Add other formatting methods if required, e.g., formatted_date
   def formatted_date
-    transaction.date&.strftime("%d/%m/%Y")
+    view.short_date(transaction.date)
   end
 end

@@ -19,7 +19,7 @@
     <strong><%= humanized_money_with_symbol @total %></strong>.
   </p>
 
-  <table class="pure-table pure-table-striped" data-controller="dateinlocale">
+  <table class="pure-table pure-table-striped">
     <thead>
       <tr>
         <th>Date</th>
@@ -32,9 +32,7 @@
     <tbody>
       <% @transactions.each do |transaction| %>
         <tr id="<%= dom_id transaction %>">
-          <td data-date="<%= transaction.date.iso8601 %>" data-dateinlocale-target="date">
-            <%= transaction.date.strftime("%d/%m/%Y") %>
-          </td>
+          <td><%= short_date(transaction.date) %></td>
           <td><%= link_to transaction.account.name, account_path(transaction.account) %></td>
           <td><%= transaction.description %></td>
           <td><%= transaction.category&.name %></td>

@@ -83,7 +83,7 @@ RSpec.describe 'Maintaing a new account', type: :system do
     expect(page).to have_content('01234567')
     expect(page).to have_content('30-00-00')
     expect(page).to have_content('£1,000.00')
-    expect(page).to have_content('3 January 2023')
+    expect(page).to have_content('3-Jan-23')
   end
 
   it 'allows a user to edit a bank account' do
