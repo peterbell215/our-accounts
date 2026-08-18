@@ -23,26 +23,25 @@
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   </head>
 
-  <nav>
-    <div class="pure-menu pure-menu-horizontal">
-      <ul class="pure-menu-list">
-        <li class="pure-menu-item">
-          <%= link_to 'Accounts', accounts_path, class: "pure-menu-link" %>
-        </li>
-        <li class="pure-menu-item">
-          <%= link_to 'Categories', categories_path, class: "pure-menu-link" %>
-        </li>
-        <li class="pure-menu-item">
-          <%= link_to 'Input Columns Definition', import_columns_definitions_path, class: "pure-menu-link" %>
-        </li>
-        <li class="pure-menu-item">
-          <%= link_to 'Import Matcher', import_matchers_path, class: "pure-menu-link" %>
-        </li>
-      </ul>
-    </div>
-  </nav>
-
   <body>
+    <nav>
+      <div class="pure-menu pure-menu-horizontal">
+        <ul class="pure-menu-list">
+          <li class="pure-menu-item">
+            <%= link_to 'Accounts', accounts_path, class: "pure-menu-link" %>
+          </li>
+          <li class="pure-menu-item">
+            <%= link_to 'Categories', categories_path, class: "pure-menu-link" %>
+          </li>
+          <li class="pure-menu-item">
+            <%= link_to 'Input Columns Definition', import_columns_definitions_path, class: "pure-menu-link" %>
+          </li>
+          <li class="pure-menu-item">
+            <%= link_to 'Import Matcher', import_matchers_path, class: "pure-menu-link" %>
+          </li>
+        </ul>
+      </div>
+    </nav>
     <div class="container">
       <%= yield %>
     </div>

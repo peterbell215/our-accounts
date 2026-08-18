@@ -270,6 +270,13 @@ controller over an edit that has not been saved, so a flag held on the instance 
 the case that matters. The button keeps its space while hidden, so the delete button beside it does not
 move as the reader works down the list.
 
+**The menu bar is sticky, and owns the top of the stack.** It stays at the top of the window while the
+page scrolls under it, which is a layout property of every screen rather than anything a page arranges
+for itself, so it lives in the layout and one rule in `application.css`. Its `z-index` has to beat the
+transaction list's own sticky column headings, which pass underneath it; that is the only stacking
+relationship in the application, and it is why either number exists. The `nav` element also used to sit
+outside `<body>` — browsers moved it in silently, but a sticky element is better off where it says it is.
+
 **One date format, formatted on the server.** Every date the reader sees goes through the `short_date`
 helper and `Date::DATE_FORMATS[:short_date]`, and reads `1-Jan-23`. This reverses an earlier decision: a
 `dateinlocale` Stimulus controller used to emit dates as ISO-8601 in data attributes and rewrite them

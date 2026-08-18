@@ -88,6 +88,9 @@ until it is fixed.
 
 Everything else — Accounts, Categories, Input Columns Definitions — works normally.
 
+The menu bar stays at the top of the window wherever you have scrolled to, so moving to another screen
+never means scrolling back up first.
+
 Every date you are shown is written the same way throughout — `1-Jan-23`. The one exception is a date
 you can type into, which your browser draws in its own style.
 

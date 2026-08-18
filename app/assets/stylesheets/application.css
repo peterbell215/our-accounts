@@ -14,7 +14,14 @@
 @import url("rails-messages.css");
 @import url("div-tables.css");
 
+/* The menu stays put at the top of the window while the page scrolls under it, so moving between
+   screens never means scrolling back up first. It sits above the transaction list's own sticky column
+   headings, which pass underneath it. */
 nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
     .pure-menu {
         background-color: #333; /* Dark background color */
     }
