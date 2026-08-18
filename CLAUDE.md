@@ -308,8 +308,20 @@ stay native, so the browser draws them in its own locale.
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
 - The analysis file (form A) is the only import with a runnable entry point. **Form B has no UI or
   route** — see above.
-- There is **no way to merge two counterparties**, which is what the raw statement-text names most want.
-  Renaming one and deleting the other leaves the other's transactions to be re-pointed by hand.
+- **Merging counterparties is `CounterpartyMerge`**, driven from the counterparties list. Two orderings in
+  it are load-bearing and both fail silently if reversed: re-point `counterparty_id` on transactions and
+  rules *before* destroying the losers, because `Account#counterparty_transactions` and
+  `#counterparty_matchers` are `dependent: :nullify`; and rename the survivor *after*, because the wanted
+  name is usually held by a member of the set and `Account` validates name uniqueness across the whole STI
+  table. Specs cover both, confirmed to fail when the order is inverted.
+- **Nothing suggests which counterparties to merge.** Of four grouping heuristics measured against the real
+  names, only stripping digits and punctuation is safe (9 groups, no category conflicts); first-word and
+  short-prefix grouping mix categories in roughly half their groups, file unrelated pubs under `THE`, and
+  treat `LNK`, `SQ *` and `PAYPAL` as payees when they are payment rails. Deliberately left manual.
+- **`AnalysisImporter` can resurrect a merged-away counterparty.** `counterparty_for` looks one up by name
+  and creates it when absent, so re-running the analysis import recreates a name that was merged away, for
+  any description that does not already have a rule. The guard skipping descriptions the account already
+  has a rule for is what limits it. Fixing it properly needs an "absorbed into" pointer and a schema change.
 - A rule cannot be created **from** a transaction you are looking at — its description has to be retyped
   on the rules screen.
 - `TransactionPresenter` is now **entirely unreferenced**. It was instantiated once in

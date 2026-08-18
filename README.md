@@ -165,6 +165,27 @@ leave you guessing which of `TESCO` and `Tesco` a transaction had been linked to
 
 Deleting a counterparty keeps its transactions; they simply stop naming anyone.
 
+#### Merging duplicates
+
+One payee usually arrives under several names, because the bank cuts its description short: `TESCO STORES
+2228` and `TESCO STORES 2889` are one shop, and eleven separate `AMAZON*` entries are one Amazon. Tick them
+and press **Merge selected**.
+
+You then get a confirmation listing each one with its transactions, its total, and the categories its rules
+assign, and a box for what to call the result. **The name can be anything** — it does not have to be one of
+the names listed. That is how five `LNK ...` cash-machine entries become a single counterparty called
+`ATM`.
+
+Nothing is lost. Every transaction and every rule moves to the merged counterparty; only the spare names
+go, and **no category changes** — each rule keeps the one it had.
+
+Read the categories column before you confirm. It is the best clue that a group is *not* one payee: if some
+say Food and others Car, you are probably looking at `TESCO STORES` and `TESCO PAY AT PUMP`, which are the
+supermarket and the petrol station and should stay apart. The screen warns you when they disagree, but lets
+you go ahead — a gym that also runs a café really is one payee under two categories.
+
+Merging cannot be undone, which is why the confirmation shows exactly what is about to move.
+
 ### Import rules
 
 These are what categorise a transaction automatically, and they belong to a particular account — a rule
@@ -422,12 +443,11 @@ Being honest about the gaps, in the order they matter:
 2. **No analysis or prediction.** No charts, no totals by category or by month, no forecasting — which
    is awkward, because that was the point of the application. Everything needed to build it is in place:
    transactions are loaded, categorised and reconciled.
-3. **No way to merge two counterparties.** If the same supplier arrived under two descriptions, you get
-   two counterparties, and the only way to unite them is to rename one, delete the other, and re-point its
-   transactions by hand.
-4. **A rule cannot be created from a transaction you are looking at.** Having spotted an uncategorised
+3. **A rule cannot be created from a transaction you are looking at.** Having spotted an uncategorised
    row, you have to go to the rules screen and retype its description rather than saying "make a rule from
    this".
+4. **Nothing suggests which counterparties to merge.** You find the duplicates yourself; alphabetical order
+   brings most of them together, but the tool does not propose groups.
 
 How well the automatic categorisation does depends on how much hand analysis you feed it. Against a
 year of real statements with one quarter analysed by hand, roughly two thirds of transactions were
