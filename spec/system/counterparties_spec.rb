@@ -66,20 +66,51 @@ RSpec.describe 'Counterparties', type: :system do
     expect(page).to have_content('OCTOPUS ENERGY')
   end
 
-  it 'orders the list so the vendors most is spent with come first' do
-    small = FactoryBot.create(:counterparty, name: 'Corner Shop')
-    large = FactoryBot.create(:counterparty, name: 'Big Supermarket')
-    account = FactoryBot.create(:lloyds_account)
+  describe 'ordering the list' do
+    # Named so that alphabetical order and spend order disagree.
+    let!(:small) { FactoryBot.create(:counterparty, name: 'Anvil Works') }
+    let!(:large) { FactoryBot.create(:counterparty, name: 'Zebra Supplies') }
+    let(:account) { FactoryBot.create(:lloyds_account) }
 
-    FactoryBot.create(:tesco_shop, account: account, counterparty: small, date: Date.new(2024, 7, 1),
-                                   amount: Money.from_amount(-5.00))
-    FactoryBot.create(:tesco_shop, account: account, counterparty: large, date: Date.new(2024, 7, 2),
-                                   amount: Money.from_amount(-500.00))
+    before do
+      FactoryBot.create(:tesco_shop, account: account, counterparty: small, date: Date.new(2024, 7, 1),
+                                     amount: Money.from_amount(-5.00))
+      FactoryBot.create(:tesco_shop, account: account, counterparty: large, date: Date.new(2024, 7, 2),
+                                     amount: Money.from_amount(-500.00))
+      visit counterparties_path
+    end
 
-    visit counterparties_path
+    # Reading every cell would snapshot the old rows and go stale the moment a click reloads the page, so
+    # wait for the row that should now be first before comparing the whole order.
+    def expect_order(expected)
+      expect(page).to have_selector('#counterparties tbody tr:first-child td:first-child',
+                                    text: expected.first)
+      expect(page.all('#counterparties tbody tr td:first-child').map(&:text)).to eq(expected)
+    end
 
-    names = page.all('#counterparties tbody tr td:first-child').map(&:text)
-    expect(names).to eq([ 'Big Supermarket', 'Corner Shop' ])
+    it 'is alphabetical to begin with, so a name can be found' do
+      expect_order([ 'Anvil Works', 'Zebra Supplies' ])
+    end
+
+    it 'reverses when the same heading is clicked again' do
+      click_link 'Name'
+
+      expect_order([ 'Zebra Supplies', 'Anvil Works' ])
+    end
+
+    it 'puts the vendors most is spent with first when ordered by total' do
+      click_link 'Total'
+
+      expect_order([ 'Zebra Supplies', 'Anvil Works' ])
+    end
+
+    it 'marks which column the order is on' do
+      expect(page).to have_link('Name ▲')
+
+      click_link 'Name ▲'
+
+      expect(page).to have_link('Name ▼')
+    end
   end
 
   it 'keeps the transactions when a counterparty is deleted' do

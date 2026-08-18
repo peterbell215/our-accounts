@@ -5,17 +5,18 @@
 <h1>Counterparties</h1>
 
 <p>
-  The suppliers and vendors behind your transactions, the ones you spend most with first.  Names taken from
-  a statement import are raw statement text — rename them here to something you would recognise.
+  The suppliers and vendors behind your transactions.  Names taken from a statement import are raw statement
+  text — rename them here to something you would recognise.  Click a column heading to reorder the list;
+  <strong>Total</strong> puts the ones you spend most with first, which is where renaming is worth the effort.
 </p>
 
 <table id="counterparties" class="pure-table pure-table-striped">
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Transactions</th>
-      <th>Total</th>
-      <th>Rules</th>
+      <th><%= counterparty_sort_link "name", "Name" %></th>
+      <th><%= counterparty_sort_link "transactions", "Transactions" %></th>
+      <th><%= counterparty_sort_link "total", "Total" %></th>
+      <th><%= counterparty_sort_link "rules", "Rules" %></th>
       <th>Actions</th>
     </tr>
   </thead>

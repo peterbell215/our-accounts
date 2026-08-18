@@ -7,17 +7,28 @@
 class CounterpartiesController < ApplicationController
   before_action :set_counterparty, only: %i[ show edit update destroy ]
 
+  # The columns the list can be ordered by.  Whitelisted because the value arrives as a query parameter,
+  # and because only these four have a meaning to sort on.
+  SORTS = %w[ name transactions total rules ].freeze
+
+  # Alphabetical by default: with a few hundred counterparties, finding the one you meant is the common
+  # errand.  Ordering by total is a click away, and is what shows which raw statement names are worth
+  # renaming first.
+  DEFAULT_SORT = "name".freeze
+
   # GET /counterparties or /counterparties.json
   #
-  # Ordered by what has been spent with each, since that is what decides whether a vendor is worth naming
-  # properly.  Grouped queries rather than a count per row: the analysis import left a few hundred of these.
+  # Grouped queries rather than a count per row: the analysis import left a few hundred of these.
   def index
     @counts = Transaction.group(:counterparty_id).count
     @totals = Transaction.group(:counterparty_id).sum(:amount_pence)
     @rule_counts = ImportMatcher.group(:counterparty_id).count
 
-    # Spending is negative, so the smallest total is the largest spend.
-    @counterparties = Counterparty.all.sort_by { |counterparty| [ @totals[counterparty.id] || 0, counterparty.name ] }
+    @sort = SORTS.include?(params[:sort]) ? params[:sort] : DEFAULT_SORT
+    @direction = params[:direction] == "desc" ? "desc" : "asc"
+
+    @counterparties = Counterparty.all.sort_by { |counterparty| sort_key(counterparty) }
+    @counterparties.reverse! if @direction == "desc"
   end
 
   # GET /counterparties/1 or /counterparties/1.json
@@ -85,6 +96,21 @@ class CounterpartiesController < ApplicationController
   end
 
   private
+    # Sorted in Ruby rather than SQL because the counts and totals are grouped queries rather than columns
+    # on accounts.  A few hundred rows makes that free.  Name is the tiebreaker throughout, so that equal
+    # counts — and there are many rules with exactly one — come out in a stable, readable order.
+    def sort_key(counterparty)
+      name = counterparty.name.downcase
+
+      case @sort
+      when "transactions" then [ @counts[counterparty.id] || 0, name ]
+      # Spending is negative, so ascending by total puts the largest spend first.
+      when "total"        then [ @totals[counterparty.id] || 0, name ]
+      when "rules"        then [ @rule_counts[counterparty.id] || 0, name ]
+      else                     [ name ]
+      end
+    end
+
     def set_counterparty
       @counterparty = Counterparty.find(params.expect(:id))
     end

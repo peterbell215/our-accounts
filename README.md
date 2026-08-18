@@ -140,10 +140,13 @@ the current account and the credit card you sometimes paid them with show up on 
 Not every transaction has one. A one-off purchase, or a description too cryptic to identify, simply has no
 counterparty, and that is expected rather than a gap to fill.
 
-The list is ordered by how much you have spent with each, largest first, and shows how many transactions
-and how many rules point at it. That ordering is the useful part: counterparties created by the analysis
-step are named after **raw statement text** — `TESCO STORES 2889` rather than `Tesco` — and the ones worth
-renaming are the ones at the top. Renaming is the main thing you will do here.
+The list shows how many transactions each has and how much you have spent with it, and starts in
+alphabetical order so you can find the one you meant. Click any column heading to reorder it, and again to
+reverse it.
+
+**Total** is the ordering worth knowing about. Counterparties created by the analysis step are named after
+**raw statement text** — `TESCO STORES 2889` rather than `Tesco` — and sorting by total brings the ones
+where renaming actually pays off to the top. Renaming is the main thing you will do here.
 
 Deleting a counterparty keeps its transactions; they simply stop naming anyone.
 

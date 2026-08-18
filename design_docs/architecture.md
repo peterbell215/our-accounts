@@ -147,7 +147,7 @@ distinct transaction description. Three judgement calls are baked in:
 - **A counterparty is derived where one can be named.** The statement only gives us the description, so
   that is what the `Counterparty` is named after, trimmed to the fifty characters `Account` permits.
   Those names are therefore raw statement text — `TESCO STORES 2889` rather than `Tesco` — which is why the
-  counterparties screen orders by total spend: the ones worth renaming are the ones at the top. Where the
+  counterparties screen can be ordered by total spend, which brings the ones worth renaming to the top. Where the
   description is too short to be a name at all (`O2`), the rule is still created with no counterparty and
   the description is reported. `ImportMatcher.counterparty_id` was `NOT NULL` until that changed, which is
   the only reason such a rule used to be discarded — its category was never in doubt.
@@ -242,6 +242,14 @@ another element with the same id.
 
 That row's validation error is shown as a red border and a `title` on the input, not as a message beneath it,
 because of the row-height assumption recorded below.
+
+**The counterparties list sorts in Ruby, not SQL.** Two of its four columns — the transaction count and the
+total — are grouped queries rather than columns on `accounts`, so there is nothing to `ORDER BY`; sorting a
+few hundred rows in memory costs nothing and keeps one code path for all four columns. The column is
+whitelisted rather than interpolated, since it arrives as a query parameter, and name is the tiebreaker
+throughout so that the many counterparties sharing a count still come out in a readable order. It defaults to
+name because finding a particular one is the common errand; ordering by total, which is what shows where
+renaming pays off, is one click away.
 
 **Turbo Streams for transactions.** `TransactionsController` renders Turbo Stream responses exclusively
 for index/new/create/update/destroy, all targeting one partial, `transactions/_transaction_as_row`. New

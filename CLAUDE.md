@@ -158,8 +158,8 @@ unset so a rule is not tied to one transaction type. Two judgement calls are wor
 description filed under several categories takes the **most frequent**, and an outright **tie is skipped**
 rather than guessed at; and each rule gets a `Counterparty` named after its description, trimmed to the
 50 characters `Account` allows. Those counterparty names are therefore raw statement text
-("TESCO STORES 2889"), not tidy payee names — the counterparties screen orders by total spend so the ones
-worth renaming come first. `ImportMatcher.counterparty_id` is nullable, so a description too short to be a
+("TESCO STORES 2889"), not tidy payee names — the counterparties screen sorts by name by default and can be
+reordered by total spend, which is what brings the ones worth renaming to the top. `ImportMatcher.counterparty_id` is nullable, so a description too short to be a
 name (`O2`) still gets its rule, reported through `counterparties_unnamed`. Skipped rows are reported, not
 silently dropped, and the whole thing is idempotent.
 

@@ -22,6 +22,56 @@ RSpec.describe "Counterparties", type: :request do
 
       expect(response.body).not_to include("Lloyds Account")
     end
+
+    describe "ordering" do
+      let(:lloyds) { create(:lloyds_account) }
+
+      # Named so that alphabetical order and spend order disagree, or the two cannot be told apart.
+      let!(:big) { create(:counterparty, name: "Zebra Supplies") }
+      let!(:small) { create(:counterparty, name: "Anvil Works") }
+
+      before do
+        create(:tesco_shop, account: lloyds, counterparty: big, date: Date.new(2024, 7, 1),
+                            amount: Money.from_amount(-900.00))
+        create(:tesco_shop, account: lloyds, counterparty: small, date: Date.new(2024, 7, 2),
+                            amount: Money.from_amount(-1.00))
+      end
+
+      def listed_names
+        response.body.scan(/Anvil Works|Zebra Supplies/)
+      end
+
+      it "is alphabetical by default" do
+        get counterparties_path
+
+        expect(listed_names).to eq([ "Anvil Works", "Zebra Supplies" ])
+      end
+
+      it "reverses on the same column" do
+        get counterparties_path(sort: "name", direction: "desc")
+
+        expect(listed_names).to eq([ "Zebra Supplies", "Anvil Works" ])
+      end
+
+      it "puts the largest spend first when ordered by total" do
+        get counterparties_path(sort: "total")
+
+        expect(listed_names).to eq([ "Zebra Supplies", "Anvil Works" ])
+      end
+
+      it "falls back to name for a column it does not know" do
+        get counterparties_path(sort: "opening_balance_pence")
+
+        expect(response).to have_http_status(:ok)
+        expect(listed_names).to eq([ "Anvil Works", "Zebra Supplies" ])
+      end
+
+      it "treats an unknown direction as ascending" do
+        get counterparties_path(sort: "name", direction: "sideways")
+
+        expect(listed_names).to eq([ "Anvil Works", "Zebra Supplies" ])
+      end
+    end
   end
 
   describe "GET /counterparties/:id" do
