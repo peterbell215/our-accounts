@@ -135,6 +135,10 @@ stray spaces do not matter — `octopus energy` finds `Octopus Energy`.
 A flat list of names with optional descriptions — "Groceries", "Utilities", "Dine Out". Categories are
 shared across all accounts. You can add, rename and delete them freely.
 
+The list is alphabetical by name to begin with. Click either column heading to reorder it, and the same
+heading again to reverse it; an arrow marks which column the order is on. Sorting by description brings
+the ones you have not described yet together.
+
 Most of your categories will be created for you the first time you load a hand-categorised statement,
 so it is usually easier to do that first and tidy the list afterwards than to type them all in.
 

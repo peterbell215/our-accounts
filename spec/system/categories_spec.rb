@@ -72,4 +72,64 @@ RSpec.describe 'Categories', type: :system do
     expect(category.name).to eq('Updated Category')
     expect(category.description).to eq('Updated description.')
   end
+  describe 'ordering the list' do
+    # The suite creates Shopping, Travel and Utilities before it runs, and they have no description, so
+    # these two are named to bracket them alphabetically and given descriptions that sort the other way.
+    before do
+      Category.create!(name: 'zebra', description: 'Aardvark related')
+      Category.create!(name: 'Anvil', description: 'Zoological')
+      visit categories_path
+    end
+
+    def names
+      page.all('#categories tbody tr td:first-child').map(&:text)
+    end
+
+    # Reading every cell would snapshot the old rows and go stale the moment a click reloads the page, so
+    # wait for the row that should now be first before comparing the whole order.
+    def expect_first(name)
+      expect(page).to have_selector('#categories tbody tr:first-child td:first-child', text: name)
+    end
+
+    it 'is alphabetical to begin with, whatever case the names are in' do
+      expect(names).to eq([ 'Anvil', 'Shopping', 'Travel', 'Utilities', 'zebra' ])
+    end
+
+    it 'reverses when the same heading is clicked again' do
+      click_link 'Name'
+      expect_first('zebra')
+
+      expect(names).to eq([ 'zebra', 'Utilities', 'Travel', 'Shopping', 'Anvil' ])
+    end
+
+    # Where the categories with no description land is SQLite's business; what matters is that the two
+    # that have one come out in their order.
+    it 'orders by description when that heading is clicked' do
+      click_link 'Description'
+      expect(page).to have_link('Description ▲')
+
+      expect(names.index('zebra')).to be < names.index('Anvil')
+
+      click_link 'Description ▲'
+      expect(page).to have_link('Description ▼')
+
+      expect(names.index('Anvil')).to be < names.index('zebra')
+    end
+
+    it 'marks which column the order is on' do
+      expect(page).to have_link('Name ▲')
+
+      click_link 'Name ▲'
+
+      expect(page).to have_link('Name ▼')
+    end
+
+    # The column name is interpolated into the ORDER BY, so anything but the two it knows is ignored.
+    it 'ignores a column it does not offer' do
+      visit categories_path(sort: 'id')
+
+      expect(page).to have_link('Name ▲')
+      expect(names).to eq([ 'Anvil', 'Shopping', 'Travel', 'Utilities', 'zebra' ])
+    end
+  end
 end
