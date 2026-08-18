@@ -75,6 +75,25 @@ encrypted credentials under `seed_data` (`bin/rails credentials:edit`), so seedi
 `config/master.key` and the statement files, both gitignored. Where any of that is absent it reports why
 and does nothing, rather than failing, so a deploy does not fall over before the statements are in place.
 
+### Worktrees do the work; merging happens in the main checkout
+
+One topic per worktree, one session per worktree. **A session in a worktree finishes at the pull request:**
+write the code, run the suite and RuboCop, keep the docs in step, commit, push the branch, open the PR.
+Then stop, and say so — do not offer to merge it, and do not merge it if the PR turns out to be mergeable.
+
+Merging is done from a session running in the main checkout, which is also where `main` is pulled, where
+merged branches are deleted, and where anything touching the shared development database belongs. To tell
+which kind of session this is:
+
+```sh
+test "$(git rev-parse --git-dir)" = "$(git rev-parse --git-common-dir)" && echo main checkout || echo worktree
+```
+
+The reason is that several worktrees are usually in flight at once. A worktree only knows its own branch,
+so merging from one lands a change while the session holding the next one is unaware `main` has moved —
+and rebasing, conflict resolution and CI all read more clearly from the checkout that owns `main`. Any
+review of a branch (`/code-review`) is welcome from either kind of session; acting on `main` is not.
+
 ### Setting up a new worktree
 
 `config/master.key` and `db/*.csv` are gitignored, so a new worktree has neither, and `db:seed` will
