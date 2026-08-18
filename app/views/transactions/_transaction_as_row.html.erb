@@ -4,25 +4,20 @@
               url: url, # Explicitly set the URL
               id: dom_id(transaction, transaction.persisted? ? nil : 'new'),
               html: { class: "div-table-row transaction-row" },
-              data: { controller: "dateinlocale transaction-row",
+              data: { controller: "transaction-row",
                       action: "input->transaction-row#refresh change->transaction-row#refresh",
                       transaction_row_unsaved_value: !transaction.persisted?,
                       transaction_id: transaction.id} do |f| %>
 
   <% transaction_presenter = TransactionPresenter.new(transaction, self, @categories, @account) %>
 
-  <%# Date Column - Use date_field %>
-  <div class="div-table-col" data-date="<%= transaction.date&.iso8601 || Date.current.iso8601 %>" data-dateinlocale-target="date">
+  <%# Date Column - a date the reader can still edit needs the browser's own date field %>
+  <div class="div-table-col">
     <% if transaction.persisted? %>
-      <%# Display formatted date if persisted %>
-      <span><%= transaction.date.strftime("%d/%m/%Y") %></span>
+      <span><%= short_date(transaction.date) %></span>
     <% else %>
-      <%= f.date_field :date, value: (transaction.date || Date.current).strftime("%Y-%m-%d"), class: "pure-input-1" %>
+      <%= f.date_field :date, value: (transaction.date || Date.current).iso8601, class: "pure-input-1" %>
     <% end %>
-
-    <%# Display formatted date if persisted, maybe handled by dateinlocale or add logic here %>
-    <%# Example: <%#= transaction.persisted? ? transaction.date.strftime("%d/%m/%Y") : f.date_field(...) %>
-    <%# For simplicity, always show the field for now, dateinlocale can format display %>
   </div>
 
   <%# Description Column - Conditional display %>

@@ -221,8 +221,9 @@ targeting the `transactions/_transaction_as_row` partial. New rows are inserted 
 `dom_id(@transaction, "new")`. Keep those DOM ids in sync with `app/views/accounts/show.html.erb`.
 
 Transaction rows are rendered as CSS div-tables (`app/assets/stylesheets/div-tables.css`), not `<table>`.
-Dates are emitted as ISO-8601 in data attributes and reformatted client-side to the browser locale by the
-`dateinlocale` Stimulus controller.
+Every date the reader sees is formatted on the server by the `short_date` helper, as `1-Jan-23`
+(`config/initializers/date_formats.rb`) — use it rather than adding another `strftime`. Date *fields*
+stay native, so the browser draws them in its own locale.
 
 ## Testing conventions
 

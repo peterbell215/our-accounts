@@ -57,9 +57,10 @@ REQUIRED_CATEGORIES = [ "Shopping", "Travel", "Utilities" ].freeze
 
 # Capybara configuration.
 #
-# The locale has to be pinned. The dateinlocale Stimulus controller deliberately formats dates using the
-# *browser's* locale, so specs asserting on a rendered date otherwise depend on where they run: a UK
-# machine renders "3 January 2023" while a GitHub runner defaults to en-US and renders "January 3, 2023".
+# The locale has to be pinned. Dates the reader only looks at are formatted on the server and read the
+# same everywhere, but a date *field* is drawn by the browser in its own locale, and a spec filling one
+# in types into whatever order that produces: day first on a UK machine, month first on a GitHub runner,
+# which defaults to en-US.
 #
 # Chrome is visible locally, where watching a failing system spec is useful, and headless in CI where
 # there is no display.

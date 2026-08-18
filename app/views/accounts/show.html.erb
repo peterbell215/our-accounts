@@ -38,7 +38,7 @@
 
       <%# Body Rows.  Only the first page is rendered here; the transactions_list controller fetches
           further pages, keeps them in memory, and renders whichever window is in view. %>
-      <div id="transactions_div_body" class="div-table-body" data-controller="dateinlocale">
+      <div id="transactions_div_body" class="div-table-body">
         <% @page.transactions.each do |transaction| %>
           <%= render "transactions/transaction_as_row", transaction: transaction, categories: @categories, account: @account %>
         <% end %>

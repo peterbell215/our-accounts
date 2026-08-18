@@ -13,7 +13,7 @@
 
   <div class="transaction-nav-position">
     <% if page.anchor %>
-      Showing transactions on or before <strong><%= page.anchor.strftime("%d/%m/%Y") %></strong>
+      Showing transactions on or before <strong><%= short_date(page.anchor) %></strong>
       <% unless page.at_latest? %>
         &mdash; <%= link_to "jump to latest", account_path(account) %>
       <% end %>
