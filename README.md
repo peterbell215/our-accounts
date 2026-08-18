@@ -165,7 +165,9 @@ Deleting a counterparty keeps its transactions; they simply stop naming anyone.
 
 These are what categorise a transaction automatically, and they belong to a particular account — a rule
 learned from your current account should not be applied to a credit card whose statements read differently.
-So they live under the account: open an account and follow **Import rules for this account**.
+So they live under the account: open an account and press **Manage Import Rules**, beside
+**Add New Transaction** above the transaction list — which is where you will be standing when you
+notice a transaction has been filed wrongly.
 
 Each rule says: when a transaction's description looks like *this*, give it *this* category and *this*
 counterparty.
