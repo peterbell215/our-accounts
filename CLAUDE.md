@@ -275,10 +275,12 @@ stay native, so the browser draws them in its own locale.
 
 ### Show screens share one strip of actions
 
-Every `show.html.erb` calls `show_actions` (`ApplicationHelper`, rendering `layouts/_show_actions`), which
-draws **Back**, **Edit** and **Destroy** above the record's data, with any model-specific buttons passed as
-a block and rendered between Edit and Destroy. A new Show screen uses it rather than writing its own links;
-the labels are those three words on every screen, so a spec can `click_button 'Destroy'` anywhere.
+Every `show.html.erb` is `content_for :title`, then an `<h1>`, then `show_actions` (`ApplicationHelper`,
+rendering `layouts/_show_actions`), then the record — the same opening as every index, new and edit screen.
+`show_actions` draws **Back**, **Edit** and **Destroy**, with any model-specific buttons passed as a block
+and rendered between Edit and Destroy. A new Show screen uses it rather than writing its own links; the
+labels are those three words on every screen, so a spec can `click_button 'Destroy'` anywhere. The heading
+names the record, so the record partials do not repeat it as a `Name:` field.
 
 The confirmation text is the screen's own argument, because what a delete costs differs — an account takes
 its transactions with it, a counterparty leaves them behind. Actions belonging to a *list* further down the

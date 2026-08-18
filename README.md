@@ -87,10 +87,14 @@ The menu bar stays at the top of the window wherever you have scrolled to, so mo
 never means scrolling back up first.
 
 Whatever you are looking at — an account, a category, a counterparty, a rule, a column layout — the page
-for one record starts with the same three buttons, above the record itself: **Back** to the list you came
-from, **Edit** it, and **Destroy** it. Anything particular to that kind of record sits alongside them.
-**Destroy** is kept apart at the right-hand end, coloured red, and always asks first, telling you what
-goes with the record and what is kept.
+for one record reads the same way. It names what you are looking at as its heading, and under that come
+the same three buttons, above the record's own details: **Back** to the list you came from, **Edit** it,
+and **Destroy** it. Anything particular to that kind of record sits alongside them. **Destroy** is kept
+apart at the right-hand end, coloured red, and always asks first, telling you what goes with the record
+and what is kept.
+
+Because the heading already names the record, its details do not repeat it: an account's page is headed
+*Lloyds Account* and lists the number, sort code and opening figures beneath.
 
 Every date you are shown is written the same way throughout — `1-Jan-23`. The one exception is a date
 you can type into, which your browser draws in its own style.
@@ -98,8 +102,8 @@ you can type into, which your browser draws in its own style.
 ### Accounts
 
 The landing page lists your accounts with their number, sort code, opening date and opening balance.
-**Show this account** opens the account, where you get its buttons and details at the top and the
-transactions below, newest first: date, description, category, counterparty, amount, and the running balance after
+**Show this account** opens the account, headed by its name, with its buttons and details at the top and
+the transactions below, newest first: date, description, category, counterparty, amount, and the running balance after
 that transaction. Money out is red, money in is green.
 
 The details at the top spread across the width of the window — three to a line on a wide screen, so an

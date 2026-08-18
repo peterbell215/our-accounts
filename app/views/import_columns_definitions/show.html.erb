@@ -1,5 +1,9 @@
 <%= render "layouts/notice", notice: notice %>
 
+<% content_for :title, "Import columns for #{@import_columns_definition.account.name}" %>
+
+<h1>Import columns for <%= @import_columns_definition.account.name %></h1>
+
 <%= show_actions back: import_columns_definitions_path,
                  edit: edit_import_columns_definition_path(@import_columns_definition),
                  destroy: import_columns_definition_path(@import_columns_definition),

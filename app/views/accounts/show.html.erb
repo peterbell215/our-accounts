@@ -1,5 +1,9 @@
 <%= render "layouts/notice", notice: notice %>
 
+<% content_for :title, @account.name %>
+
+<h1><%= @account.name %></h1>
+
 <%= show_actions back: accounts_path, edit: edit_account_path(@account), destroy: account_path(@account),
                  confirm: "Destroy #{@account.name}? Its transactions, rules and import columns definition go with it." do %>
   <%= link_to "Manage Import Rules", account_import_matchers_path(@account), class: "pure-button" %>

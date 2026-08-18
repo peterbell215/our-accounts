@@ -1,8 +1,8 @@
 <%= render "layouts/notice", notice: notice %>
 
-<%# The partial is the name as a heading, so the actions sit under it and above the data, as on every
-    other Show screen. %>
-<%= render @counterparty %>
+<% content_for :title, @counterparty.name %>
+
+<h1><%= @counterparty.name %></h1>
 
 <%= show_actions back: counterparties_path, edit: edit_counterparty_path(@counterparty),
                  destroy: counterparty_path(@counterparty),

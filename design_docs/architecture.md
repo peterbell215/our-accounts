@@ -305,6 +305,16 @@ This is also why `.pure-button-error` is defined in `application.css`. Pure ship
 variant, so the delete buttons throughout the app — the transaction rows, the rules list, and now Destroy
 — had been asking for a class that did not exist and rendering as ordinary grey buttons.
 
+**A Show screen names itself, and its data does not name it again.** Index, new and edit screens all
+carried an `<h1>` and a `content_for :title`; three of the five Show screens carried neither, so the strip
+of actions was the first thing on the page and the record was identified only by a `Name:` field in the
+middle of its own details. Each now leads with a heading — the record's name, or *Import columns for
+&lt;account&gt;* where the record has no name of its own — and the `Name:` row has gone from the account,
+category and column-layout partials, which is also what removed the column layout's misleading one: it
+held the *account's* name under a label suggesting the definition had one. `counterparties/_counterparty`
+was nothing but that heading, so it is gone and the heading is in the view, where every other screen keeps
+it.
+
 **Turbo Streams for transactions.** `TransactionsController` renders Turbo Stream responses exclusively
 for index/new/create/update/destroy, all targeting one partial, `transactions/_transaction_as_row`. New
 rows are inserted with `turbo_stream.before("end-of-table-marker", ...)`, and unsaved rows are addressed

@@ -1,5 +1,9 @@
 <%= render "layouts/notice", notice: notice %>
 
+<% content_for :title, @category.name %>
+
+<h1><%= @category.name %></h1>
+
 <%= show_actions back: categories_path, edit: edit_category_path(@category), destroy: category_path(@category),
                  confirm: "Destroy the category #{@category.name}?" %>
 
