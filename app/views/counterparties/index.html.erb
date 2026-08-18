@@ -10,9 +10,18 @@
   <strong>Total</strong> puts the ones you spend most with first, which is where renaming is worth the effort.
 </p>
 
+<p>
+  One payee often arrives under several names, because the bank truncates its description: `TESCO STORES 2228`
+  and `TESCO STORES 2889` are one shop.  Tick them and press <strong>Merge selected</strong> to fold them
+  into one.
+</p>
+
+<%# A GET form: it navigates to the confirmation carrying the ticked ids, and changes nothing on the way. %>
+<%= form_with url: new_counterparty_merge_path, method: :get, local: true do %>
 <table id="counterparties" class="pure-table pure-table-striped">
   <thead>
     <tr>
+      <th><span title="Tick two or more to merge them">Merge</span></th>
       <th><%= sort_link "name", "Name" %></th>
       <th><%= sort_link "transactions", "Transactions" %></th>
       <th><%= sort_link "total", "Total" %></th>
@@ -23,6 +32,8 @@
   <tbody>
     <% @counterparties.each do |counterparty| %>
       <tr id="<%= dom_id counterparty %>">
+        <td><%= check_box_tag "ids[]", counterparty.id, false, id: dom_id(counterparty, "merge"),
+                              aria: { label: "Merge #{counterparty.name}" } %></td>
         <td><%= link_to counterparty.name, counterparty_path(counterparty) %></td>
         <td><%= @counts[counterparty.id] || 0 %></td>
         <td class="currency">
@@ -34,6 +45,11 @@
     <% end %>
   </tbody>
 </table>
+
+<div style="margin-top: 1rem">
+  <%= submit_tag "Merge selected", class: "pure-button", data: { disable_with: nil } %>
+</div>
+<% end %>
 
 <% if @counterparties.empty? %>
   <p>No counterparties yet.</p>

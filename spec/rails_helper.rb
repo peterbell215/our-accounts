@@ -79,3 +79,7 @@ Capybara.register_driver :chrome_en_gb do |app|
 end
 
 Capybara.default_driver = :chrome_en_gb
+
+# A checkbox in a table row has no room for a visible label, so it carries an aria-label instead — which is
+# what a screen reader reads out, and now also what `check "Merge Tesco"` finds.
+Capybara.enable_aria_label = true

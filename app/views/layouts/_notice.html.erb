@@ -1,5 +1,15 @@
+<%# Both kinds of flash message, so a redirect carrying an alert is not silent on the page it lands on.
+    `alert` defaults to the flash, which is what every caller wants; passing it explicitly stays possible. %>
+<% alert = local_assigns.fetch(:alert) { flash[:alert] } %>
+
 <% if notice.present? %>
   <div id="notice_explanation">
     <h2><%= notice %></h2>
+  </div>
+<% end %>
+
+<% if alert.present? %>
+  <div id="error_explanation">
+    <h2><%= alert %></h2>
   </div>
 <% end %>

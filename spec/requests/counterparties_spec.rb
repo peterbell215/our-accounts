@@ -37,8 +37,10 @@ RSpec.describe "Counterparties", type: :request do
                             amount: Money.from_amount(-1.00))
       end
 
+      # Only the link text in each row, not every mention: each row also carries the name in the merge
+      # checkbox's accessible label, so a bare scan of the body counts every counterparty twice.
       def listed_names
-        response.body.scan(/Anvil Works|Zebra Supplies/)
+        response.body.scan(%r{>(Anvil Works|Zebra Supplies)</a>}).flatten
       end
 
       it "is alphabetical by default" do

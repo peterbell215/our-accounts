@@ -12,6 +12,13 @@ Rails.application.routes.draw do
   # balances, none of which a counterparty has.
   resources :counterparties
 
+  # Merging is its own resource rather than extra actions on CounterpartiesController, following the same
+  # habit as CsvAnalysesController: the operation is the noun.  `new` confirms what is about to move and is
+  # reached by a GET form from the counterparties list, carrying the ticked ids in the query string —
+  # displaying a confirmation changes nothing, so it should be safe to reload or bookmark.  `create` is the
+  # POST that actually moves anything.
+  resources :counterparty_merges, only: [ :new, :create ]
+
   resources :accounts do
     resources :transactions, only: [ :index, :new, :create, :edit, :update, :destroy ]
     # Rules belong to an account, so nesting them is what keeps that from being a field you have to
