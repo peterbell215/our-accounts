@@ -208,7 +208,10 @@ repeat with the same amount on the same day.
 
 `AccountSeeder` runs the whole chain in order — account, columns definition, rules, import, labels — and
 is what `db/seeds.rb` calls. Each step is idempotent or skipped once done, so seeding can be re-run
-against an existing database. It runs in development and production, and does nothing in test.
+against an existing database. `AnalysisImporter` therefore **skips a description this account already has a
+rule for**, rather than reasserting the spreadsheet's category and counterparty over it: since the rules are
+editable in the web layer, updating them here would make every re-seed silently revert corrections made by
+hand. It counts those separately from the ones it created so the run still reports what it did. It runs in development and production, and does nothing in test.
 
 The account's opening balance is **derived from the statement** rather than configured: the raw download
 is reverse-ordered, so the oldest transaction is the last row, and working back from its balance keeps
@@ -233,7 +236,13 @@ form sets `url:` explicitly, because `form_with(model: [account, matcher])` woul
 
 **The counterparty is edited as a name, not an id.** `Transaction#counterparty_name=` resolves a typed name
 against `Counterparty`, case-insensitively, and records an unresolved one as a validation error rather than
-creating a record — counterparty names are already sprawling and a typo would add to it. The transaction list
+creating a record — counterparty names are already sprawling and a typo would add to it. A value that already
+names the transaction's *current* counterparty is left alone rather than resolved again, because
+`#counterparty` is an `Account` and import data can point it at one of the household's own accounts: the cell
+then renders a name no `Counterparty` holds, and re-resolving it would refuse a row over a name the user
+never typed. `Account#name` is squished on write and case-insensitively unique for the same lookup's sake —
+`" Tesco "` would otherwise fail to match itself, and `TESCO` alongside `Tesco` would make the match
+arbitrary. The transaction list
 therefore renders a text field against a single shared `<datalist>`: a `<select>` per row over several
 hundred counterparties would put thousands of `<option>` elements on one page, and the datalist is one list
 however many rows are on screen, with no JavaScript. The datalist is rendered once in

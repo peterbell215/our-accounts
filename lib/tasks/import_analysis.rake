@@ -19,6 +19,7 @@ namespace :import do
 
     puts "Categories created:      #{importer.categories_created} (taken from the whole file)"
     puts "Import matchers created: #{importer.matchers_created} against #{account.name}"
+    puts "Rules already present:   #{importer.matchers_kept} (left exactly as they are)" if importer.matchers_kept.positive?
     puts "Rows for other accounts: #{importer.other_account_rows} (skipped)" if importer.other_account_rows.positive?
 
     if importer.ambiguous.any?

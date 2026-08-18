@@ -64,6 +64,35 @@ RSpec.describe Transaction do
 
       expect(trx).not_to be_valid
     end
+
+    # #counterparty is an Account, so import data or the console can point it at one of the household's own
+    # accounts.  The row then renders that name, which is in no Counterparty, and the row has to stay
+    # savable — otherwise a name the user never typed blocks a change to the category beside it.
+    context 'when the counterparty already is one of the household’s own accounts' do
+      let(:barclaycard) { create(:barclay_card_account) }
+
+      before { trx.counterparty = barclaycard }
+
+      it 'accepts the name the row rendered, submitted back unchanged' do
+        trx.counterparty_name = "Barclaycard"
+
+        expect(trx).to be_valid
+        expect(trx.counterparty).to eq barclaycard
+      end
+
+      it 'still refuses a different own account typed over it' do
+        trx.counterparty_name = "Lloyds Account"
+
+        expect(trx).not_to be_valid
+      end
+
+      it 'still accepts a real counterparty typed over it' do
+        trx.counterparty_name = "Octopus Energy"
+
+        expect(trx).to be_valid
+        expect(trx.counterparty).to eq octopus
+      end
+    end
   end
 
   describe '#sequence' do

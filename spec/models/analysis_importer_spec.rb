@@ -176,6 +176,27 @@ RSpec.describe AnalysisImporter, type: :model do
         expect { described_class.new(write_analysis(rows), account).import }
           .not_to change(ImportMatcher, :count)
       end
+
+      # The rules screens let a rule be retuned by hand.  A second run must not undo that, or re-seeding
+      # would silently revert every correction to what the spreadsheet said.
+      it 'leaves a rule that has since been corrected by hand exactly as it is' do
+        described_class.new(write_analysis(rows), account).import
+        rule = ImportMatcher.find_by!(description: "OCTOPUS ENERGY")
+        rule.update!(category: Category.find_by!(name: "Travel"), counterparty: nil, description_is_regex: true)
+
+        described_class.new(write_analysis(rows), account).import
+
+        expect(rule.reload).to have_attributes(category: Category.find_by!(name: "Travel"),
+                                               counterparty: nil, description_is_regex: true)
+      end
+
+      it 'reports the rules it left alone rather than counting them as created' do
+        described_class.new(write_analysis(rows), account).import
+        importer = described_class.new(write_analysis(rows), account).import
+
+        expect(importer.matchers_created).to eq 0
+        expect(importer.matchers_kept).to eq 1
+      end
     end
   end
 

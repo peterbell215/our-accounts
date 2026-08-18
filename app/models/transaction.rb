@@ -46,6 +46,12 @@ class Transaction < ApplicationRecord
   # counterparty names are already sprawling, because AnalysisImporter derived them from raw statement text,
   # and creating one on a typo would add to that.  Counterparties are created deliberately, on their own
   # screen.
+  #
+  # A value that already names this transaction's counterparty is left alone rather than resolved again.
+  # #counterparty is an Account, and import data or the console can point it at one of the household's own
+  # accounts; the cell then renders that account's name, which Counterparty does not contain, so submitting
+  # the row — even to change nothing but the category — used to fail on a name the user never typed.
+  # Resolving a *changed* name still goes through Counterparty only, so an own account cannot be chosen.
   # @param [String, nil] value
   def counterparty_name=(value)
     @counterparty_name = value
@@ -53,8 +59,8 @@ class Transaction < ApplicationRecord
 
     if value.blank?
       self.counterparty = nil
-    else
-      match = Counterparty.where("LOWER(name) = ?", value.strip.downcase).first
+    elsif !counterparty&.name&.casecmp?(value.squish)
+      match = Counterparty.where("LOWER(name) = ?", value.squish.downcase).order(:id).first
       match ? self.counterparty = match : @unresolved_counterparty = value
     end
   end
@@ -92,6 +98,6 @@ class Transaction < ApplicationRecord
   def counterparty_name_resolved
     return if @unresolved_counterparty.blank?
 
-    errors.add(:counterparty_name, "#{@unresolved_counterparty.strip.inspect} is not a counterparty")
+    errors.add(:counterparty_name, "#{@unresolved_counterparty.squish.inspect} is not a counterparty")
   end
 end

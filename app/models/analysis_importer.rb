@@ -17,7 +17,7 @@ class AnalysisImporter
   # Account#name is validated as 3 to 50 characters, and descriptions run from 2 to 76.
   NAME_RANGE = (3..50).freeze
 
-  attr_reader :file, :account, :categories_created, :matchers_created, :ambiguous,
+  attr_reader :file, :account, :categories_created, :matchers_created, :matchers_kept, :ambiguous,
               :counterparties_unnamed, :other_account_rows
 
   # @param [Pathname, String] file the analysis CSV
@@ -27,6 +27,7 @@ class AnalysisImporter
     @account = account
     @categories_created = 0
     @matchers_created = 0
+    @matchers_kept = 0
     @ambiguous = []
     @counterparties_unnamed = []
     @other_account_rows = 0
@@ -82,21 +83,27 @@ class AnalysisImporter
         next
       end
 
+      # A rule this account already has is left exactly as it is, and counted so the caller can say so.
+      # These rules are editable now, so a category or counterparty corrected by hand on the rules screen
+      # must survive the next run — otherwise re-running the analysis, which is documented as safe to
+      # repeat, would quietly revert the correction to whatever the spreadsheet said.
+      if account.import_matchers.exists?(description: description)
+        @matchers_kept += 1
+        next
+      end
+
       build_matcher(description, ranked.first.first, counterparty_for(description))
     end
   end
 
+  # Only ever called for a description this account has no rule for, so this creates rather than updates.
   # @return [void]
   def build_matcher(description, category_name, counterparty)
-    matcher = ImportMatcher.find_or_initialize_by(account: account, description: description)
-    was_new = matcher.new_record?
+    ImportMatcher.create!(account: account, description: description, description_is_regex: false,
+                          category: Category.find_or_create_by!(name: category_name),
+                          counterparty: counterparty)
 
-    matcher.category = Category.find_or_create_by!(name: category_name)
-    matcher.counterparty = counterparty
-    matcher.description_is_regex = false
-    matcher.save!
-
-    @matchers_created += 1 if was_new
+    @matchers_created += 1
   end
 
   # The statement only tells us the description, so that is what the counterparty is named after, trimmed

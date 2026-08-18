@@ -121,7 +121,8 @@ it. The small icon beside the name opens that counterparty's own page. Clearing 
 
 A name that is not already a counterparty is **refused**, and the field turns red rather than the row
 saving. That is deliberate: counterparty names imported from statements are already untidy, and quietly
-creating a new one from a typo would make it worse. Create it on the Counterparties screen first.
+creating a new one from a typo would make it worse. Create it on the Counterparties screen first. Case and
+stray spaces do not matter — `octopus energy` finds `Octopus Energy`.
 
 ### Categories
 
@@ -147,6 +148,10 @@ reverse it.
 **Total** is the ordering worth knowing about. Counterparties created by the analysis step are named after
 **raw statement text** — `TESCO STORES 2889` rather than `Tesco` — and sorting by total brings the ones
 where renaming actually pays off to the top. Renaming is the main thing you will do here.
+
+Names are tidied as they are saved: surrounding and doubled spaces are removed, so a name always matches
+itself when you type it into a transaction row. Two counterparties cannot differ only in case, which would
+leave you guessing which of `TESCO` and `Tesco` a transaction had been linked to.
 
 Deleting a counterparty keeps its transactions; they simply stop naming anyone.
 
@@ -266,14 +271,16 @@ worse than leaving it to you. You can categorise those transactions by hand afte
 
 It also creates a counterparty for each rule, named after the description — so those names are raw
 statement text, and worth tidying on the [Counterparties](#counterparties) screen. Where a description is
-too short to be a name at all (`O2`), you get the rule without a counterparty, and it says so:
+too short to be a name at all (`O2`), you get the rule without a counterparty, which is what the last line
+of that report is telling you.
+
+Running it again is safe: it creates nothing twice, and any rule you have since retuned by hand is left
+exactly as it is rather than being reset to what the spreadsheet said. It counts those separately:
 
 ```
-2 rules created without a counterparty, the description being too short to name one:
-  "O2"
+Import matchers created: 0 against Joint
+Rules already present:   282 (left exactly as they are)
 ```
-
-Running it again changes nothing, so it is safe to repeat.
 
 **If you have no such spreadsheet**, skip this step. Create your categories by hand on the Categories
 screen, import your statements, and categorise transactions from the account screen as you go.
