@@ -86,14 +86,20 @@ navigation bar — see [Import rules](#import-rules) below.
 The menu bar stays at the top of the window wherever you have scrolled to, so moving to another screen
 never means scrolling back up first.
 
+Whatever you are looking at — an account, a category, a counterparty, a rule, a column layout — the page
+for one record starts with the same three buttons, above the record itself: **Back** to the list you came
+from, **Edit** it, and **Destroy** it. Anything particular to that kind of record sits alongside them.
+**Destroy** is kept apart at the right-hand end, coloured red, and always asks first, telling you what
+goes with the record and what is kept.
+
 Every date you are shown is written the same way throughout — `1-Jan-23`. The one exception is a date
 you can type into, which your browser draws in its own style.
 
 ### Accounts
 
 The landing page lists your accounts with their number, sort code, opening date and opening balance.
-**Show this account** opens the account, where you get the details at the top and the transactions
-below, newest first: date, description, category, counterparty, amount, and the running balance after
+**Show this account** opens the account, where you get its buttons and details at the top and the
+transactions below, newest first: date, description, category, counterparty, amount, and the running balance after
 that transaction. Money out is red, money in is green.
 
 The details at the top spread across the width of the window — three to a line on a wide screen, so an
@@ -169,9 +175,8 @@ Deleting a counterparty keeps its transactions; they simply stop naming anyone.
 
 These are what categorise a transaction automatically, and they belong to a particular account — a rule
 learned from your current account should not be applied to a credit card whose statements read differently.
-So they live under the account: open an account and press **Manage Import Rules**, beside
-**Add New Transaction** above the transaction list — which is where you will be standing when you
-notice a transaction has been filed wrongly.
+So they live under the account: open an account and press **Manage Import Rules**, with the account's
+own buttons at the top of the screen.
 
 Each rule says: when a transaction's description looks like *this*, give it *this* category and *this*
 counterparty.

@@ -27,4 +27,24 @@ module ApplicationHelper
       safe_join([ label, arrow ].compact)
     end
   end
+
+  # The strip of buttons every Show screen opens with, so Back, Edit and Destroy are in the same place
+  # and read the same whatever record is on show.  Anything particular to the model goes in the block,
+  # and lands between Edit and Destroy.
+  #
+  # Destroy sits at the far end of the strip, apart from the rest, and always confirms: it is the one
+  # button here that cannot be undone, so it should not fall under the cursor on the way to Edit.  What
+  # the confirmation says is the screen's to write, because what is lost differs — an account takes its
+  # transactions with it, a counterparty leaves them behind.
+  #
+  # @param [String] back path of the list this record belongs to
+  # @param [String] edit path of the record's edit form
+  # @param [String] destroy path the DELETE goes to
+  # @param [String] confirm what the confirmation asks before the record goes
+  # @yield model-specific buttons, rendered between Edit and Destroy
+  # @return [String]
+  def show_actions(back:, edit:, destroy:, confirm:, &block)
+    render "layouts/show_actions", back: back, edit: edit, destroy: destroy, confirm: confirm,
+                                  model_actions: (capture(&block) if block)
+  end
 end

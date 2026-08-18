@@ -1,0 +1,14 @@
+<%# The strip of actions every Show screen opens with.  Rendered through the show_actions helper rather
+    than directly, so a screen names its four paths and nothing else. %>
+<div class="show-actions">
+  <%= link_to "Back", back, class: "pure-button" %>
+  <%= link_to "Edit", edit, class: "pure-button" %>
+
+  <%# Actions particular to this model, between Edit and Destroy. %>
+  <%= model_actions %>
+
+  <%= button_to "Destroy", destroy, method: :delete,
+                class: "pure-button pure-button-error",
+                form_class: "show-actions-destroy",
+                data: { turbo_confirm: confirm } %>
+</div>

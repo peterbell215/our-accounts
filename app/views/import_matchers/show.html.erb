@@ -4,6 +4,11 @@
 
 <h1>Rule for <%= @account.name %></h1>
 
+<%= show_actions back: account_import_matchers_path(@account),
+                 edit: edit_account_import_matcher_path(@account, @import_matcher),
+                 destroy: account_import_matcher_path(@account, @import_matcher),
+                 confirm: "Destroy this rule? Transactions it already categorised keep their category." %>
+
 <dl>
   <dt>Description</dt>
   <dd><%= @import_matcher.description %></dd>
@@ -27,10 +32,3 @@
   </dd>
 </dl>
 
-<div>
-  <%= link_to "Edit this rule", edit_account_import_matcher_path(@account, @import_matcher) %> |
-  <%= link_to "Back to rules", account_import_matchers_path(@account) %>
-
-  <%= button_to "Destroy this rule", account_import_matcher_path(@account, @import_matcher),
-                method: :delete, class: "pure-button" %>
-</div>

@@ -119,7 +119,7 @@ RSpec.describe 'Counterparties', type: :system do
                                                  counterparty: octopus, date: Date.new(2024, 7, 1))
 
     visit counterparty_path(octopus)
-    accept_confirm { click_button 'Destroy this counterparty' }
+    accept_confirm { click_button 'Destroy' }
 
     expect(page).to have_content('Counterparty was successfully destroyed.')
     expect(transaction.reload).to be_present
