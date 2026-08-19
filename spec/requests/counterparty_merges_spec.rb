@@ -93,15 +93,28 @@ RSpec.describe "CounterpartyMerges", type: :request do
       expect(first.reload.name).to eq "ATM"
     end
 
-    it "goes back to the confirmation with the selection intact when the name is refused" do
+    # Both halves matter: without the ids the selection is lost, and without the name the box silently
+    # reverts to the suggested name, so submitting again would merge under a name nobody chose.
+    it "goes back to the confirmation with the selection and the typed name intact when the name is refused" do
       held = counterparty("Waitrose")
 
       post counterparty_merges_path, params: { ids: [ first.id, second.id ], name: "Waitrose" }
 
-      expect(response).to redirect_to(new_counterparty_merge_path(ids: [ first.id.to_s, second.id.to_s ]))
+      expect(response).to redirect_to(
+        new_counterparty_merge_path(ids: [ first.id.to_s, second.id.to_s ], name: "Waitrose")
+      )
       expect(flash[:alert]).to include("Waitrose")
       expect(held.reload).to be_present
       expect(second.reload).to be_present
+    end
+
+    it "offers the refused name back for correction rather than the suggested one" do
+      counterparty("Waitrose")
+
+      post counterparty_merges_path, params: { ids: [ first.id, second.id ], name: "Waitrose" }
+      follow_redirect!
+
+      expect(response.body).to include('value="Waitrose"')
     end
 
     it "merges a clashing group anyway, leaving both categories alone" do

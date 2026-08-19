@@ -143,7 +143,11 @@ stray spaces do not matter — `octopus energy` finds `Octopus Energy`.
 ### Categories
 
 A flat list of names with optional descriptions — "Groceries", "Utilities", "Dine Out". Categories are
-shared across all accounts. You can add, rename and delete them freely.
+shared across all accounts. You can add and rename them freely.
+
+Deleting one is refused while any import rule still assigns it, and the message names the rules in the way,
+because a rule without a category has nothing left to do. Change or delete those rules first. Otherwise the
+delete goes ahead: transactions already filed under the category are kept, and simply stop naming one.
 
 The list is alphabetical by name to begin with. Click either column heading to reorder it, and the same
 heading again to reverse it; an arrow marks which column the order is on. Sorting by description brings
@@ -188,6 +192,10 @@ the names listed. That is how five `LNK ...` cash-machine entries become a singl
 
 Nothing is lost. Every transaction and every rule moves to the merged counterparty; only the spare names
 go, and **no category changes** — each rule keeps the one it had.
+
+If the name you choose is already held by a counterparty you did *not* tick, or by one of your own accounts,
+the merge is refused and nothing moves. You come back to the same confirmation with everything still ticked
+and **the name still as you typed it**, so you can correct it rather than start again.
 
 Read the categories column before you confirm. It is the best clue that a group is *not* one payee: if some
 say Food and others Car, you are probably looking at `TESCO STORES` and `TESCO PAY AT PUMP`, which are the

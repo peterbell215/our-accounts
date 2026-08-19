@@ -60,15 +60,31 @@ class CategoriesController < ApplicationController
 
   # DELETE /categories/1 or /categories/1.jsonmain
   def destroy
-    @category.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to categories_path, status: :see_other, notice: "Category was successfully destroyed." }
-      format.json { head :no_content }
+    # destroy rather than destroy!: a category any rule still assigns is refused by :restrict_with_error, and
+    # the reader needs to be told which rules to deal with, not shown a 500.
+    if @category.destroy
+      respond_to do |format|
+        format.html { redirect_to categories_path, status: :see_other, notice: "Category was successfully destroyed." }
+        format.json { head :no_content }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to @category, status: :see_other, alert: destroy_refused_alert }
+        format.json { render json: @category.errors, status: :unprocessable_entity }
+      end
     end
   end
 
   private
+    # Names the rules standing in the way, since the fix is to recategorise or delete them and they live on
+    # another screen.
+    def destroy_refused_alert
+      rules = @category.import_matchers.includes(:account)
+      "#{@category.name} cannot be destroyed while #{helpers.pluralize(rules.size, 'import rule')} " \
+        "still assigns it: #{rules.first(5).map(&:description).to_sentence}" \
+        "#{rules.size > 5 ? ', and others' : ''}.  Change or delete those rules first."
+    end
+
     # Case-insensitively, or "Utilities" would sort before "groceries" under SQLite's binary collation and
     # the list would read as though it were in no order at all.  Name breaks the tie, so categories with
     # no description — which sort together, SQLite putting NULLs first — still come out readable and in a

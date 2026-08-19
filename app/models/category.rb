@@ -1,8 +1,13 @@
 # Class to represent a category of transactions that we want to group such as 'Utilities' or 'Regular Savings'.
 # Categories are preloaded as part of the import process to the DB, but can then be managed and augmented.
 class Category < ApplicationRecord
-  has_many :transactions
-  has_many :import_matchers
+  # A category a rule still assigns cannot go: import_matchers.category_id has a foreign key and the rule has
+  # no meaning without it, so the delete is refused with an error the screen can show rather than raising
+  # ActiveRecord::InvalidForeignKey out of the controller.  Transactions are only labelled with a category,
+  # so they keep everything else and simply stop naming one — and being nullified explicitly, they no longer
+  # leave transactions.category_id pointing at a row that has gone, which no foreign key would have caught.
+  has_many :transactions, dependent: :nullify
+  has_many :import_matchers, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: true, length: { minimum: 3, maximum: 50 }
 

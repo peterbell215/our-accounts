@@ -62,8 +62,8 @@ class CounterpartyMerge
   # @return [Array<String>] the distinct categories the members' rules assign, which is the best signal
   #   available that a group is not really one payee: Food and Car together usually means two payees.
   def rule_categories
-    ImportMatcher.where(counterparty: counterparties)
-                 .includes(:category).map { |matcher| matcher.category.name }.uniq.sort
+    @rule_categories ||= ImportMatcher.where(counterparty: counterparties)
+                                      .includes(:category).map { |matcher| matcher.category.name }.uniq.sort
   end
 
   # @return [Boolean] whether the members' rules disagree about the category
@@ -90,8 +90,14 @@ class CounterpartyMerge
 
   # A counterparty holding the wanted name that is *not* being folded in.  One inside the set is fine — it
   # is about to be destroyed, or it is the survivor being renamed to what it already is.
+  #
+  # Counterparty rather than Account, to match how #initialize resolves the ids.  Over Account this advised
+  # the impossible: naming a merge "Lloyds Account" said to include that account in the merge, when a
+  # BankAccount id is filtered out of the set by design.  A name held by one of the household's own accounts
+  # is still refused — Account validates uniqueness case-insensitively across the whole table, so
+  # #rename_survivor fails and reports it — just without the misleading instruction.
   def held_elsewhere
-    Account.where("LOWER(name) = ?", name.downcase).where.not(id: counterparties.map(&:id)).first
+    Counterparty.named(name).where.not(id: counterparties.map(&:id)).first
   end
 
   # update_all rather than each(&:update!): one statement per table, and neither model has a callback that

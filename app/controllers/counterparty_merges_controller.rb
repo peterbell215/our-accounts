@@ -10,15 +10,18 @@ class CounterpartyMergesController < ApplicationController
   # safe to reload, and the ticked ids belong in the URL where they can be seen.
   def new
     @counterparties = Counterparty.where(id: ids).order(:name)
+
+    if @counterparties.size < CounterpartyMerge::MINIMUM
+      return redirect_to counterparties_path,
+                         alert: "Tick at least #{CounterpartyMerge::MINIMUM} counterparties to merge them."
+    end
+
     @counts = Transaction.where(counterparty: @counterparties).group(:counterparty_id).count
     @totals = Transaction.where(counterparty: @counterparties).group(:counterparty_id).sum(:amount_pence)
     @categories = categories_by_counterparty
-    @merge = CounterpartyMerge.new(ids: ids, name: suggested_name)
-
-    return if @counterparties.size >= CounterpartyMerge::MINIMUM
-
-    redirect_to counterparties_path,
-                alert: "Tick at least #{CounterpartyMerge::MINIMUM} counterparties to merge them."
+    # params[:name] is what #create redirected back with — the name that was refused, so it can be corrected
+    # rather than retyped.  Only a first visit has no name to keep.
+    @merge = CounterpartyMerge.new(ids: ids, name: params[:name].presence || suggested_name)
   end
 
   # POST /counterparty_merges
@@ -28,9 +31,11 @@ class CounterpartyMergesController < ApplicationController
     if @merge.merge
       redirect_to @merge.survivor, notice: merged_notice
     else
-      # Straight back to the confirmation with everything still ticked, so a rejected name can be corrected
-      # rather than re-selected from scratch.
-      redirect_to new_counterparty_merge_path(ids: ids), alert: @merge.error
+      # Straight back to the confirmation with everything still ticked *and the name still as typed*, so a
+      # rejected name can be corrected rather than re-selected from scratch.  Carrying the ids without the
+      # name would be worse than starting over: the box would silently revert to the suggested name, and
+      # submitting again would merge under a name nobody chose.
+      redirect_to new_counterparty_merge_path(ids: ids, name: params[:name]), alert: @merge.error
     end
   end
 

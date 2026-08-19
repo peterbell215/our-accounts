@@ -73,6 +73,14 @@ are `dependent: :nullify`: deleting a counterparty must not delete the household
 with no counterparty still assigns its category. That also stopped `Account#destroy` tripping over the
 foreign key on `transactions.counterparty_id`, which it previously did.
 
+`Category`'s two sides are deliberately different. `has_many :transactions, dependent: :nullify`, because a
+category is only a label: deleting it must keep the spending and merely stop it naming one — and no foreign
+key covers `transactions.category_id`, so leaving this implicit left rows pointing at a deleted row.
+`has_many :import_matchers, dependent: :restrict_with_error`, because a rule with no category has nothing
+left to do, and `import_matchers.category_id` *does* carry a foreign key: without the restriction the delete
+raised `ActiveRecord::InvalidForeignKey` out of the controller, which the Show screen's Destroy button made a
+one-click 500.
+
 ### Merging counterparties, and the two orders that matter
 
 The bank truncates its description field to eighteen characters, and `AnalysisImporter` derives one
@@ -86,6 +94,12 @@ and `TESCO PAY AT PUMP` are the supermarket and the petrol station and must stay
 heuristics were measured against the real 281 names and only one — stripping digits and punctuation — avoided
 false groups; first-word grouping filed twelve unrelated pubs and charities under `THE` and treated `LNK`,
 `SQ *` and `PAYPAL` as payees. So suggestions were left out and the set is always chosen by hand.
+
+**The wanted name is checked against `Counterparty`, not `Account`.** The ids are resolved through
+`Counterparty` too, so a `BankAccount` is filtered out of the set by design — and a check over `Account` gave
+advice that could not be followed, telling the reader to include an account in a merge that would discard it.
+A name held by one of the household's own accounts is still refused, by `Account`'s own case-insensitive
+uniqueness validation at the rename, which `#rename_survivor` turns into the error the screen shows.
 
 The differing categories on a group's rules are the best signal available that the group is wrong, which is
 why the confirmation lists them per member and warns when they disagree. It only warns: one payee

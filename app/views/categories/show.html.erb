@@ -5,6 +5,8 @@
 <h1><%= @category.name %></h1>
 
 <%= show_actions back: categories_path, edit: edit_category_path(@category), destroy: category_path(@category),
-                 confirm: "Destroy the category #{@category.name}?" %>
+                 confirm: "Destroy the category #{@category.name}? " \
+                          "Transactions filed under it are kept, but they will no longer name a category. " \
+                          "Import rules that assign it must be dealt with first." %>
 
 <%= render @category %>

@@ -120,6 +120,33 @@ RSpec.describe CounterpartyMerge, type: :model do
       expect(Counterparty.exists?(other.id)).to be true
       expect(merge.transactions_moved).to eq 0
     end
+
+    # The name of one of the household's own accounts is refused as well, but not with the advice above: a
+    # BankAccount id is filtered out of the set by design, so "include it in the merge" would be impossible
+    # to follow.  Account's own uniqueness validation reports it instead, at the rename.
+    context 'when the name belongs to one of the household’s own accounts' do
+      subject(:merge) { described_class.new(ids: [ via_paypal.id, other.id ], name: "Lloyds Account") }
+
+      it 'is refused' do
+        expect(merge.merge).to be false
+      end
+
+      it 'does not tell the reader to include an account they cannot include' do
+        merge.merge
+
+        expect(merge.error).to match(/already been taken/i)
+        expect(merge.error).not_to include("Include it in the merge")
+      end
+
+      it 'leaves both the accounts and the counterparties alone' do
+        merge.merge
+
+        expect(lloyds.reload.name).to eq "Lloyds Account"
+        expect(Counterparty.exists?(other.id)).to be true
+        expect(via_paypal.reload.counterparty_transactions.count).to eq 3
+        expect(merge.transactions_moved).to eq 0
+      end
+    end
   end
 
   describe 'what it refuses' do

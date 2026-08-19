@@ -60,8 +60,10 @@ RSpec.describe 'The actions on a Show screen', type: :system do
   describe 'a counterparty' do
     let(:path) { counterparty_path(create(:octopus_energy)) }
 
-    # The heading is the name, so the data proper starts at the transactions below it.
-    it_behaves_like 'a Show screen', 'Octopus Energy', 'h2'
+    # The heading is the name, so the data proper starts at the transactions below it.  Addressed by id, not
+    # by 'h2': layouts/_notice renders a flash inside an h2 *above* the strip, and querySelector takes the
+    # first match, so a bare 'h2' would silently measure the notice on any path that arrives with one.
+    it_behaves_like 'a Show screen', 'Octopus Energy', '#counterparty_transactions'
   end
 
   describe 'an import columns definition' do

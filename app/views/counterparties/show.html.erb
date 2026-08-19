@@ -8,7 +8,7 @@
                  destroy: counterparty_path(@counterparty),
                  confirm: "Destroy #{@counterparty.name}? Its transactions are kept, but they will no longer name a counterparty." %>
 
-<h2>Transactions</h2>
+<h2 id="counterparty_transactions">Transactions</h2>
 
 <% if @transactions.any? %>
   <p>

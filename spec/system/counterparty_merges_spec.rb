@@ -16,8 +16,11 @@ RSpec.describe 'Merging counterparties', type: :system do
     end
   end
 
+  # exact: true because Capybara matches labels by substring by default, and this feature exists precisely
+  # for names where one contains another — TESCO STORES beside TESCO STORES 2228 would otherwise raise
+  # Capybara::Ambiguous the day such a pair reaches a system example.
   def tick(counterparty)
-    check "Merge #{counterparty.name}"
+    check "Merge #{counterparty.name}", exact: true
   end
 
   it 'folds two names into one from the list' do
