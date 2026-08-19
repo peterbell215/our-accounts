@@ -284,6 +284,37 @@ its link with `url_for` and nothing but the two parameters, so it returns to whi
 and it reads the `@sort` and `@direction` that a sortable list's controller sets. What differs between the
 two lists is only how the ordering is *done*, which is where it belongs: in each controller.
 
+**Every Show screen opens with the same strip of actions.** `ApplicationHelper#show_actions` and
+`layouts/_show_actions` render Back, Edit and Destroy, in that order, above the record's own data, with
+any actions particular to that model in a block between Edit and Destroy. The scaffold's per-screen
+`link_to "Edit this account"` lines it replaces sat *under* the record on all five screens, so on a screen
+with a list below — an account, a counterparty — the actions were somewhere in the middle of the page; they
+were worded differently on each, separated differently, and two of the five drew their destroy button with
+no button class at all. A helper wrapping a partial, rather than a partial rendered directly, is what lets
+a screen name its four paths and pass its extra buttons as a block — `render layout:` would put the same
+thing behind a clumsier call.
+
+Two decisions inside it. **Destroy is pushed to the far end of the strip and always confirms**, because it
+is the one action there that cannot be undone and it should not fall under the cursor on the way to Edit;
+what the confirmation *says* is each screen's to write, since what is lost differs — an account takes its
+transactions with it, a counterparty leaves them behind. And **the strip does not swallow list actions**:
+`Add New Transaction` stays above the transaction list, where the row it inserts appears, while
+`Manage Import Rules` moved up into the strip because it acts on the account rather than on the list.
+
+This is also why `.pure-button-error` is defined in `application.css`. Pure ships only the primary
+variant, so the delete buttons throughout the app — the transaction rows, the rules list, and now Destroy
+— had been asking for a class that did not exist and rendering as ordinary grey buttons.
+
+**A Show screen names itself, and its data does not name it again.** Index, new and edit screens all
+carried an `<h1>` and a `content_for :title`; three of the five Show screens carried neither, so the strip
+of actions was the first thing on the page and the record was identified only by a `Name:` field in the
+middle of its own details. Each now leads with a heading — the record's name, or *Import columns for
+&lt;account&gt;* where the record has no name of its own — and the `Name:` row has gone from the account,
+category and column-layout partials, which is also what removed the column layout's misleading one: it
+held the *account's* name under a label suggesting the definition had one. `counterparties/_counterparty`
+was nothing but that heading, so it is gone and the heading is in the view, where every other screen keeps
+it.
+
 **Turbo Streams for transactions.** `TransactionsController` renders Turbo Stream responses exclusively
 for index/new/create/update/destroy, all targeting one partial, `transactions/_transaction_as_row`. New
 rows are inserted with `turbo_stream.before("end-of-table-marker", ...)`, and unsaved rows are addressed

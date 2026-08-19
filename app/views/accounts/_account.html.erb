@@ -1,12 +1,7 @@
-<%# The details sit in one grid so they flow across the width available: one field per line on a
-    phone, two from the medium breakpoint, three from the large one — which puts the five fields of a
-    bank account on two lines. %>
+<%# The name is the screen's heading, so it is not repeated here.  What is left sits in one grid so the
+    fields flow across the width available: one per line on a phone, two from the medium breakpoint, three
+    from the large one — which puts the four fields of a bank account on two lines. %>
 <div id="<%= dom_id account %>" class="account-grid pure-g">
-  <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 account-field">
-    <strong class="account-field-label">Name:</strong>
-    <span><%= account.name %></span>
-  </div>
-
   <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-1-3 account-field">
     <strong class="account-field-label">Account Number:</strong>
     <span><%= account.account_number %></span>

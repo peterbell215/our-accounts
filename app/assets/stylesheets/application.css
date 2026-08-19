@@ -48,6 +48,33 @@ body div.container {
     margin-top: 20px; /* Add space above the buttons */
 }
 
+/* Every Show screen opens with this strip, so Back, Edit and Destroy are always in the same place and
+   the reader does not have to look for them under the data. */
+.show-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em;
+    /* Space above as well as below: on a screen with no heading of its own the strip is the first thing
+       under the sticky menu bar, and would otherwise touch it. */
+    margin: 1em 0;
+}
+
+/* button_to wraps its button in a form, which is what has to be pushed to the far end of the strip.
+   Destroy is kept away from Edit deliberately: it is the one action on the strip that cannot be undone. */
+.show-actions form.show-actions-destroy {
+    margin-left: auto;
+}
+
+/* Pure ships only the primary variant, so the error one that every delete button in the app already asks
+   for has to be defined here — without it they are ordinary grey buttons, and the transaction rows, the
+   rules list and Destroy above all read as though nothing were at stake. */
+.pure-button-error,
+a.pure-button-error {
+    background-color: #ca3c3c;
+    color: #fff;
+}
+
 .pure-g {
     margin-top: 1em; /* Adjust the value as needed */
     margin-bottom: 1em; /* Adjust the value as needed */
