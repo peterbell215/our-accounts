@@ -3,7 +3,7 @@ class CategoriesController < ApplicationController
 
   # The columns the list can be ordered by.  Whitelisted because the value arrives as a query parameter
   # and is interpolated into the ORDER BY.
-  SORTS = %w[ name description ].freeze
+  SORTS = %w[ name description forecast_method ].freeze
 
   # Alphabetical by default: a category is looked up by name everywhere else in the application, so the
   # list reads the same way as the dropdowns do.
@@ -108,6 +108,6 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.expect(category: [ :name, :description ])
+      params.expect(category: [ :name, :description, :forecast_method, :forecast_months ])
     end
 end

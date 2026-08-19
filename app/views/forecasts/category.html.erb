@@ -1,0 +1,184 @@
+<%= render "layouts/notice", notice: notice %>
+
+<% content_for :title, "#{@line.label} — #{month_name(@forecast.month)}" %>
+
+<h1><%= @line.label %> in <%= month_name(@forecast.month) %></h1>
+
+<%# Not the shared show_actions strip: this is a report about a month, not a record with an edit form and
+    a delete button behind it. %>
+<div class="show-actions">
+  <%= link_to "Back", forecast_path(month: @forecast.month), class: "pure-button" %>
+  <% unless @line.uncategorised? %>
+    <%= link_to "Change how this is predicted", edit_category_path(@line.category), class: "pure-button" %>
+  <% end %>
+</div>
+
+<div class="pure-g">
+  <div class="pure-u-1-4"><strong>Forecast</strong></div>
+  <div class="pure-u-1-4"><%= forecast_money @line.expected %></div>
+  <div class="pure-u-1-4"><strong>Spent so far</strong></div>
+  <div class="pure-u-1-4"><%= humanized_money_with_symbol @line.actual %></div>
+
+  <div class="pure-u-1-4"><strong>Still to come</strong></div>
+  <div class="pure-u-1-4"><%= forecast_money @line.remaining %></div>
+  <div class="pure-u-1-4"><strong>Projected</strong></div>
+  <div class="pure-u-1-4"><%= forecast_money @line.projected %></div>
+</div>
+
+<% case @line.method %>
+<% when :monthly_average %>
+  <h2>The months it is averaged over</h2>
+
+  <p>
+    The forecast is the total of these <%= pluralize @line.strategy.window_months.count, "month" %> divided
+    by <%= @line.strategy.divisor %> — the months the records actually cover.  The month being forecast is
+    left out of its own average.
+    <% if @line.strategy.uncovered.positive? %>
+      <strong><%= pluralize @line.strategy.uncovered, "month" %> predate your records altogether</strong>
+      and are not divided by.
+    <% end %>
+  </p>
+
+  <table id="window_months" class="pure-table pure-table-striped">
+    <thead><tr><th>Month</th><th>Spent</th></tr></thead>
+    <tbody>
+      <% @line.strategy.window_months.each do |month, spent| %>
+        <tr>
+          <td><%= month_name month %></td>
+          <td class="currency"><%= humanized_money_with_symbol spent %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if @line.strategy.window_months.any? { |_, spent| spent.zero? } %>
+    <p>
+      A month showing nothing pulls the average down, which is right where you genuinely spent nothing —
+      and wrong where the category simply did not exist yet.  If that is what you are looking at, shorten
+      the lookback on the category, or predict it by hand instead.
+    </p>
+  <% end %>
+
+<% when :regular_payments %>
+  <h2>The payments it is made up of</h2>
+
+  <% if @line.strategy.payments.any? %>
+    <p>
+      Each of these was recognised from its own history.  A payment stops counting towards
+      <strong>still to come</strong> the moment it goes out, whatever it came in at — so a bill £30 over
+      its prediction does not eat into the ones still due.
+    </p>
+
+    <table id="regular_payments" class="pure-table pure-table-striped">
+      <thead>
+        <tr>
+          <th>Payment</th><th>Expected</th><th>How often</th><th>Last seen</th>
+          <th>Due this month</th><th>Gone out</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @line.strategy.payments.each do |payment| %>
+          <tr>
+            <td>
+              <% if payment.counterparty %>
+                <%= link_to payment.label, counterparty_path(payment.counterparty) %>
+              <% else %>
+                <%= payment.label %>
+              <% end %>
+            </td>
+            <td class="currency"><%= humanized_money_with_symbol payment.amount %></td>
+            <td><%= payment.cadence_label %></td>
+            <td><%= short_date payment.last_seen %></td>
+            <td><%= payment.due? ? "Yes" : "No" %></td>
+            <td>
+              <% if payment.landed? %>
+                ✓ <%= short_date payment.landed_on %>, <%= humanized_money_with_symbol payment.landed_amount %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p>
+      No repeating payments were found in this category's history.  Two occurrences are needed before a
+      cadence can be worked out, so a new direct debit will not appear until its second one.  A category
+      that is not really made of regular payments is better predicted by an average.
+    </p>
+  <% end %>
+
+  <% if @line.strategy.irregular.any? %>
+    <p id="irregular_payments">
+      These repeat, but too erratically to put a schedule on, so nothing is predicted for them:
+      <%= safe_join(@line.strategy.irregular, ", ") %>.
+    </p>
+  <% end %>
+
+<% when :manual %>
+  <h2>Your prediction</h2>
+
+  <p>
+    Nothing in this category's history says anything useful about what this month holds, so the figure is
+    yours to give.  Leave it empty and save to withdraw it.
+  </p>
+
+  <% if @manual_forecast&.errors&.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@manual_forecast.errors.count, "error") %> prohibited this prediction from being saved:</h2>
+      <ul>
+        <% @manual_forecast.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with url: forecast_category_manual_path(@line.category, month: @forecast.month),
+                method: :post, scope: :manual_forecast, local: true,
+                html: { class: "pure-form pure-form-aligned" } do |form| %>
+    <fieldset>
+      <div class="pure-control-group">
+        <%= form.label :amount, "Expected spend (£)" %>
+        <%= form.text_field :amount, value: (@line.strategy.record&.amount&.to_s), class: "pure-input-1-3" %>
+      </div>
+      <div class="pure-controls">
+        <%= form.submit "Save prediction", class: "pure-button pure-button-primary" %>
+      </div>
+    </fieldset>
+  <% end %>
+
+<% when :excluded %>
+  <h2>Not forecast</h2>
+
+  <p>
+    This category is deliberately left out of the forecast and its totals.  Paying off a card, or moving
+    money between two of your own accounts, is not spending — the spending already happened elsewhere, and
+    counting it here would count the same money twice.
+  </p>
+
+  <p>
+    <%= humanized_money_with_symbol @line.actual %> went through it this month all the same, which is shown
+    here so that it is not simply missing.
+  </p>
+<% end %>
+
+<h2>What has gone through this month</h2>
+
+<% transactions = @forecast.transactions_for(@line) %>
+<% if transactions.any? %>
+  <table id="month_transactions" class="pure-table pure-table-striped">
+    <thead><tr><th>Date</th><th>Description</th><th>Counterparty</th><th>Amount</th></tr></thead>
+    <tbody>
+      <% transactions.each do |transaction| %>
+        <tr>
+          <td><%= short_date transaction.date %></td>
+          <td><%= transaction.description %></td>
+          <td><%= transaction.counterparty&.name %></td>
+          <td class="currency negative"><%= humanized_money_with_symbol transaction.amount %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>Nothing has been spent in this category this month.</p>
+<% end %>

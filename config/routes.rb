@@ -19,6 +19,15 @@ Rails.application.routes.draw do
   # POST that actually moves anything.
   resources :counterparty_merges, only: [ :new, :create ]
 
+  # Forecasting.  There is no resource to create — the whole screen is recomputed from the transactions
+  # every time it is asked for — so these are plain routes rather than `resource :forecast`, whose nested
+  # member helpers would read worse than the four names spelled out.  The month travels as `?month=`.
+  get  "forecast",                       to: "forecasts#show",          as: :forecast
+  get  "forecast/uncategorised",         to: "forecasts#uncategorised", as: :forecast_uncategorised
+  get  "forecast/categories/:id",        to: "forecasts#category",      as: :forecast_category
+  # The one thing the forecast stores: a figure typed in by hand.  An upsert, so there is no `new`.
+  post "forecast/categories/:id/manual", to: "manual_forecasts#update", as: :forecast_category_manual
+
   resources :accounts do
     resources :transactions, only: [ :index, :new, :create, :edit, :update, :destroy ]
     # Rules belong to an account, so nesting them is what keeps that from being a field you have to

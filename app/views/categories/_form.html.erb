@@ -21,6 +21,22 @@
       <%= form.text_area :description, class: "pure-input-1-1" %>
     </div>
 
+    <div class="pure-control-group">
+      <%= form.label :forecast_method, "Predict this by" %>
+      <%= form.select :forecast_method,
+                      Category::FORECAST_METHOD_LABELS.map { |value, label| [ label, value ] },
+                      {}, class: "pure-input-1-3" %>
+    </div>
+
+    <div class="pure-control-group">
+      <%= form.label :forecast_months, "Months to average over" %>
+      <%= form.number_field :forecast_months, min: 1, max: 24, placeholder: Category::DEFAULT_FORECAST_MONTHS,
+                            class: "pure-input-1-3" %>
+      <span class="pure-form-message-inline">
+        Leave empty for <%= Category::DEFAULT_FORECAST_MONTHS %>.  Only used when predicting by average.
+      </span>
+    </div>
+
     <div class="pure-controls">
       <%= form.submit class: "pure-button pure-button-primary" %>
     </div>

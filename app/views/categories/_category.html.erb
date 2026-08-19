@@ -6,6 +6,16 @@
   </div>
 
   <div class="pure-g">
+    <div class="pure-u-1-6"><strong>Predicted by:</strong></div>
+    <div class="pure-u-1-4">
+      <%= category.forecast_method_label %>
+      <% if category.forecast_monthly_average? && category.forecast_months %>
+        (<%= pluralize category.forecast_months, "month" %>)
+      <% end %>
+    </div>
+  </div>
+
+  <div class="pure-g">
     <div class="pure-u-1-6"><strong>Created At:</strong></div>
     <div class="pure-u-1-4"><%= short_date(category.created_at) %></div>
   </div>

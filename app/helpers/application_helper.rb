@@ -5,6 +5,12 @@ module ApplicationHelper
   # @return [String, nil]
   def short_date(value) = value&.to_fs(:short_date)
 
+  # A whole month, for the forecast, which is about March rather than about any day in it: March 2026.
+  #
+  # @param [Date, nil] value
+  # @return [String, nil]
+  def month_name(value) = value&.to_fs(:month_year)
+
   # One sortable column heading, for any list that sorts.
   #
   # Clicking the column already sorted on reverses it; clicking any other switches to it, ascending.  The

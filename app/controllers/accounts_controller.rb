@@ -3,7 +3,7 @@ class AccountsController < ApplicationController
 
   # GET /accounts or /accounts.json
   def index
-    @accounts = Account.where("type IN ('BankAccount', 'CreditCardAccount')").order(:name)
+    @accounts = Account.own.order(:name)
   end
 
   # GET /accounts/1 or /accounts/1.json
