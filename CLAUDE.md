@@ -120,8 +120,11 @@ Ruby is managed by rvm; `.ruby-version` selects `ruby-4.0.6`. Note that on Ruby 
 `4.0` in `.ruby-version`. Both are pinned accordingly in `Gemfile.lock`.
 
 CI (`.github/workflows/ci.yml`) runs brakeman, importmap audit, rubocop and the full RSpec suite. The
-`test` job installs Chrome and runs the system specs headless; screenshots from failures are uploaded as
-a build artifact.
+`test` job runs the system specs headless against the Chrome the runner image already ships — it only
+falls back to `apt-get` if the image has none, because installing it unconditionally reached Google's apt
+repository on every run and hung three runs in a row. The job is capped at `timeout-minutes: 15` against a
+suite that takes under two, so a wedged step fails in minutes rather than holding a runner for hours.
+Screenshots from failures are uploaded as a build artifact.
 
 `bin/brakeman` unshifts `--ensure-latest`, so the scan exits non-zero the moment a newer brakeman is
 published, whatever it finds. A brakeman release on its own is enough to turn CI red until the gem is

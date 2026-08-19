@@ -56,12 +56,27 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    # The suite runs in under two minutes.  A generous ceiling, but a finite one: an apt-get that stops
+    # responding has no timeout of its own, and without this the job sat at the Chrome step for a quarter of
+    # an hour and would have held the runner until GitHub's six-hour limit.
+    timeout-minutes: 15
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
       - name: Install Chrome for the Capybara system specs
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y google-chrome-stable
+        # The ubuntu-latest image already ships Google Chrome, so the usual path is to confirm it and move
+        # on.  Installing it again reached Google's apt repository on every run, which hung three runs in a
+        # row while the code was fine — the mirror, not the suite.  apt-get remains the fallback for an image
+        # that turns out not to have it.
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+          else
+            sudo apt-get update
+            sudo apt-get install --no-install-recommends -y google-chrome-stable
+          fi
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
