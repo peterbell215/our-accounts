@@ -82,10 +82,12 @@ RSpec.describe 'Counterparties', type: :system do
 
     # Reading every cell would snapshot the old rows and go stale the moment a click reloads the page, so
     # wait for the row that should now be first before comparing the whole order.
+    #
+    # Second cell, not first: the first holds the merge checkbox.
     def expect_order(expected)
-      expect(page).to have_selector('#counterparties tbody tr:first-child td:first-child',
+      expect(page).to have_selector('#counterparties tbody tr:first-child td:nth-child(2)',
                                     text: expected.first)
-      expect(page.all('#counterparties tbody tr td:first-child').map(&:text)).to eq(expected)
+      expect(page.all('#counterparties tbody tr td:nth-child(2)').map(&:text)).to eq(expected)
     end
 
     it 'is alphabetical to begin with, so a name can be found' do

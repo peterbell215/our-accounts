@@ -73,6 +73,43 @@ are `dependent: :nullify`: deleting a counterparty must not delete the household
 with no counterparty still assigns its category. That also stopped `Account#destroy` tripping over the
 foreign key on `transactions.counterparty_id`, which it previously did.
 
+### Merging counterparties, and the two orders that matter
+
+The bank truncates its description field to eighteen characters, and `AnalysisImporter` derives one
+counterparty per distinct description, so one payee arrives many times over — `TESCO STORES 2228`, `2555`,
+`2889`. Nothing recovers that upstream, so `CounterpartyMerge` repairs it afterwards: a chosen set folds into
+one survivor under a name the reader types, which may be a name nothing yet holds.
+
+**What counts as one payee is never inferred.** Sharing a prefix proves nothing in either direction: all five
+`LNK ...` entries are one cash-machine counterparty however different their venues look, while `TESCO STORES`
+and `TESCO PAY AT PUMP` are the supermarket and the petrol station and must stay apart. Four grouping
+heuristics were measured against the real 281 names and only one — stripping digits and punctuation — avoided
+false groups; first-word grouping filed twelve unrelated pubs and charities under `THE` and treated `LNK`,
+`SQ *` and `PAYPAL` as payees. So suggestions were left out and the set is always chosen by hand.
+
+The differing categories on a group's rules are the best signal available that the group is wrong, which is
+why the confirmation lists them per member and warns when they disagree. It only warns: one payee
+legitimately spans categories, and merging deliberately changes none — each rule keeps its own description
+and `category_id`.
+
+Two orderings inside the merge are load-bearing, and reversing either loses data with nothing to show for it:
+
+- **Re-point before destroying.** `Account#counterparty_transactions` and `#counterparty_matchers` are
+  `dependent: :nullify`, so destroying a loser first nulls the very rows being moved.
+- **Rename after destroying.** The wanted name is usually held by a member of the set — `Spotify` is held by
+  `SPOTIFY`, which is being folded in — and `Account` validates `name` uniqueness case-insensitively across
+  the whole STI table, so renaming first fails against a record about to disappear.
+
+Both are pinned by specs verified to fail when the order is inverted rather than merely to pass as written.
+Checking that caught a fault in the second: it originally made `SPOTIFY` the survivor, and a record is
+excluded from its own uniqueness check, so it passed whichever order was used. The survivor is the lowest id
+in the set, matching `Account.scope :named`, so the record other code already resolves to is the one kept.
+
+Ids resolve through `Counterparty`, never `Account`: `Transaction#counterparty` is declared
+`class_name: "Account"` and nothing in the schema forbids one of the household's own accounts being named as
+a counterparty, so without that scope a hand-edited form could fold away the account holding every
+transaction.
+
 ### Money is never a float
 
 Every monetary column is an integer number of pence plus a currency column (`amount_pence` /
@@ -481,10 +518,15 @@ The two gaps that matter:
 - **No analysis or prediction exists yet** — no reporting views, no aggregation by category or period.
   This is the point of the application and none of it is built.
 
-Smaller ones: there is no way to **merge** two counterparties, which is the operation the raw-text names
-most want — renaming one and deleting the other leaves its transactions to be re-pointed by hand; a rule
+Smaller ones: nothing **suggests** which counterparties to merge, so the duplicates are found by eye; a rule
 cannot be created from a transaction you are looking at, so its description has to be retyped; and the
 accounts index renders raw ISO dates while the show page renders localised ones.
+
+One newly opened: **`AnalysisImporter` can resurrect a merged-away counterparty.** `counterparty_for` looks
+one up by name and creates it when absent, so re-running the analysis import recreates a name that a merge
+removed, for any description that does not already have a rule. The guard skipping descriptions the account
+already has a rule for is what limits the damage. Fixing it properly means an "absorbed into" pointer and a
+schema change, which was not worth adding before there is experience of whether re-imports cause it.
 
 One trap worth recording for whoever writes the next migration: **Rails 8.1's schema dumper sorts columns
 alphabetically**, unconditionally. `ImportColumnsDefinition::CSV_HEADERS` used to be derived from

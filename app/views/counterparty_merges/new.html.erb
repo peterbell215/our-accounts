@@ -1,0 +1,64 @@
+<%= render "layouts/notice", notice: notice %>
+
+<% content_for :title, "Merge counterparties" %>
+
+<h1>Merge <%= pluralize(@counterparties.size, "counterparty") %></h1>
+
+<p>
+  Everything below is folded into one, keeping all its transactions and rules.  Nothing is deleted except the
+  spare names, and <strong>no category changes</strong> — each rule keeps the one it has, which is how one
+  payee can span several.
+</p>
+
+<table id="merge_members" class="pure-table pure-table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Transactions</th>
+      <th>Total</th>
+      <th>Categories its rules assign</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @counterparties.each do |counterparty| %>
+      <tr id="<%= dom_id counterparty %>">
+        <td><%= counterparty.name %></td>
+        <td><%= @counts[counterparty.id] || 0 %></td>
+        <td class="currency">
+          <%= humanized_money_with_symbol Money.new(@totals[counterparty.id] || 0) %>
+        </td>
+        <td><%= (@categories[counterparty.id] || []).join(", ") %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @merge.categories_clash? %>
+  <%# The single best signal that a suggested group is wrong: Food and Car together usually means two
+      payees, as TESCO STORES and TESCO PAY AT PUMP do.  A warning, though, not a refusal — a gym that also
+      runs a café really is one payee under two categories. %>
+  <p id="category_clash" class="merge-warning">
+    <strong>These do not agree on a category</strong> — <%= @merge.rule_categories.to_sentence %>.
+    Often that means they are not the same counterparty after all.  Merging does not change any category.
+  </p>
+<% end %>
+
+<%= form_with url: counterparty_merges_path, method: :post, local: true,
+              html: { class: "pure-form pure-form-aligned" } do |form| %>
+  <% @counterparties.each do |counterparty| %>
+    <%= hidden_field_tag "ids[]", counterparty.id, id: nil %>
+  <% end %>
+
+  <fieldset>
+    <div class="pure-control-group">
+      <%= label_tag :name, "Call the merged counterparty" %>
+      <%= text_field_tag :name, @merge.name, class: "pure-input-1-3" %>
+      <span class="pure-form-message-inline">3 to 50 characters.  May be a name none of them currently has.</span>
+    </div>
+
+    <div class="pure-controls">
+      <%= form.submit "Merge", class: "pure-button pure-button-primary" %>
+      <%= link_to "Cancel", counterparties_path, class: "pure-button" %>
+    </div>
+  </fieldset>
+<% end %>
