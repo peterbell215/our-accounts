@@ -110,6 +110,15 @@ Then `bin/rails db:prepare`, which creates `storage/development.sqlite3` **and r
 freshly created database is seeded automatically, so there is no need to call `db:seed` separately. The
 worktree gets its own `storage/`, so none of this touches the main checkout's development database.
 
+Run `yarn install` as well, before starting a server. `node_modules` is gitignored, so a new worktree
+does not have one, and `config/initializers/assets.rb` puts it on the asset path for the two Pure CSS
+`@import`s at the top of `app/assets/stylesheets/application.css`. Without it Propshaft cannot resolve
+those imports and says nothing about it: the pages still render, but with none of Pure underneath, so the
+top menu falls back to a vertical list, the tables lose their styling and the action buttons look like
+plain links. It reads like a stylesheet someone broke rather than a missing dependency. Propshaft also
+caches its load path at boot, so installing into a worktree whose server is already running needs a
+restart before the assets appear.
+
 **Before deploying, note that `.dockerignore` does not exclude `db/*.csv`.** Docker's build context is
 the filesystem rather than git, so those files are baked into the image and pushed to whatever registry
 Kamal is configured with. Either exclude them and put the statements on the host, or satisfy yourself
