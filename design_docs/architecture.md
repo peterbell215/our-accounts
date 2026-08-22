@@ -18,7 +18,7 @@ through yarn. There is deliberately no JavaScript build step; assets are served 
 
 ## The domain
 
-Five tables carry the whole model.
+Six tables carry the whole model.
 
 ```
         Account (STI)
@@ -38,7 +38,13 @@ Five tables carry the whole model.
         └──────────────────────────┘
 
         ImportColumnsDefinition ──── account
+
+        ManualForecast ──── category
 ```
+
+`Category` also carries how its spend is predicted — `forecast_method` and an optional
+`forecast_months` — and `ManualForecast` holds the figures the reader enters by hand for the categories
+nothing can be inferred about. Between them they are everything the forecast stores.
 
 ### Accounts are single-table inheritance
 
@@ -286,6 +292,163 @@ are gitignored for the same reason.
 
 ---
 
+## Forecasting
+
+Predicting what a calendar month will cost is what the importing and categorising were always for. The
+whole of it lives under `app/models/forecast/`, and is arithmetic over the transactions rather than
+anything held on disk.
+
+### Nothing is stored but the configuration
+
+There is no forecast table. Each request rebuilds the month from the transactions; the only things
+written down are the method chosen on each category and the figures typed in by hand.
+
+The alternative was a snapshot — a row per category per month, written when the forecast was generated —
+which would have bought a record of what was predicted against what happened. It loses because a stored
+forecast goes stale the moment the next statement is imported, and a number on screen that disagrees
+with the transactions underneath it is worse than no number at all. It would also need a regeneration
+step, which is a thing to remember to do. Recomputing costs milliseconds over a few thousand rows, and
+a month that has finished already shows how the forecast did by comparing what was spent against what
+the same arithmetic predicts.
+
+### A category says how it is predicted
+
+`Category#forecast_method` is one of four, because categories differ in kind rather than in degree:
+
+- **`monthly_average`** — the mean of recent complete months. For Food and Car, which are steady in
+  aggregate and unpredictable one transaction at a time.
+- **`regular_payments`** — the individual direct debits and subscriptions, recognised from history and
+  predicted one at a time. For Utilities and Subscriptions.
+- **`manual`** — the reader's own figure. For Holidays, where the spending is real and large and the
+  history says nothing whatever about next month.
+- **`excluded`** — left out. For paying off a card and moving money between the household's own
+  accounts, which is not spending: the spending already happened on the card, and counting it here
+  would count the same money twice.
+
+The setting lives on `Category` rather than in a table of its own. A one-to-one settings table would
+have needed a row conjured for every category before it could be configured, and a null-object dance
+for the ones without one. Excluding transfers through a fourth enum value, rather than an `internal`
+boolean or a way of excluding whole accounts, keeps it to the concept already there.
+
+The enum is declared `prefix: :forecast, scopes: false`. The prefix keeps the predicates meaningful —
+`category.forecast_manual?` rather than a bare `manual?` on a Category. Suppressing the scopes matters
+more than it looks: the obvious name for the first value is `average`, and the generated
+`Category.average` would have sat on top of `ActiveRecord::Calculations#average`. Nothing needs a scope,
+so none is generated and the collision cannot recur under a different name.
+
+### Spend is positive here, and negative everywhere else
+
+Inside the module every figure is a positive magnitude. The conversion happens in one place,
+`Forecast::History`, and nothing else in the module touches `amount_pence`.
+
+Three things force it. The central rule is `[expected - actual, 0].max`, whose negative twin reads as a
+bug at every review forever. The reader types `600` for a holiday, not `-600`, so a hand-entered figure
+has to be stored positive — and a stored positive cannot sit beside computed negatives in one column.
+And the screen shows outgoings only, so the sign distinguishes nothing and would only paint every row in
+the red that elsewhere means "money left an account".
+
+Staying negative throughout was the alternative, and its merit is real: one convention across the whole
+application, and a forecast figure directly comparable with a transaction amount. It loses to the clamp
+and the typed-in figure.
+
+### Everything counts in whole months
+
+A month is an index — `year * 12 + month` — and a gap between payments is a subtraction. That is what
+makes February, leap years and thirty-day months a non-question rather than a list of cases to handle;
+the only day arithmetic in the module is the one range that picks out a month's own transactions. There
+is deliberately no pro-rating by days elapsed: the rule is a whole month's prediction less what has
+already gone, and a daily burn rate is a different question nobody asked.
+
+### Remaining belongs to the strategy, not the line
+
+This is the design's one real idea, and it comes straight out of the requirement.
+
+`Forecast::Line#actual` is the same thing under every method: everything spent in the category this
+month, including spending no method predicted. `remaining` is not, because how much is still to come
+depends entirely on how the prediction was arrived at.
+
+Suppose Utilities expects the energy bill at £218 and the water bill at £40. The energy bill goes out at
+£248. Subtracting at the level of the category gives `£258 − £248 = £10` — which has quietly eaten £30
+of a water bill that has not been paid and is still going to be. Settling the payments one at a time
+gives £40, and goes on giving £40 whatever the energy bill came in at, because that payment is done. The
+projected total then reads £288 against an expectation of £258, which is the honest answer rather than
+an error.
+
+So the line owns `actual` and `projected`; the strategy owns `expected` and `remaining`. Strategies take
+a **set of rows** rather than a `Category`, which is what lets the uncategorised line below be the same
+code with a different scope instead of a special case threaded through four classes.
+
+### The average, and what it divides by
+
+The window is the N complete months before the month being forecast — not before today, so that a
+forecast for March reads the same in June as it did in March, and a month gone by is a fair test of the
+method. The window end is *also* held to the last month that has actually happened, or a forecast three
+months out would average over months that do not exist yet, each contributing nothing and dragging the
+prediction down by a third.
+
+The divisor is the number of those months the **records** cover, not the months the **category** has
+existed for. Dividing by the category's own history would make one £600 transaction four months ago
+predict £600 every month forever. Dividing by the records' coverage means a month in which the household
+genuinely spent nothing on Food did happen and does pull the average down — which is what an average of
+recent months is supposed to mean.
+
+The cost is a category younger than the window, averaged over months of zeroes and reading low.
+`Category#forecast_months` is the remedy, and the workings page prints the months with the zeroes
+visible so that the cause is discoverable — a knob nobody can see the need for is not a remedy.
+
+### Recognising a regular payment
+
+Detection runs over **all** history rather than the average's window. A six-month window holds at most
+one occurrence of an annual insurance premium, so it could never reach the two occurrences a cadence
+needs; two years of history finds it at once, and the categories using this method are few enough that
+loading all of them is a few hundred rows.
+
+What replaces the window is a **staleness rule** expressed in the payment's own cadence: a payment is
+live only if its last occurrence is at most `cadence + 1` months back. That is strictly better than a
+fixed window — a monthly payment gets two months of silence, a quarterly one four, an annual one
+thirteen — and without it a subscription cancelled three years ago has a spotless monthly cadence and
+reads as due every month for ever.
+
+The rest: a payee is its counterparty where it has one and its exact description where it has not, since
+plenty of direct debits never acquired one. The cadence is the median gap in months, snapped to the
+nearest of 1, 3, 6 and 12, because a raw median of two or five is noise around one of those rather than
+a schedule anything is on; a median above twelve is reported on the workings page as too erratic to
+forecast, never dropped in silence, since silence there is money vanishing from the total with no trace.
+The predicted amount is the **most recent** occurrence rather than an average of them — the whole reason
+to use this method instead of the average is that a direct debit steps up and the new figure is what
+next month costs, and averaging lags precisely the change the method exists to catch. The price is a
+genuinely variable bill, where the answer is to forecast that category by its average instead.
+
+### The uncategorised line
+
+`transactions.category_id` is nullable and about a third of real transactions have none. Left out, the
+headline total would be a third short with nothing on the page to say so, so everything uncategorised
+gets a line of its own, predicted by average because unclassified spending has no structure to exploit.
+Sitting high, it is also the standing argument for writing another import rule.
+
+Refunds — positive amounts inside a spend category — are ignored, because `Transaction.spend` filters to
+negatives. Averages therefore read very slightly high. Netting each category would be more honest for
+the real categories and nonsense for this one, because salary lands here: netting would make
+Uncategorised positive and the line would invert or disappear. One rule for everything beats two.
+
+### Two queries, not a hundred and eighty
+
+`Forecast::History` loads the window across every category at once, and all history for the few
+categories forecast from their payments. Building the page a category at a time would be a query per
+category per month.
+
+Rows are `pluck`ed and grouped in Ruby rather than grouped by `strftime('%Y-%m', date)` in SQL. That
+keeps SQLite's date functions out of the application and follows `CounterpartiesController#index`, which
+sorts its derived totals in memory for the same reason. The escape hatch, if a few thousand rows ever
+stops being milliseconds, is to push the grouping into the query.
+
+`app/models/forecast/` is the first subdirectory under `app/models`, which the flat neighbours
+(`AnalysisImporter`, `FileImporter`, `TransactionPage`) do not need. Eight small classes that only make
+sense together earn it, and two of them — `Month` and `Line` — have names far too generic to sit at the
+top level.
+
+---
+
 ## The web layer
 
 Conventional Rails: eight controllers, ERB views, no client-side framework.
@@ -355,6 +518,35 @@ transactions with it, a counterparty leaves them behind. And **the strip does no
 This is also why `.pure-button-error` is defined in `application.css`. Pure ships only the primary
 variant, so the delete buttons throughout the app — the transaction rows, the rules list, and now Destroy
 — had been asking for a class that did not exist and rendering as ordinary grey buttons.
+
+The forecast's own pages deliberately do **not** use the strip. `show_actions` requires an edit path and
+a destroy path, and a forecast page is a report about a month rather than a record: there is nothing to
+edit as a record and nothing to delete. They open with a plain Back link instead, in the same position.
+
+**The forecast is one screen and a workings page behind each line.** `ForecastsController` is read-only
+and takes the month as `?month=`, coercing anything unreadable back to the current month rather than
+raising — the same view `TransactionPage#coerce_date` takes of a date arriving as a parameter — and
+clamping it to the same bounds the navigation buttons show, so a hand-edited URL cannot strand the reader
+where the buttons would not go. Month navigation reuses the disabled-span pattern of
+`TransactionsHelper#transaction_anchor_link`, for the same reason: the controls keep their positions.
+
+A **workings page per line** rather than rows that expand. There is no JavaScript build step, the
+existing Stimulus controllers each earn their keep, and a fourth written for disclosure would not — while
+a page has room to print the months an average is taken over, or every recognised payment with the date
+and amount of the one that has already gone out. That page is where the reader can check the guess, which
+is the difference between a forecast they can act on and a number they have to take on trust.
+
+The hand-entered figure is **an upsert on one route**, `POST /forecast/categories/:id/manual`, reached
+from the workings page: `find_or_initialize_by(category, month)`, saved, or destroyed when the field is
+left empty. A full `resources :manual_forecasts` would be five routes and two more screens around a
+record that is a single number. Emptying the field deletes rather than storing zero, because "I have not
+said" and "nothing will be spent" are different statements and the screen shows them differently — a
+category awaiting a figure reads **not set**, and the count of them is reported above the table, that
+being much the likeliest way for the headline total to be quietly too small.
+
+Configuration has no screen of its own: the method and the lookback are two more fields on the category
+form, and the method is a sortable column on the categories list — ordering by it answers "which are
+still on the default?".
 
 **A Show screen names itself, and its data does not name it again.** Index, new and edit screens all
 carried an `<h1>` and a `content_for :title`; three of the five Show screens carried neither, so the strip
@@ -443,8 +635,13 @@ transaction list's own sticky column headings, which pass underneath it; that is
 relationship in the application, and it is why either number exists. The `nav` element also used to sit
 outside `<body>` — browsers moved it in silently, but a sticky element is better off where it says it is.
 
-**One date format, formatted on the server.** Every date the reader sees goes through the `short_date`
-helper and `Date::DATE_FORMATS[:short_date]`, and reads `1-Jan-23`. This reverses an earlier decision: a
+**Dates are formatted on the server, through a helper, in one of two registered formats.** Every date
+the reader sees goes through the `short_date` helper and `Date::DATE_FORMATS[:short_date]`, and reads
+`1-Jan-23`. The forecast adds the second: it is about a whole month rather than any day in one, and
+`1-Mar-26` would claim a precision it does not have, so `month_name` and
+`Date::DATE_FORMATS[:month_year]` give `March 2026`. The rule being kept was never "exactly one format"
+— it is that no view spells out a `strftime` of its own, so that changing how a date reads is a change
+in one place. This reverses an earlier decision: a
 `dateinlocale` Stimulus controller used to emit dates as ISO-8601 in data attributes and rewrite them
 client-side in the browser's locale. Following the reader's locale sounds better than it read — the
 transaction list still printed `01/01/2023` server-side, the accounts index printed an ISO date, and the
@@ -486,9 +683,27 @@ to the database or to a CSV file formatted per that account's `ImportColumnsDefi
 specs generate a statement, import it, and assert on the result, rather than checking a fixture. It is
 also used by `data:create_sample_data`, so it is not test-only code.
 
+`ForecastDataBuilder` is its counterpart for the forecast, and separate from it on purpose:
+`AccountTrxDataGenerator` assigns no categories at all, pins its transactions to the account's opening
+date rather than to the month under test, and is shared with `data:create_sample_data` — bending it to
+suit would have risked the import specs for no gain. The builder places a history relative to a `today`
+the spec supplies: six months of the weekly shop, a monthly direct debit that steps up, a quarterly
+bill, a subscription cancelled a year ago, a card payment, some uncategorised spending and a salary.
+
+It leaves balances unset, which the import fixtures cannot. `balance_pence` is nullable and the forecast
+never reads it, so skipping the running total keeps `Transaction#sequence` and its `ImportError` out of a
+fixture that has nothing to do with importing.
+
+`Forecast::Month` takes `today:` as an argument rather than reading the clock, which is why no forecast
+spec freezes time: each one states the situation it is testing instead.
+
 The suite creates the categories it needs itself, via `REQUIRED_CATEGORIES` in `spec/rails_helper.rb`.
 It deliberately does not seed from the real statement files: those are gitignored, so depending on them
-would make the suite unrunnable on a fresh clone and in CI.
+would make the suite unrunnable on a fresh clone and in CI. One trap that constant sets: it is created in
+a `before(:suite)`, *outside* the per-example transaction, so Shopping, Travel and Utilities exist in
+every forecast spec and appear as extra lines at zero. They add nothing to a total, but a spec counting
+rows has to expect them — and a factory for a category named "Utilities" would collide with the one
+already there, which is why the regular-payments factory is named `:subscriptions_category`.
 
 System specs drive a real Chrome through Capybara. The browser locale is pinned to `en_GB` via the
 `LANGUAGE` environment variable. Displayed dates no longer depend on it, but a date *field* is drawn by
@@ -519,22 +734,40 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
 ## Where it stands
 
 Working: the account model, both import forms, the categorisation rules and their per-transaction
-corrections, the rules and counterparty screens, the CSV analysis screen, transaction CRUD over Turbo, and
-seeding that rebuilds a development database end to end.
+corrections, the rules and counterparty screens, the CSV analysis screen, transaction CRUD over Turbo,
+the monthly forecast and its workings pages, and seeding that rebuilds a development database end to end.
 
-The two gaps that matter:
+The gap that matters:
 
 - **Form B has no UI or route.** `FileImporter` is only ever invoked from `AccountSeeder` and from its
   spec. Loading a new statement means dropping into `bin/rails runner`. This is the obvious next piece of
   work, and it is now a much more attractive one, because the categorisation behind it is real: against
   a year's actual downloads, the derived rules categorise about 64% of transactions automatically, and
   85% within the window that was analysed by hand.
-- **No analysis or prediction exists yet** — no reporting views, no aggregation by category or period.
-  This is the point of the application and none of it is built.
 
-Smaller ones: nothing **suggests** which counterparties to merge, so the duplicates are found by eye; a rule
-cannot be created from a transaction you are looking at, so its description has to be retyped; and the
-accounts index renders raw ISO dates while the show page renders localised ones.
+**Prediction now exists; analysis of the past still does not.** The forecast answers "what will this
+month cost, and how much of it has gone", which was the point of the application. What it does not do is
+look backwards: there are no charts, no totals by category over a year, no comparison between one period
+and another, and no record of how past forecasts actually did beyond recomputing them a month at a time.
+
+Three gaps the forecast opened, all of them visible rather than silent:
+
+- **A recurring series split by a counterparty added part-way through its history is not recognised.**
+  The payee is grouped by counterparty where it has one and by description where it has not, so the two
+  halves can each fall below the two occurrences a cadence needs. Merging the two counterparties reunites
+  it, which is now a supported operation rather than a dead end.
+- **Refunds are ignored**, so averages read very slightly high — see the reasoning above.
+- **A category created after the transactions it should cover reads low**, being averaged over months of
+  zeroes. The workings page shows the zeroes and `forecast_months` is the remedy, but nothing warns.
+
+Smaller ones elsewhere: nothing **suggests** which counterparties to merge, so the duplicates are found by
+eye; a rule cannot be created from a transaction you are looking at, so its description has to be retyped;
+and the accounts index renders raw ISO dates while the show page renders localised ones.
+
+One worth doing next time a migration is written: `Transaction#sequence` runs
+`account.transactions.where("date <= ?", date).order(:date, :day_index).last` **once per imported row**,
+and there is no index on `(account_id, date)` — so a 2,626-row import scans a growing table 2,626 times.
+It was left alone here only because it has nothing to do with forecasting.
 
 One newly opened: **`AnalysisImporter` can resurrect a merged-away counterparty.** `counterparty_for` looks
 one up by name and creates it when absent, so re-running the analysis import recreates a name that a merge

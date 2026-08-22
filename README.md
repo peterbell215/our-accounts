@@ -12,7 +12,8 @@ It is built for one household. There is no login, no user accounts, and the data
 on your own machine.
 
 > **Status: usable, but unfinished in one important way.** Loading a statement has no screen yet — it is
-> a command you type. Everything downstream of that works. See [What isn't built yet](#what-isnt-built-yet).
+> a command you type. Everything downstream of that works, including forecasting what a month will cost.
+> See [What isn't built yet](#what-isnt-built-yet).
 
 ---
 
@@ -26,6 +27,7 @@ on your own machine.
 - [Teaching it your categories](#teaching-it-your-categories)
 - [Importing a statement](#importing-a-statement)
 - [Correcting categories](#correcting-categories)
+- [Forecasting a month](#forecasting-a-month)
 - [Command reference](#command-reference)
 - [When something goes wrong](#when-something-goes-wrong)
 - [What isn't built yet](#what-isnt-built-yet)
@@ -71,11 +73,12 @@ There is no `bin/dev` — `bin/rails server` is the only command you need.
 
 ## The screens
 
-Four items in the navigation bar:
+Five items in the navigation bar:
 
 | Screen | What it is for |
 | --- | --- |
 | **Accounts** | Your bank and credit-card accounts, and the transactions in each |
+| **Forecast** | What this month is likely to cost, and how much of it has already gone |
 | **Categories** | The list of spending categories |
 | **Counterparties** | The suppliers and vendors you deal with, and everything you have spent with each |
 | **Input Columns Definition** | How to read each institution's CSV layout |
@@ -140,6 +143,27 @@ saving. That is deliberate: counterparty names imported from statements are alre
 creating a new one from a typo would make it worse. Create it on the Counterparties screen first. Case and
 stray spaces do not matter — `octopus energy` finds `Octopus Energy`.
 
+### Forecast
+
+What this month is likely to cost, category by category, and how much of it has already gone. Every line
+shows the forecast, what has been spent so far, and what is still to come — with a total at the bottom
+that is the number the screen is really for.
+
+**Still to come never goes below zero.** A category you have already overspent simply has nothing left
+to come; it does not start subtracting from the rest.
+
+Use **«** and **»** to move a month either way. Going back to a month that has finished swaps the last
+column for **Difference**, which is how far the month ran over or under what would have been predicted
+for it — the closest thing to a report card the application has.
+
+Clicking a category opens its **workings**: the months an average was taken over, or the individual
+bills a category was built from, and in every case the transactions recorded in that category this month
+so you can check the figures against what actually happened.
+
+How each category is predicted is set on the [Categories](#categories) screen — or by clicking what the
+second column says, which takes you straight to that category's form. See
+[Forecasting a month](#forecasting-a-month) for what to choose and why.
+
 ### Categories
 
 A flat list of names with optional descriptions — "Groceries", "Utilities", "Dine Out". Categories are
@@ -149,9 +173,15 @@ Deleting one is refused while any import rule still assigns it, and the message 
 because a rule without a category has nothing left to do. Change or delete those rules first. Otherwise the
 delete goes ahead: transactions already filed under the category are kept, and simply stop naming one.
 
-The list is alphabetical by name to begin with. Click either column heading to reorder it, and the same
+Each category also carries **how it should be predicted**, which is what the
+[Forecast](#forecasting-a-month) uses — an average of recent months, its regular payments one at a time,
+a figure you enter yourself, or not at all. A new category is set to the average until you say otherwise.
+Where you choose the average you can also say **how many months to average over**; leave it empty for six.
+
+The list is alphabetical by name to begin with. Click any column heading to reorder it, and the same
 heading again to reverse it; an arrow marks which column the order is on. Sorting by description brings
-the ones you have not described yet together.
+the ones you have not described yet together, and sorting by **Predicted by** groups them by method,
+which is the quickest way to see which ones you have not thought about yet.
 
 Most of your categories will be created for you the first time you load a hand-categorised statement,
 so it is usually easier to do that first and tidy the list afterwards than to type them all in.
@@ -403,6 +433,69 @@ Your hand judgement always wins over a rule, and re-running changes nothing.
 
 ---
 
+## Forecasting a month
+
+Once your spending is categorised, the application will tell you what the month is likely to cost and
+how much of that has already gone out. It is worth ten minutes' setting up, because the quality of the
+answer depends entirely on telling it how each category behaves.
+
+### Telling it how a category behaves
+
+Open **Categories**, edit each one, and choose under **Predict this by**. There are four answers.
+
+**An average of recent months.** The right choice for most categories: Food, Car, Dine Out — the ones
+that are steady enough over a month even though no single transaction is predictable. It averages the
+last six complete months, ignoring the month you are looking at, and you can change six to anything from
+one to twenty-four where that suits the category better.
+
+**Its regular payments, one at a time.** For categories made up of standing bills — Utilities,
+Subscriptions. Rather than averaging the category, it recognises each direct debit from your history and
+predicts them separately: what each one costs, how often it comes, and whether it has been paid yet this
+month. This is much the better answer where it applies, and it needs nothing typed in.
+
+**A figure I enter myself.** For Holidays, and anything else where the spending is real, large, and
+utterly unlike last month. Nothing can be inferred, so the application asks instead. Open the category
+from the forecast and type what you expect; leave the field empty and save to withdraw it. Until you
+give a figure the line reads **not set**, and the forecast warns you above the table that its total is
+that much too small.
+
+**Not forecast.** For paying off a credit card, and for moving money between two of your own accounts.
+That is not spending — the spending already happened on the card — and counting it would count the same
+money twice. Excluded categories still appear on the screen, so you can see what has been left out, but
+they add nothing to the total.
+
+### What to expect from the regular-payments method
+
+- A payment has to have happened **twice** before it can be recognised, because one occurrence says
+  nothing about how often it comes. A new direct debit appears on its second one.
+- It handles monthly, quarterly, half-yearly and yearly bills, and only expects them in the months they
+  are actually due.
+- It predicts **the most recent amount**, not an average. Direct debits step up, and last month's figure
+  is the best guess at next month's.
+- That last point makes it the wrong choice for a genuinely variable bill — energy at £120 in summer and
+  £300 in winter. Put that category on the average instead.
+- A bill you have cancelled drops off on its own once it has been silent for longer than its own cycle.
+- A payee that appears under two counterparties may not be recognised at all, because its history is
+  split in two. Merge the counterparties on the [Counterparties](#counterparties) screen and it reunites.
+
+### Reading the month
+
+The forecast is one number per category, less what has already been spent. Where a category is predicted
+from its regular payments, that subtraction happens **bill by bill**, which matters more than it sounds:
+if the energy bill was expected at £218 and came in at £248, it is settled and the water bill still to
+come is untouched. Subtracted at the level of the category, that £30 would have quietly eaten into it.
+
+### Uncategorised spending
+
+Anything with no category gets a line of its own at the bottom, forecast the same way as an average. It
+is there because leaving it out would make the total roughly a third too small on real data, with nothing
+on the screen to say so. If it is a large number, that is the nudge to write a few more import rules.
+
+Refunds are not counted — the forecast looks at money going out only — so a category with a lot of
+returns reads a little high.
+
+---
+
 ## Command reference
 
 Run these from the project directory.
@@ -445,6 +538,20 @@ Check its **Matched** count on the rules list. If it is zero, the usual causes a
 leading or trailing spaces — a literal rule matches exactly, and the list marks those with ⚠ — or a
 **Transaction type** that does not match the statement's. Leave the type blank unless you mean it.
 
+**A category's forecast looks far too low**
+Open its workings from the forecast. If the months it is averaged over are mostly zeroes, the category
+is younger than the six months it looks back over — it is being averaged against months it did not
+exist for. Shorten **Months to average over** on the category, or predict that one by hand.
+
+**A direct debit I pay every month is not in the regular payments list**
+Two things stop it. It needs to have happened **twice** before a cadence can be worked out, so a new one
+does not appear until its second payment. Or its history is split across two counterparties, in which
+case neither half has enough occurrences — merge them on the Counterparties screen.
+
+**The forecast total looks too small**
+Check the line above the table. A category set to *A figure I enter myself* contributes nothing until you
+give it one, and the screen names the ones still waiting.
+
 **`db:seed` says it is not seeding anything**
 It cannot find the statement files in `db/`, or the credentials naming them are not set. It reports
 which file is missing.
@@ -457,14 +564,17 @@ Being honest about the gaps, in the order they matter:
 
 1. **No screen for importing a statement.** `FileImporter` works and is well tested, but you have to
    invoke it from the command line. This is the most worthwhile thing to build next.
-2. **No analysis or prediction.** No charts, no totals by category or by month, no forecasting — which
-   is awkward, because that was the point of the application. Everything needed to build it is in place:
-   transactions are loaded, categorised and reconciled.
+2. **No look at the past.** The forecast tells you about the month ahead, but there is nothing that
+   shows a year of Food side by side, no charts, and no comparison of one period against another. The
+   only backward view is stepping the forecast back a month at a time to see how it did.
 3. **A rule cannot be created from a transaction you are looking at.** Having spotted an uncategorised
    row, you have to go to the rules screen and retype its description rather than saying "make a rule from
    this".
 4. **Nothing suggests which counterparties to merge.** You find the duplicates yourself; alphabetical order
    brings most of them together, but the tool does not propose groups.
+5. **Nothing warns that a category is too young to average.** A category you created last month and never
+   applied to older transactions is averaged over five months of zeroes, so it reads low. The workings
+   page shows the zeroes, but you have to go and look.
 
 How well the automatic categorisation does depends on how much hand analysis you feed it. Against a
 year of real statements with one quarter analysed by hand, roughly two thirds of transactions were

@@ -11,6 +11,7 @@
     <tr>
       <th><%= sort_link "name", "Name" %></th>
       <th><%= sort_link "description", "Description" %></th>
+      <th><%= sort_link "forecast_method", "Predicted by" %></th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -19,6 +20,7 @@
       <tr id="<%= dom_id category %>">
         <td><%= category.name %></td>
         <td><%= category.description %></td>
+        <td><%= category.forecast_method_label %></td>
         <td><%= link_to "Show this category", category_path(category) %></td>
       </tr>
     <% end %>

@@ -32,5 +32,10 @@ class Account < ApplicationRecord
   # validation above now prevents, but older data may still hold — resolves to the same one every time.
   scope :named, ->(name) { where("LOWER(name) = ?", name.to_s.squish.downcase).order(:id) }
 
+  # The household's own accounts, as against the counterparties sharing this table.  Named because the
+  # distinction is made in several places and "type IN (...)" spelled out at each of them says what it
+  # does rather than what it means.
+  scope :own, -> { where(type: %w[ BankAccount CreditCardAccount ]) }
+
   monetize :opening_balance_pence, allow_nil: true
 end

@@ -1,4 +1,5 @@
-# One date format for the whole application: 1-Jan-23.
+# Two date formats for the whole application, both registered here and both reached through a helper:
+# 1-Jan-23 for a date, and March 2026 for a month the forecast is about.
 #
 # Dates were previously rendered three different ways — 01/01/2023 in the transaction list, an ISO date
 # on the accounts index, and whatever the reader's browser locale produced for the rest, because a
@@ -10,3 +11,8 @@
 # enough for that not to matter.
 Date::DATE_FORMATS[:short_date] = "%-d-%b-%y"
 Time::DATE_FORMATS[:short_date] = "%-d-%b-%y"
+
+# The forecast is about a whole month rather than a day, and "1-Mar-26" would be claiming a precision it
+# does not have. The rule being kept here was never "exactly one format" — it is that no view spells out
+# a strftime of its own, so that changing how a date reads is a change in one place.
+Date::DATE_FORMATS[:month_year] = "%B %Y"

@@ -1,0 +1,100 @@
+<%= render "layouts/notice", notice: notice %>
+
+<% content_for :title, "Forecast — #{month_name(@forecast.month)}" %>
+
+<h1>Forecast for <%= month_name(@forecast.month) %></h1>
+
+<div class="transaction-nav">
+  <%= forecast_month_link "« #{month_name(@forecast.previous)}", @forecast, :back %>
+  <%= forecast_month_link "#{month_name(@forecast.next)} »", @forecast, :forward %>
+  <span class="transaction-nav-status">
+    <% if @forecast.past? %>
+      This month has finished, so <strong>Difference</strong> shows how the forecast did.
+    <% elsif @forecast.future? %>
+      This month has not started yet.
+    <% else %>
+      Today is <%= short_date @forecast.today %>.
+    <% end %>
+    <%= link_to "jump to this month", forecast_path unless @forecast.current? %>
+  </span>
+</div>
+
+<% unless @forecast.any_transactions? %>
+  <p>No transactions have been imported yet, so there is nothing to forecast from.</p>
+<% end %>
+
+<% if @forecast.awaiting_figures.any? %>
+  <p id="awaiting_figures">
+    <%= pluralize @forecast.awaiting_figures.count, "category" %>
+    <%= @forecast.awaiting_figures.one? ? "is" : "are" %> forecast by hand and
+    <%= @forecast.awaiting_figures.one? ? "has" : "have" %> no figure for this month:
+    <%= safe_join(@forecast.awaiting_figures.map { |line|
+          link_to line.label, forecast_line_path(line, @forecast.month) }, ", ") %>.
+    Until you give one, the total below is that much too small.
+  </p>
+<% end %>
+
+<table id="forecast" class="pure-table pure-table-striped">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Predicted by</th>
+      <th>Forecast</th>
+      <th><%= @forecast.past? ? "Spent" : "Spent so far" %></th>
+      <th><%= @forecast.past? ? "Difference" : "Still to come" %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @forecast.lines.each do |line| %>
+      <tr id="<%= line.uncategorised? ? "forecast_uncategorised" : dom_id(line.category, "forecast") %>">
+        <td><%= link_to line.label, forecast_line_path(line, @forecast.month) %></td>
+        <td>
+          <% if line.uncategorised? %>
+            An average of recent months
+          <% else %>
+            <%= link_to line.category.forecast_method_label, edit_category_path(line.category) %>
+          <% end %>
+        </td>
+        <td class="currency">
+          <% if line.awaiting_figure? %>
+            <%= link_to "not set", forecast_line_path(line, @forecast.month) %>
+          <% else %>
+            <%= forecast_money line.expected %>
+          <% end %>
+        </td>
+        <td class="currency"><%= humanized_money_with_symbol line.actual %></td>
+        <td class="currency"><%= forecast_money(@forecast.past? ? line.difference : line.remaining) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th>Total</th>
+      <th></th>
+      <th class="currency"><%= humanized_money_with_symbol @forecast.expected %></th>
+      <th class="currency"><%= humanized_money_with_symbol @forecast.actual %></th>
+      <th class="currency">
+        <%= humanized_money_with_symbol(@forecast.past? ? @forecast.actual - @forecast.expected : @forecast.remaining) %>
+      </th>
+    </tr>
+  </tfoot>
+</table>
+
+<% if @forecast.excluded_lines.any? %>
+  <p id="excluded_categories">
+    Left out of the total deliberately, being money moved rather than money spent:
+    <%= safe_join(@forecast.excluded_lines.map { |line| line.label }, ", ") %>.
+  </p>
+<% end %>
+
+<p>
+  <% if @forecast.past? %>
+    <strong>Difference</strong> is what was spent less what would have been forecast for the month, so a
+    positive figure is an overspend.
+  <% else %>
+    <strong>Still to come</strong> never goes below zero: a category you have already overspent simply has
+    nothing left to come.
+  <% end %>
+  Change how a category is predicted from the <%= link_to "Categories", categories_path %> screen, or by
+  clicking what it says in the second column.
+</p>

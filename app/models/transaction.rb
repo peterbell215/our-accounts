@@ -25,6 +25,10 @@ class Transaction < ApplicationRecord
 
   scope :on_or_before, ->(date) { where(date: ..date) }
 
+  # Outgoings only.  Income and refunds are positive and have no place in a forecast of what will be
+  # spent — a month's salary landing in an uncategorised bucket would swamp everything around it.
+  scope :spend, -> { where(amount_pence: ...0) }
+
   # Everything strictly older than one row, in the ordering above.  Keyset rather than offset paging, so
   # that adding a transaction while someone is scrolling neither repeats nor skips a row.
   scope :older_than, ->(date, day_index, id) {
