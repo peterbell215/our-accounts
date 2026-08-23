@@ -56,6 +56,7 @@ class Forecast::Month
     @categories = Category.order(:name).to_a
     @history = Forecast::History.new(month: @month, today: @today, categories: @categories)
     @manual = ManualForecast.where(month: @month).index_by(&:category_id)
+    @schedules = load_schedules
   end
 
   # @return [Array<Forecast::Line>] categories by name, then the uncategorised line
@@ -114,6 +115,15 @@ class Forecast::Month
   end
 
   private
+    # The frequencies the reader has set by hand, for the whole page in one query rather than one per
+    # category — the same rule Forecast::History follows and for the same reason.  Only the categories
+    # forecast from their payments can have any, which is also all History loads full history for.
+    def load_schedules
+      ids = @categories.select(&:forecast_regular_payments?).map(&:id)
+
+      ids.empty? ? {} : PaymentSchedule.where(category_id: ids).group_by(&:category_id)
+    end
+
     def line_for_category(category)
       build_line(category: category, label: category.name,
                  method: category.forecast_method.to_sym, months: category.forecast_window)
@@ -130,7 +140,9 @@ class Forecast::Month
     def strategy_for(method, category, rows, months)
       case method
       when :monthly_average  then Forecast::MonthlyAverage.new(rows: rows, history: @history, months: months)
-      when :regular_payments then Forecast::RegularPayments.new(rows: @history.all_rows_for(category.id), month: @month)
+      when :regular_payments then Forecast::RegularPayments.new(rows: @history.all_rows_for(category.id),
+                                                                month: @month,
+                                                                schedules: @schedules.fetch(category.id, []))
       when :manual           then Forecast::ManualAmount.new(record: @manual[category.id])
       when :excluded         then Forecast::Excluded.new
       else raise ArgumentError, "unknown forecast method #{method.inspect}"

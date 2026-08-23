@@ -149,4 +149,35 @@ describe Forecast::Month, type: :model do
         .to all(eq("SOMETHING UNFILED"))
     end
   end
+
+  describe 'the frequencies set by hand' do
+    before { data }
+
+    it 'reaches the strategy, so ruling a payee out lowers the category' do
+      before_ruling = line("Subscriptions").expected
+
+      create(:payment_schedule, category: data.subscriptions, counterparty: data.energy,
+                                cadence_months: nil)
+
+      expect(described_class.new(month: month, today: today).lines
+                            .find { |l| l.label == "Subscriptions" }.expected)
+        .to eq(before_ruling - Money.from_amount(218.85))
+    end
+
+    # Loaded for the page rather than per category, the same rule Forecast::History follows: a forecast
+    # that asked once per category would be back to a query per line.
+    it 'is loaded in one query for the whole page' do
+      create(:payment_schedule, category: data.subscriptions, counterparty: data.energy, cadence_months: 1)
+
+      queries = 0
+      subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |_, _, _, _, payload|
+        queries += 1 if payload[:sql].include?("payment_schedules")
+      end
+
+      described_class.new(month: month, today: today).lines.each(&:expected)
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+
+      expect(queries).to eq(1)
+    end
+  end
 end

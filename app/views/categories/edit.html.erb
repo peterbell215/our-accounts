@@ -1,8 +1,83 @@
+<%= render "layouts/notice", notice: notice %>
+
 <% content_for :title, "Editing category" %>
 
 <h1>Editing category</h1>
 
 <%= render "form", category: @category %>
+
+<% if @payments %>
+  <h2>Its regular payments</h2>
+
+  <p>
+    Every payee found in this category's history, and whether it is part of the forecast.  Each frequency
+    is worked out from the payments themselves — how far apart they have fallen — and where that is wrong
+    you can say so here.  Naming a frequency also forecasts a payee the history could not: a direct debit
+    seen only once, or one whose dates are too ragged to read.
+  </p>
+
+  <% if @payments.any? %>
+    <%= form_with url: category_payment_schedules_path(@category), method: :patch, local: true,
+                  html: { class: "pure-form" } do %>
+      <table id="payment_frequencies" class="pure-table pure-table-striped">
+        <thead>
+          <tr>
+            <th>Payee</th><th>Last amount</th><th>Last seen</th><th>How often</th><th>In the forecast</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @payments.each do |payment| %>
+            <tr>
+              <td>
+                <%# A payee is its counterparty, or its exact description where it has none, which is how
+                    the forecast groups it.  Both fields are always rendered, always in this order, and
+                    neither is a checkbox: Rack starts a new hash in a `name[]` array only when it meets
+                    a key the last one already has, so a row that skipped a field would merge into its
+                    neighbour and both rulings would land on the wrong payee.
+                    `id: nil` because these helpers derive an id from the name, and every row here shares
+                    its names — without it the page carries one id three times over per payee. %>
+                <%= hidden_field_tag "payment_schedules[][counterparty_id]", payment.counterparty_id,
+                                     id: nil %>
+                <%= hidden_field_tag "payment_schedules[][description]", payment.payee_description,
+                                     id: nil %>
+                <% if payment.counterparty %>
+                  <%= link_to payment.label, counterparty_path(payment.counterparty) %>
+                <% else %>
+                  <%= payment.label %>
+                <% end %>
+              </td>
+              <td class="currency"><%= forecast_money payment.amount %></td>
+              <td><%= short_date payment.last_seen %></td>
+              <td>
+                <%= select_tag "payment_schedules[][cadence_months]",
+                               options_for_select(payment_schedule_options, payment.schedule_value),
+                               id: nil, class: "pure-input-1",
+                               aria: { label: "How often #{payment.label} is paid" } %>
+              </td>
+              <td><%= payment_reason payment %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 1rem">
+        <%= submit_tag "Save frequencies", class: "pure-button pure-button-primary" %>
+      </div>
+    <% end %>
+
+    <p>
+      A payee that has gone quiet for longer than its own frequency allows drops out of the forecast, and
+      that holds for a frequency you set as well: saying how often a direct debit came does not say it is
+      still coming.  Where one has genuinely stopped, <strong>Not a regular payment</strong> takes it out
+      now rather than waiting.
+    </p>
+  <% else %>
+    <p>
+      No payments have been recorded against this category yet, so there is nothing to recognise.  A
+      category with no regular payments in it is better predicted by an average.
+    </p>
+  <% end %>
+<% end %>
 
 <br>
 

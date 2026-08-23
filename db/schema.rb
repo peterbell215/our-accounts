@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_081600) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_23_090000) do
   create_table "accounts", force: :cascade do |t|
     t.string "account_number"
     t.datetime "created_at", null: false
@@ -76,6 +76,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_081600) do
     t.index ["category_id", "month"], name: "index_manual_forecasts_on_category_id_and_month", unique: true
   end
 
+  create_table "payment_schedules", force: :cascade do |t|
+    t.integer "cadence_months"
+    t.integer "category_id", null: false
+    t.integer "counterparty_id"
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.datetime "updated_at", null: false
+    t.index ["category_id", "counterparty_id"], name: "index_payment_schedules_on_category_and_counterparty", unique: true, where: "counterparty_id IS NOT NULL"
+    t.index ["category_id", "description"], name: "index_payment_schedules_on_category_and_description", unique: true, where: "description IS NOT NULL"
+  end
+
   create_table "transactions", force: :cascade do |t|
     t.integer "account_id"
     t.string "amount_currency", default: "GBP", null: false
@@ -99,5 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_081600) do
   add_foreign_key "import_matchers", "accounts", column: "counterparty_id"
   add_foreign_key "import_matchers", "categories"
   add_foreign_key "manual_forecasts", "categories"
+  add_foreign_key "payment_schedules", "accounts", column: "counterparty_id"
+  add_foreign_key "payment_schedules", "categories"
   add_foreign_key "transactions", "accounts", column: "counterparty_id"
 end
