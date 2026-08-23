@@ -319,12 +319,17 @@ the data rather than only that its buttons exist.
 - `ImportTestHelpers` wraps generating/cleaning up those CSV fixtures under `tmp/`.
 - `.github/prompts/rspec-system-test.md` documents the house template for new system specs.
 
-## Known gaps (the project stalled here)
+## Known gaps
 
 - **There is no UI or route for running an import.** `FileImporter` is only ever invoked from
-  `spec/models/file_importer_spec.rb`. Wiring it to a controller/upload form is the obvious next step.
-- **No analysis or prediction features exist yet**, despite being the point of the app — no reporting
-  views, no aggregation by category or period.
+  `AccountSeeder` and from its own spec, so loading a new statement means dropping into
+  `bin/rails runner`. Wiring it to a controller/upload form is the obvious next step.
+- **Prediction exists; analysis of the past does not.** The monthly forecast answers what this month
+  will cost and how much of it has already gone — `Forecast::Month`, the strategies beside it and the
+  `forecast` screens. Looking backwards is still missing: no charts, no totals by category over a
+  year, no comparison between one period and another, and no record of how past forecasts did beyond
+  recomputing them a month at a time. `design_docs/architecture.md` carries the detail, including
+  three gaps the forecast itself opened.
 - There is deliberately **no `bin/dev` or `Procfile.dev`**. With importmap and Propshaft there is no
   asset build to watch, and solid_queue only runs in production, so foreman would be supervising a
   single process — while costing the interactive debugger, since its stdout is not a TTY. Use
