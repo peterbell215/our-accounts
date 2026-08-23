@@ -10,3 +10,69 @@
                           "Import rules that assign it must be dealt with first." %>
 
 <%= render @category %>
+
+<h2>Counterparties</h2>
+
+<% if @counterparty_spend.any? %>
+  <p>
+    <%= pluralize(@counterparty_spend.size, "counterparty") %>, the largest spend first.
+  </p>
+
+  <table id="category_counterparties" class="pure-table pure-table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Transactions</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @counterparty_spend.each do |counterparty, count, total| %>
+        <tr id="<%= dom_id counterparty %>">
+          <td><%= link_to counterparty.name, counterparty_path(counterparty) %></td>
+          <td><%= count %></td>
+          <td class="currency <%= total.positive? ? 'positive' : 'negative' %>">
+            <%= humanized_money_with_symbol total %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No transaction filed under this category names a counterparty yet.</p>
+<% end %>
+
+<h2>Rules assigning it</h2>
+
+<% if @matchers.any? %>
+  <table id="category_matchers" class="pure-table pure-table-striped">
+    <thead>
+      <tr>
+        <th>Account</th>
+        <th>Description</th>
+        <th>Counterparty</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @matchers.each do |matcher| %>
+        <tr>
+          <td><%= matcher.account.name %></td>
+          <td><%= matcher.description %></td>
+          <%# A rule need not name one: a description too short to be an account name, such as O2, still
+              gets its rule and still assigns this category. %>
+          <td>
+            <% if matcher.counterparty %>
+              <%= link_to matcher.counterparty.name, counterparty_path(matcher.counterparty) %>
+            <% else %>
+              &mdash;
+            <% end %>
+          </td>
+          <td><%= link_to "Edit", edit_account_import_matcher_path(matcher.account, matcher) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No import rule assigns this category, so nothing will be filed under it automatically.</p>
+<% end %>

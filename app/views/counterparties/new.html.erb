@@ -2,10 +2,6 @@
 
 <h1>New counterparty</h1>
 
+<%= form_actions back: counterparties_path %>
+
 <%= render "form", counterparty: @counterparty %>
-
-<br>
-
-<div>
-  <%= link_to "Back to counterparties", counterparties_path %>
-</div>

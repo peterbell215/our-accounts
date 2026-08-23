@@ -17,7 +17,8 @@ class CounterpartyMerge
   # been moved rather than at the rename, which happens last.
   NAME_RANGE = (3..50).freeze
 
-  attr_reader :counterparties, :name, :survivor, :transactions_moved, :matchers_moved, :error
+  attr_reader :counterparties, :name, :survivor, :transactions_moved, :matchers_moved, :schedules_moved,
+              :error
 
   # @param [Array<Integer>, Array<String>] ids the counterparties to fold together
   # @param [String] name what the survivor should be called afterwards; may be a name nothing yet holds
@@ -30,6 +31,7 @@ class CounterpartyMerge
     @name = name.to_s.squish
     @transactions_moved = 0
     @matchers_moved = 0
+    @schedules_moved = 0
   end
 
   # @return [Boolean] whether the merge was carried out
@@ -46,6 +48,7 @@ class CounterpartyMerge
       # dependent: :nullify, so destroying a loser first would null the very rows being moved.
       @transactions_moved = repoint(Transaction, losers)
       @matchers_moved = repoint(ImportMatcher, losers)
+      @schedules_moved = move_schedules(losers)
 
       losers.each(&:destroy!)
 
@@ -109,6 +112,23 @@ class CounterpartyMerge
     model.where(counterparty: losers).update_all(counterparty_id: survivor.id)
   end
 
+  # Frequencies set by hand travel with the payee, because this is the very moment they are most wanted:
+  # a series split across two counterparties is not recognised at all, merging them is the repair, and
+  # losing the cadence in the process would undo half of it.
+  #
+  # Not through #repoint, though the intent is the same.  payment_schedules is uniquely indexed on
+  # (category_id, counterparty_id), so a blanket update_all would collide wherever the survivor has
+  # already been ruled on in the same category.  The survivor's own ruling wins there — it is the one the
+  # reader set against the name they are keeping — and the loser's is dropped rather than merged, since
+  # two cadences for one payee cannot both be right and nothing here can tell which.
+  def move_schedules(losers)
+    schedules = PaymentSchedule.where(counterparty: losers)
+    survivor_categories = PaymentSchedule.where(counterparty: survivor).pluck(:category_id)
+
+    schedules.where(category_id: survivor_categories).delete_all
+    schedules.where.not(category_id: survivor_categories).update_all(counterparty_id: survivor.id)
+  end
+
   def rename_survivor
     survivor.update!(name: name)
   rescue ActiveRecord::RecordInvalid => e
@@ -121,6 +141,7 @@ class CounterpartyMerge
   def forget_counts
     @transactions_moved = 0
     @matchers_moved = 0
+    @schedules_moved = 0
     @survivor = @survivor&.reload
   end
 end

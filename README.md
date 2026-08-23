@@ -99,6 +99,17 @@ and what is kept.
 Because the heading already names the record, its details do not repeat it: an account's page is headed
 *Lloyds Account* and lists the number, sort code and opening figures beneath.
 
+Creating or editing something reads the same way, with the buttons you need to leave the screen in the
+same place — under the heading, above the form, never at the bottom of the page. **Back** returns to the
+list, and when you are editing, **Show** opens the record as it currently stands, so you can look at what
+you are about to change without losing your place. There is no **Destroy** here: to delete something, open
+it first. Saving is the button at the foot of the form itself, where you finish filling it in.
+
+The one list with a **Back** button of its own is an account's import rules, because it is the only list
+you reach from somewhere else rather than from the menu bar; **Back** there returns you to the account. The
+screen that confirms a merge has one too, above the names it is about to fold together, as well as the
+**Cancel** beside **Merge** at the foot of it.
+
 Every date you are shown is written the same way throughout — `1-Jan-23`. The one exception is a date
 you can type into, which your browser draws in its own style.
 
@@ -182,6 +193,16 @@ second column says, which takes you straight to that category's form. See
 A flat list of names with optional descriptions — "Groceries", "Utilities", "Dine Out". Categories are
 shared across all accounts. You can add and rename them freely.
 
+Opening one shows **who you spent it with**: every supplier a transaction filed under this category names,
+how many of those transactions there are and what they came to, with the largest spend at the top. Each
+name is a link to that supplier's own page, where the same money is gathered the other way round — every
+dealing with them, whichever account paid. Transactions with no counterparty are simply left out; a one-off
+purchase not naming anyone is expected rather than something to fix.
+
+Below that are **the rules that file things here** — which account each belongs to, the description it
+matches, and the supplier it names, with a dash where it names none. This is also the list to read when a
+delete is refused, because those are the rules standing in the way.
+
 Deleting one is refused while any import rule still assigns it, and the message names the rules in the way,
 because a rule without a category has nothing left to do. Change or delete those rules first. Otherwise the
 delete goes ahead: transactions already filed under the category are kept, and simply stop naming one.
@@ -190,6 +211,12 @@ Each category also carries **how it should be predicted**, which is what the
 [Forecast](#forecasting-a-month) uses — an average of recent months, its regular payments one at a time,
 a figure you enter yourself, or not at all. A new category is set to the average until you say otherwise.
 Where you choose the average you can also say **how many months to average over**; leave it empty for six.
+
+Where you choose **its regular payments**, editing the category also shows you every payee it found in
+that category: what each one last cost, when it was last seen, how often it comes, and whether it is part
+of the forecast — with the reason where it is not. Each one's frequency is a dropdown, so where the
+application has read the history wrongly you can simply tell it. See
+[Correcting what it found](#correcting-what-it-found).
 
 The list is alphabetical by name to begin with. Click any column heading to reorder it, and the same
 heading again to reverse it; an arrow marks which column the order is on. Sorting by description brings
@@ -510,7 +537,9 @@ one to twenty-four where that suits the category better.
 **Its regular payments, one at a time.** For categories made up of standing bills — Utilities,
 Subscriptions. Rather than averaging the category, it recognises each direct debit from your history and
 predicts them separately: what each one costs, how often it comes, and whether it has been paid yet this
-month. This is much the better answer where it applies, and it needs nothing typed in.
+month. This is much the better answer where it applies, and it needs nothing typed in — though where it
+reads your history wrongly, you can put it right. See
+[Correcting what it found](#correcting-what-it-found).
 
 **A figure I enter myself.** For Holidays, and anything else where the spending is real, large, and
 utterly unlike last month. Nothing can be inferred, so the application asks instead. Open the category
@@ -525,8 +554,9 @@ they add nothing to the total.
 
 ### What to expect from the regular-payments method
 
-- A payment has to have happened **twice** before it can be recognised, because one occurrence says
-  nothing about how often it comes. A new direct debit appears on its second one.
+- A payment has to have happened **twice** before it can be worked out on its own, because one occurrence
+  says nothing about how often it comes. A new direct debit appears on its second one — or sooner, if you
+  tell it the frequency.
 - It handles monthly, quarterly, half-yearly and yearly bills, and only expects them in the months they
   are actually due.
 - It predicts **the most recent amount**, not an average. Direct debits step up, and last month's figure
@@ -538,7 +568,40 @@ they add nothing to the total.
   workings page lists each charge on its own line, so two ordinary payments are not mistaken for a single
   one that has doubled.
 - A payee that appears under two counterparties may not be recognised at all, because its history is
-  split in two. Merge the counterparties on the [Counterparties](#counterparties) screen and it reunites.
+  split in two. Both halves are listed, each saying it was only seen once, so you can see what has
+  happened; merge the counterparties on the [Counterparties](#counterparties) screen and it reunites,
+  keeping any frequency you had set.
+
+Everything it decided is on the category's own screen, including the payees it left out and why, so a
+figure you did not expect can always be traced back to a reason.
+
+### Correcting what it found
+
+Edit a category predicted by its regular payments and you get the whole list, with a frequency dropdown
+against each payee. Leave it on **Work it out from the history** and nothing changes. The other choices:
+
+- **Monthly, Quarterly, Twice a year, Yearly** — say how often it comes, and it is forecast at that
+  frequency whatever the history reads like. This is how you bring in a direct debit that has only been
+  paid once, and how you fix an annual premium that falls a fortnight either side of its anniversary and
+  so looks irregular.
+- **Not a regular payment** — take it out of the forecast altogether. For a bill you have cancelled and
+  do not want to wait out, or a coincidence the application has mistaken for a schedule.
+
+Three things are worth knowing about a frequency you set yourself:
+
+- **It does not keep a dead bill alive.** A payment silent for longer than the frequency you gave, plus a
+  month's grace, still drops out. Saying how often something came is not saying it is still coming — so
+  use **Not a regular payment** for something genuinely cancelled.
+- **The amount is still the last payment**, never a figure you type. A payee that has never been paid in
+  a month that has finished is not forecast whatever frequency you give it; it comes in the month after
+  its first payment.
+- **You can always give it back.** Choose **Work it out from the history** and the setting is cleared, as
+  though you had never touched it.
+
+The list describes **the last month you have imported transactions for**, the same month the forecast
+opens on, so what it says lines up with the forecast's own workings page. If every payee reads *nothing
+since…*, that is not the list being broken: it means your last import is further back than those bills'
+own cycles, and loading a more recent statement is what brings them back.
 
 ### Reading the month
 
@@ -611,9 +674,11 @@ is younger than the six months it looks back over — it is being averaged again
 exist for. Shorten **Months to average over** on the category, or predict that one by hand.
 
 **A direct debit I pay every month is not in the regular payments list**
-Two things stop it. It needs to have happened **twice** before a cadence can be worked out, so a new one
-does not appear until its second payment. Or its history is split across two counterparties, in which
-case neither half has enough occurrences — merge them on the Counterparties screen.
+Edit the category and look at the list there: every payee it found is on it, and the ones left out say
+why. Usually it is one of two things. It needs to have happened **twice** before a frequency can be
+worked out, so a new one does not appear until its second payment — set the frequency yourself and it
+appears now. Or its history is split across two counterparties, in which case neither half has enough
+occurrences; merge them on the Counterparties screen.
 
 **The forecast total looks too small**
 Check the line above the table. A category set to *A figure I enter myself* contributes nothing until you

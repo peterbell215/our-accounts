@@ -26,6 +26,10 @@ class Category < ApplicationRecord
   # and nothing to refuse the delete over.
   has_many :manual_forecasts, dependent: :destroy
 
+  # And so is a frequency set by hand for one of this category's payees: it is a ruling about how this
+  # category's spending behaves, and means nothing once the category has gone.
+  has_many :payment_schedules, dependent: :destroy
+
   # How this category's spend is predicted.  Categories differ in kind: some are steady in aggregate and
   # unpredictable transaction by transaction, so an average of recent months is as good a guess as any;
   # some are a handful of direct debits, better predicted one at a time; some are too lumpy to infer
@@ -56,6 +60,31 @@ class Category < ApplicationRecord
   #
   # @return [String]
   def forecast_method_label = FORECAST_METHOD_LABELS.fetch(forecast_method)
+
+  # Every counterparty named by a transaction filed under this category, with how many transactions name
+  # it and what they came to.  Biggest spend first: amounts are stored negative, so ascending by total
+  # does that — the same reasoning as CounterpartiesController#sort_key.  Name breaks the tie, so the many
+  # counterparties a category has exactly one transaction with still come out in a readable order.
+  #
+  # Transactions naming nobody are left out rather than gathered into a row of their own: a one-off
+  # purchase, or a description too cryptic to identify, is expected to have no counterparty.
+  #
+  # One grouped query and one load, rather than a count and a sum per row: the analysis import left a few
+  # hundred counterparties, and a busy category names a good number of them.  Ordered in Ruby for the same
+  # reason CounterpartiesController#index is — the count and the total are grouped values rather than
+  # columns to ORDER BY.
+  #
+  # @return [Array<Array(Counterparty, Integer, Money)>]
+  def counterparty_spend
+    rows = transactions.where.not(counterparty_id: nil)
+                       .group(:counterparty_id)
+                       .pluck(:counterparty_id, Arel.sql("COUNT(*)"), Arel.sql("SUM(amount_pence)"))
+
+    counterparties = Counterparty.where(id: rows.map(&:first)).index_by(&:id)
+
+    rows.map { |id, count, pence| [ counterparties[id], count, Money.new(pence) ] }
+        .sort_by { |counterparty, _count, total| [ total, counterparty.name.downcase ] }
+  end
 
   # Imports category names from a CSV holding a "Category" column, such as the outgoings analysis
   # spreadsheet.  Files without that column, for example a raw bank statement, are ignored.

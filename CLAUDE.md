@@ -300,7 +300,7 @@ Every date the reader sees is formatted on the server by the `short_date` helper
 (`config/initializers/date_formats.rb`) — use it rather than adding another `strftime`. Date *fields*
 stay native, so the browser draws them in its own locale.
 
-### Show screens share one strip of actions
+### Every screen opens with a strip of actions
 
 Every `show.html.erb` is `content_for :title`, then an `<h1>`, then `show_actions` (`ApplicationHelper`,
 rendering `layouts/_show_actions`), then the record — the same opening as every index, new and edit screen.
@@ -314,6 +314,20 @@ its transactions with it, a counterparty leaves them behind. Actions belonging t
 page stay with that list: `Add New Transaction` is on the transaction list, not in the account's strip.
 `spec/system/show_actions_spec.rb` covers all five screens, and asserts by geometry that the strip is above
 the data rather than only that its buttons exist.
+
+**New and Edit screens have their own strip**, `form_actions` (rendering `layouts/_form_actions`), in the
+same position — under the `<h1>`, above the form. It draws **Back** to the list and, on an Edit screen,
+**Show** to the record; those bare words again, not per-model wording. There is no Destroy: a form offers
+nothing to delete that its Show screen does not, and Save should not sit next to it. Nothing goes at the
+foot of the page — that is what this replaced, and on the category edit screen, whose form is followed by
+the regular-payments table, it put the way back off the bottom of the screen. `.form-actions` is a second
+selector on the `.show-actions` rule in `application.css`; do **not** rename `.show-actions` to unify them,
+because `show_actions_spec.rb` selects on it to assert what a Show screen holds.
+`spec/system/form_actions_spec.rb` covers all ten screens, by geometry, the same way.
+
+`import_matchers/index` uses `form_actions` as well: it is the only list reached from somewhere other than
+the menu bar, so the only one with anywhere to go back to. Transaction rows are the exception to all of
+this, because the row is the form — the controller renders Turbo Streams and there is no `edit` route.
 
 ## Testing conventions
 
@@ -339,12 +353,21 @@ the data rather than only that its buttons exist.
 - **There is no UI or route for running an import.** `FileImporter` is only ever invoked from
   `AccountSeeder` and from its own spec, so loading a new statement means dropping into
   `bin/rails runner`. Wiring it to a controller/upload form is the obvious next step.
-- **Prediction exists; analysis of the past does not.** The monthly forecast answers what this month
+- **Prediction exists; analysis of the past barely does.** The monthly forecast answers what this month
   will cost and how much of it has already gone — `Forecast::Month`, the strategies beside it and the
-  `forecast` screens. Looking backwards is still missing: no charts, no totals by category over a
-  year, no comparison between one period and another, and no record of how past forecasts did beyond
-  recomputing them a month at a time. `design_docs/architecture.md` carries the detail, including
-  three gaps the forecast itself opened.
+  `forecast` screens. Looking backwards is almost entirely missing: no charts, no totals by category over
+  a period, no comparison between one period and another, and no record of how past forecasts did beyond
+  recomputing them a month at a time. The exception is `Category#counterparty_spend`, rendered on the
+  category Show screen — who a category was spent with, all-time, largest first.
+  `design_docs/architecture.md` carries the detail, including the gaps the forecast itself opened.
+- **A hand-set payment frequency can outlive its payee.** `PaymentSchedule` names a payee the way
+  `Forecast::RegularPayments` groups it (`counterparty_id || description`), so recategorising its
+  transactions leaves the row with nothing to apply to. `#candidates` therefore runs over the union of the
+  payees in the history and the payees it holds rulings for — otherwise the row would appear on no screen,
+  and the only place able to withdraw it could not show it. Nothing prunes them, and nothing warns when the
+  history has come to contradict a ruling. Note that `RuleApplication` is now a ready way to orphan one:
+  a rule naming a counterparty assigns it to every row it claims, so a ruling held by *description* stops
+  matching the payee the detector now groups by id.
 - There is deliberately **no `bin/dev` or `Procfile.dev`**. With importmap and Propshaft there is no
   asset build to watch, and solid_queue only runs in production, so foreman would be supervising a
   single process — while costing the interactive debugger, since its stdout is not a TTY. Use
@@ -361,12 +384,17 @@ the data rather than only that its buttons exist.
   transactions table. It reuses `ImportMatcher#match` unchanged — it duck-types on `account_id`, `trx_type`
   and `description`, which a saved `Transaction` satisfies — and `update_all`, because `#sequence` must not
   run again. A rule naming no counterparty leaves the row's own alone, unlike `Transaction#find_match`.
-- **Merging counterparties is `CounterpartyMerge`**, driven from the counterparties list. Two orderings in
-  it are load-bearing and both fail silently if reversed: re-point `counterparty_id` on transactions and
+- **Merging counterparties is `CounterpartyMerge`**, driven from the counterparties list. Three orderings in
+  it are load-bearing and all fail silently if reversed: re-point `counterparty_id` on transactions and
   rules *before* destroying the losers, because `Account#counterparty_transactions` and
-  `#counterparty_matchers` are `dependent: :nullify`; and rename the survivor *after*, because the wanted
-  name is usually held by a member of the set and `Account` validates name uniqueness across the whole STI
-  table. Specs cover both, confirmed to fail when the order is inverted.
+  `#counterparty_matchers` are `dependent: :nullify`; move the losers' `PaymentSchedule` rows *before* too,
+  for the opposite reason — `#counterparty_payment_schedules` is `dependent: :destroy`, so they would be
+  deleted rather than nullified; and rename the survivor *after*, because the wanted name is usually held by
+  a member of the set and `Account` validates name uniqueness across the whole STI table. Note that the
+  schedules cannot go through the same `update_all` as the other two: the partial unique index on
+  `(category_id, counterparty_id)` collides where the survivor is already ruled on in that category, so
+  those are deleted first and the survivor's own ruling wins. Specs cover all three, confirmed to fail when
+  the order is inverted.
 - **Nothing suggests which counterparties to merge.** Of four grouping heuristics measured against the real
   names, only stripping digits and punctuation is safe (9 groups, no category conflicts); first-word and
   short-prefix grouping mix categories in roughly half their groups, file unrelated pubs under `THE`, and

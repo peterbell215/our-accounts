@@ -7,6 +7,13 @@ Rails.application.routes.draw do
 
   resources :categories
 
+  # The frequencies the reader has set by hand for one category's regular payments.  Here rather than in
+  # the forecasting group below, because it is edited on the category screen and belongs to the category
+  # — but it is forecast configuration, and the comment on that group explains the shape.  An upsert over
+  # the whole screen's worth at once, so there is no `new`, no `create` and nothing to show.
+  patch "categories/:category_id/payment_schedules", to: "payment_schedules#update",
+        as: :category_payment_schedules
+
   # Counterparties.  A Counterparty is an Account, but not one of the household's, so it does not go
   # through AccountsController: the shared form and detail partial are about sort codes and opening
   # balances, none of which a counterparty has.
@@ -29,7 +36,8 @@ Rails.application.routes.draw do
   post "forecast/categories/:id/manual", to: "manual_forecasts#update", as: :forecast_category_manual
 
   resources :accounts do
-    resources :transactions, only: [ :index, :new, :create, :edit, :update, :destroy ]
+    # No `edit`: a transaction is edited in place in its own row, so there is no form screen to route to.
+    resources :transactions, only: [ :index, :new, :create, :update, :destroy ]
     # Rules belong to an account, so nesting them is what keeps that from being a field you have to
     # remember to set.
     resources :import_matchers
