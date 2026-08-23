@@ -17,7 +17,12 @@ export default class extends Controller {
     static targets = [ "save" ]
     static values = {
         // A row that has never been saved always has something to save.
-        unsaved: { type: Boolean, default: false }
+        unsaved: { type: Boolean, default: false },
+        // A row whose counterparty name is waiting to be confirmed also has: the reader has to press save a
+        // second time to create it. Nothing on the row looks edited at that point — the server has just
+        // rendered the typed name as the field's default, and the hidden field carrying the confirmation is
+        // filtered out below — so without this the button the reader needs would be hidden.
+        pending: { type: Boolean, default: false }
     }
 
     connect() {
@@ -29,7 +34,7 @@ export default class extends Controller {
     }
 
     get changed() {
-        if (this.unsavedValue) return true
+        if (this.unsavedValue || this.pendingValue) return true
 
         return this.fields.some(field => (
             field.tagName === "SELECT" ? this.selectChanged(field) : field.value !== field.defaultValue

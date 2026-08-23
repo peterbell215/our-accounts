@@ -274,9 +274,13 @@ That partial takes `transaction:`, `account:` and `categories:` as **locals** �
 and `@categories` as well, which is how a local gets dropped. Every caller passes all three.
 
 The counterparty cell is a text field backed by one shared `<datalist id="counterparty-names">`, written
-through `Transaction#counterparty_name=` (a name, not an id; an unknown name is a validation error, not a new
-`Counterparty`). The datalist is rendered **once** in `accounts/show.html.erb` and must not be added to
-`transactions/_rows.html.erb`, or every fetched page appends another element with the same id. Its error is
+through `Transaction#counterparty_name=` (a name, not an id). An unknown name is **confirmed, then created**:
+the first save comes back marked and the row carries the offered name back in a hidden
+`confirmed_counterparty_name`, so a second save creates the `Counterparty` — via `belongs_to` autosave, which
+is why anything the record would reject (too short, or one of the household's own account names) has to be
+refused on the `Transaction` instead. The datalist is rendered **once** in `accounts/show.html.erb` and must
+not be added to `transactions/_rows.html.erb`, or every fetched page appends another element with the same
+id; a save that creates a counterparty appends one `counterparties/_option` to it as a second stream. Its error is
 shown as a red border plus a `title` on the input, never as a message beneath it: `transactions_list_controller.js`
 measures one row's height and applies it to all of them, so a row that grows breaks the scroll arithmetic.
 
@@ -350,10 +354,11 @@ the data rather than only that its buttons exist.
   names, only stripping digits and punctuation is safe (9 groups, no category conflicts); first-word and
   short-prefix grouping mix categories in roughly half their groups, file unrelated pubs under `THE`, and
   treat `LNK`, `SQ *` and `PAYPAL` as payees when they are payment rails. Deliberately left manual.
-- **`AnalysisImporter` can resurrect a merged-away counterparty.** `counterparty_for` looks one up by name
-  and creates it when absent, so re-running the analysis import recreates a name that was merged away, for
-  any description that does not already have a rule. The guard skipping descriptions the account already
-  has a rule for is what limits it. Fixing it properly needs an "absorbed into" pointer and a schema change.
+- **A merged-away counterparty can be resurrected.** `AnalysisImporter#counterparty_for` looks one up by
+  name and creates it when absent, so re-running the analysis import recreates a name that was merged away,
+  for any description that does not already have a rule; the guard skipping descriptions the account already
+  has a rule for is what limits it. Confirming the old name in a transaction row does the same, though
+  deliberately. Fixing either properly needs an "absorbed into" pointer and a schema change.
 - A rule cannot be created **from** a transaction you are looking at — its description has to be retyped
   on the rules screen.
 - `TransactionPresenter` is now **entirely unreferenced**. It was instantiated once in

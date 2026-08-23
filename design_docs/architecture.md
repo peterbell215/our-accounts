@@ -460,19 +460,43 @@ form sets `url:` explicitly, because `form_with(model: [account, matcher])` woul
 `bank_account_import_matchers_path` from the STI subclass and the route is nested under `:accounts`.
 
 **The counterparty is edited as a name, not an id.** `Transaction#counterparty_name=` resolves a typed name
-against `Counterparty`, case-insensitively, and records an unresolved one as a validation error rather than
-creating a record — counterparty names are already sprawling and a typo would add to it. A value that already
-names the transaction's *current* counterparty is left alone rather than resolved again, because
-`#counterparty` is an `Account` and import data can point it at one of the household's own accounts: the cell
-then renders a name no `Counterparty` holds, and re-resolving it would refuse a row over a name the user
-never typed. `Account#name` is squished on write and case-insensitively unique for the same lookup's sake —
-`" Tesco "` would otherwise fail to match itself, and `TESCO` alongside `Tesco` would make the match
-arbitrary. The transaction list
-therefore renders a text field against a single shared `<datalist>`: a `<select>` per row over several
-hundred counterparties would put thousands of `<option>` elements on one page, and the datalist is one list
-however many rows are on screen, with no JavaScript. The datalist is rendered once in
-`accounts/show.html.erb` and **not** in `transactions/_rows.html.erb`, or every fetched page would append
-another element with the same id.
+against `Counterparty`, case-insensitively. A value that already names the transaction's *current*
+counterparty is left alone rather than resolved again, because `#counterparty` is an `Account` and import
+data can point it at one of the household's own accounts: the cell then renders a name no `Counterparty`
+holds, and re-resolving it would refuse a row over a name the user never typed. `Account#name` is squished
+on write and case-insensitively unique for the same lookup's sake — `" Tesco "` would otherwise fail to
+match itself, and `TESCO` alongside `Tesco` would make the match arbitrary. The transaction list therefore
+renders a text field against a single shared `<datalist>`: a `<select>` per row over several hundred
+counterparties would put thousands of `<option>` elements on one page, and the datalist is one list however
+many rows are on screen, with no JavaScript. The datalist is rendered once in `accounts/show.html.erb` and
+**not** in `transactions/_rows.html.erb`, or every fetched page would append another element with the same
+id; a save that creates a counterparty appends the one extra `<option>` as a second Turbo Stream, so the
+rest of the rows offer it without a reload.
+
+**A name no counterparty has is confirmed, not refused.** It used to be a flat validation error: creating a
+record on a typo would add to the sprawl of raw statement names `AnalysisImporter` already left behind, so
+the reader was sent to the Counterparties screen instead. That argument still holds, but the detour was paid
+on every genuinely new supplier, which is exactly when the need arises. So the guard moved rather than went:
+the first save comes back marked, and saving the row a second time creates the `Counterparty`.
+
+Three things shape how that is carried:
+
+- **The confirmation is the name, not a flag.** The row round-trips it through a hidden
+  `confirmed_counterparty_name`, and `Transaction#accept_confirmed_counterparty` only acts when it still
+  matches what was typed. A bare "yes" would survive an edit to the field and create the name the reader had
+  just corrected away from.
+- **The new record is written by `belongs_to` autosave**, inside the transaction's own save and so in one
+  database transaction. Autosave does not check whether that write succeeded when `:autosave` is unset, so
+  anything the record would reject has to be caught on the `Transaction` first — otherwise the row would
+  save with a silently empty `counterparty_id`. That is why a name too short to be one, or belonging to one
+  of the household's own accounts, is refused outright with its own message rather than offered: saving
+  again could only fail again. Declaring `autosave: true` instead would file Rails' errors under
+  `:counterparty`, where the row is not looking.
+- **The save button has to survive the rejection.** `transaction_row_controller` decides a row is edited by
+  comparing each field with its `defaultValue`, and the server has just rendered the typed name back as that
+  default; hidden inputs are filtered out of the comparison. Without a `pending` value forcing the button
+  visible there would be nothing left to press. Its `title` carries the instruction — naming what the next
+  press will create — because the error itself can only be a tooltip on the field.
 
 That row's validation error is shown as a red border and a `title` on the input, not as a message beneath it,
 because of the row-height assumption recorded below.
@@ -779,11 +803,13 @@ One worth doing next time a migration is written: `Transaction#sequence` runs
 and there is no index on `(account_id, date)` — so a 2,626-row import scans a growing table 2,626 times.
 It was left alone here only because it has nothing to do with forecasting.
 
-One newly opened: **`AnalysisImporter` can resurrect a merged-away counterparty.** `counterparty_for` looks
-one up by name and creates it when absent, so re-running the analysis import recreates a name that a merge
-removed, for any description that does not already have a rule. The guard skipping descriptions the account
-already has a rule for is what limits the damage. Fixing it properly means an "absorbed into" pointer and a
-schema change, which was not worth adding before there is experience of whether re-imports cause it.
+One newly opened: **a merged-away counterparty can be resurrected.** `AnalysisImporter#counterparty_for`
+looks one up by name and creates it when absent, so re-running the analysis import recreates a name that a
+merge removed, for any description that does not already have a rule; the guard skipping descriptions the
+account already has a rule for is what limits the damage. Typing the old name into a transaction row and
+confirming it now does the same thing, though deliberately rather than behind the reader's back. Fixing
+either properly means an "absorbed into" pointer and a schema change, which was not worth adding before
+there is experience of whether it happens in practice.
 
 One trap worth recording for whoever writes the next migration: **Rails 8.1's schema dumper sorts columns
 alphabetically**, unconditionally. `ImportColumnsDefinition::CSV_HEADERS` used to be derived from
