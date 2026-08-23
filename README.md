@@ -99,6 +99,17 @@ and what is kept.
 Because the heading already names the record, its details do not repeat it: an account's page is headed
 *Lloyds Account* and lists the number, sort code and opening figures beneath.
 
+Creating or editing something reads the same way, with the buttons you need to leave the screen in the
+same place — under the heading, above the form, never at the bottom of the page. **Back** returns to the
+list, and when you are editing, **Show** opens the record as it currently stands, so you can look at what
+you are about to change without losing your place. There is no **Destroy** here: to delete something, open
+it first. Saving is the button at the foot of the form itself, where you finish filling it in.
+
+The one list with a **Back** button of its own is an account's import rules, because it is the only list
+you reach from somewhere else rather than from the menu bar; **Back** there returns you to the account. The
+screen that confirms a merge has one too, above the names it is about to fold together, as well as the
+**Cancel** beside **Merge** at the foot of it.
+
 Every date you are shown is written the same way throughout — `1-Jan-23`. The one exception is a date
 you can type into, which your browser draws in its own style.
 

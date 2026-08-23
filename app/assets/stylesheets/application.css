@@ -48,9 +48,12 @@ body div.container {
     margin-top: 20px; /* Add space above the buttons */
 }
 
-/* Every Show screen opens with this strip, so Back, Edit and Destroy are always in the same place and
-   the reader does not have to look for them under the data. */
-.show-actions {
+/* Every screen that is not a top-level destination opens with one of these strips, so the way back is
+   always in the same place and the reader does not have to look for it under the data — or, on a form with
+   a list beneath it, off the bottom of the page.  Two class names because the strips hold different things:
+   Back, Edit and Destroy on a Show screen, Back and Show on a form.  They are laid out identically. */
+.show-actions,
+.form-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;

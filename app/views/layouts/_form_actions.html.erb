@@ -1,0 +1,6 @@
+<%# The strip of navigation every New and Edit screen opens with.  Rendered through the form_actions helper
+    rather than directly, so a screen names its one or two paths and nothing else. %>
+<div class="form-actions">
+  <%= link_to "Back", back, class: "pure-button" %>
+  <%= link_to "Show", show, class: "pure-button" if show %>
+</div>

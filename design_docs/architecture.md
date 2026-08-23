@@ -643,6 +643,46 @@ The forecast's own pages deliberately do **not** use the strip. `show_actions` r
 a destroy path, and a forecast page is a report about a month rather than a record: there is nothing to
 edit as a record and nothing to delete. They open with a plain Back link instead, in the same position.
 
+**Every screen that is not a top-level destination opens with a strip of navigation, and the form screens
+have their own.** `ApplicationHelper#form_actions` and `layouts/_form_actions` draw Back to the list and,
+where there is a record already, Show to look at it as it stands — under the heading, above the form. The
+Show strip above was only half the job: New and Edit screens were left as the scaffold wrote them, with a
+plain text link in a bare `<div>` after a `<br>` at the foot of the page, worded differently on each
+(*Back to accounts*, *Back to rules*, *Back to import columns definitions*). The category edit screen is
+what exposed it. Since a category predicted by its regular payments carries the table of them below the
+form, its two links sat under a table and two paragraphs of explanation — off the bottom of the screen, so
+in practice that screen had no way back at all. `import_matchers/edit` was worse in a quieter way: it
+offered Back but no way to reach the rule being edited, so that link is new rather than moved.
+
+Three decisions inside it. **There is no Destroy on a form screen** — a form offers nothing to delete that
+its own Show screen does not, and the one irreversible button in the application should not sit within
+reach of Save. **The labels are the bare words Back and Show**, for the same reason the Show strip uses
+three fixed words: a reader learns the position once, and a spec can `click_link 'Back'` on any screen
+rather than knowing which model it is looking at. And **`.form-actions` is a second selector on the
+`.show-actions` rule** rather than a copy of it; the two strips hold different things but are laid out
+identically, and `.show-actions` could not simply be reused for both because `spec/system/show_actions_spec.rb`
+selects on it to assert what a *Show* screen contains.
+
+The merge confirmation screen takes the strip as well, and keeps its own `Cancel` beside `Merge`. The two
+are not the same thing: `Cancel` is that screen's answer to the question it asks, and belongs with the
+button that says yes, while `Back` is where the way out lives on every other screen — reachable without
+reading the whole page first, which on a merge of a dozen names is the point.
+
+The rule reaches one list, too. `import_matchers/index` is the only index in the application reached from
+somewhere other than the sticky menu bar — the other four *are* menu-bar destinations, so "back" from them
+would mean nothing — and it had the same plain text link, below its explanatory paragraph. It now draws
+`form_actions` with a back path and no show path. `New rule` stays at the foot of the list, following the
+same rule as `Add New Transaction`: the strip does not swallow list actions.
+
+Transaction rows are the deliberate exception, because the row *is* the form. That is now true rather than
+nearly true: `transactions/new.html.erb` and `transactions/edit.html.erb` have been deleted and `:edit`
+dropped from the nested route. Neither template could work. `TransactionsController#new` renders its Turbo
+Stream inline, so the first was unreachable — and would have failed if reached, naming a `transactions_path`
+that is not a route and a `transactions/_form` partial that does not exist. The second had no controller
+action at all, which under Rails' implicit rendering meant the route *did* reach it, rendering
+`_transaction_as_row` without the `account:` and `categories:` locals it requires. Nothing linked to
+either, and nothing referenced `edit_account_transaction_path`.
+
 **The forecast is one screen and a workings page behind each line.** `ForecastsController` is read-only
 and takes the month as `?month=`, coercing anything unreadable — or absent — back to
 `Forecast::Month.default_month` rather than raising — the same view `TransactionPage#coerce_date` takes of
