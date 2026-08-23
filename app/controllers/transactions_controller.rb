@@ -42,9 +42,10 @@ class TransactionsController < ApplicationController
     if @transaction.save
       # Replace the temporary row (identified by dom_id(@transaction, 'new'))
       # with the persisted row after successful creation.
-      render turbo_stream: turbo_stream.replace(helpers.dom_id(@transaction, "new"),
-                                                partial: "transactions/transaction_as_row",
-                                                locals: { transaction: @transaction, account: @account, categories: @categories })
+      render turbo_stream: [ turbo_stream.replace(helpers.dom_id(@transaction, "new"),
+                                                  partial: "transactions/transaction_as_row",
+                                                  locals: { transaction: @transaction, account: @account, categories: @categories }),
+                             *new_counterparty_stream ]
     else
       # If saving fails, re-render the row with errors (within the temporary row).
       # Ensure the temporary ID is used so Turbo knows which element to update.
@@ -58,9 +59,10 @@ class TransactionsController < ApplicationController
   # PATCH /accounts/:account_id/transactions/:id
   def update
     if @transaction.update(transaction_params)
-      render turbo_stream: turbo_stream.replace(@transaction,
-                                                partial: "transactions/transaction_as_row",
-                                                locals: { transaction: @transaction, account: @account, categories: @categories })
+      render turbo_stream: [ turbo_stream.replace(@transaction,
+                                                  partial: "transactions/transaction_as_row",
+                                                  locals: { transaction: @transaction, account: @account, categories: @categories }),
+                             *new_counterparty_stream ]
     else
       render turbo_stream: turbo_stream.replace(@transaction,
                                                 partial: "transactions/transaction_as_row",
@@ -96,7 +98,19 @@ class TransactionsController < ApplicationController
   def transaction_params
     # Permit all the fields submitted by the single form.  The counterparty arrives as a name, not an id —
     # the row offers the existing names through a datalist.
-    params.require(:transaction).permit(:category_id, :date, :description, :amount, :counterparty_name)
+    params.require(:transaction).permit(:category_id, :date, :description, :amount, :counterparty_name,
+                                        :confirmed_counterparty_name)
+  end
+
+  # A counterparty the save has just created is in no other row's datalist yet, and the page is not going to
+  # be reloaded — the whole list lives behind Turbo.  Appending the one option keeps the rest of the rows
+  # offering it as a completion.
+  # @return [Array<Turbo::Streams::TagBuilder>]
+  def new_counterparty_stream
+    return [] unless @transaction.counterparty_created?
+
+    [ turbo_stream.append("counterparty-names", partial: "counterparties/option",
+                          locals: { counterparty: @transaction.counterparty }) ]
   end
 
   # The last row the browser already has, so the next page resumes immediately after it.

@@ -45,24 +45,63 @@ RSpec.describe Transaction do
       expect(trx.counterparty).to be_nil
     end
 
-    # Silently creating one would add to the sprawl of raw statement names the analysis import already left.
+    # Creating one outright would add to the sprawl of raw statement names the analysis import already left,
+    # so an unknown name is offered rather than either created or refused.
     context 'with a name no counterparty has' do
-      it 'is invalid and says so against the field that was typed into' do
-        trx.counterparty_name = "Ocotpus Enrgy"
+      it 'asks for the save to be repeated, against the field that was typed into' do
+        trx.counterparty_name = "Bristol Water"
 
         expect(trx).not_to be_valid
-        expect(trx.errors[:counterparty_name].first).to eq('"Ocotpus Enrgy" is not a counterparty')
+        expect(trx.errors[:counterparty_name].first)
+          .to eq('"Bristol Water" is not a counterparty — save again to create it')
+        expect(trx.counterparty_to_confirm).to eq "Bristol Water"
       end
 
-      it 'does not create one' do
-        expect { trx.counterparty_name = "Ocotpus Enrgy" }.not_to change(Counterparty, :count)
+      it 'creates nothing on that first attempt' do
+        trx.counterparty_name = "Bristol Water"
+
+        expect { trx.save }.not_to change(Counterparty, :count)
+      end
+
+      it 'creates and links it once the name is confirmed' do
+        trx.counterparty_name = "Bristol Water"
+        trx.confirmed_counterparty_name = "Bristol Water"
+
+        expect { trx.save! }.to change(Counterparty, :count).by(1)
+        expect(trx.reload.counterparty).to eq Counterparty.find_by_name("Bristol Water")
+        expect(trx).to be_counterparty_created
+      end
+
+      # The row hands back the name it offered, not a bare yes, so correcting the typo before saving again
+      # asks about the correction instead of creating the typo behind the reader.
+      it 'creates nothing when the confirmation names something else' do
+        trx.counterparty_name = "Bristol Watr"
+        trx.confirmed_counterparty_name = "Bristol Water"
+
+        expect(trx).not_to be_valid
+        expect { trx.save }.not_to change(Counterparty, :count)
+      end
+
+      # Saving again could only fail again, so the reader is told what is wrong rather than invited to try.
+      it 'refuses a name too short to be one, confirmed or not' do
+        trx.counterparty_name = "O2"
+        trx.confirmed_counterparty_name = "O2"
+
+        expect(trx).not_to be_valid
+        expect(trx.errors[:counterparty_name].first).to eq('"O2" is too short (minimum is 3 characters)')
+        expect(trx.counterparty_to_confirm).to be_nil
       end
     end
 
-    it 'will not match one of the household’s own accounts' do
+    # Account names are case-insensitively unique across the whole STI table, so this is not a counterparty
+    # waiting to be created — it cannot exist at all.
+    it 'will not match one of the household’s own accounts, nor offer to create one' do
       trx.counterparty_name = "Lloyds Account"
+      trx.confirmed_counterparty_name = "Lloyds Account"
 
       expect(trx).not_to be_valid
+      expect(trx.errors[:counterparty_name].first).to eq('"Lloyds Account" is one of your own accounts')
+      expect(trx.counterparty_to_confirm).to be_nil
     end
 
     # #counterparty is an Account, so import data or the console can point it at one of the household's own

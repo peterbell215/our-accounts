@@ -20,11 +20,10 @@
 
 <%# Rendered once for the whole page, not per row and not in transactions/_rows: a second element with this
     id would arrive with every page the transactions_list controller fetches.  Rows fetched later resolve
-    list="counterparty-names" against this one. %>
+    list="counterparty-names" against this one, and a save that creates a counterparty appends one more
+    option to it. %>
 <datalist id="counterparty-names">
-  <% @counterparties.each do |counterparty| %>
-    <option value="<%= counterparty.name %>"></option>
-  <% end %>
+  <%= render partial: "counterparties/option", collection: @counterparties, as: :counterparty %>
 </datalist>
 
 <% if @page.any? %>
