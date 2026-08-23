@@ -33,6 +33,45 @@ RSpec.describe "Categories", type: :request do
     end
   end
 
+  describe "GET /categories/:id/edit — the payees behind a regular-payments category" do
+    let(:data) { ForecastDataBuilder.new(today: Date.current).build }
+
+    it "lists what the forecast found, and whether each is part of it" do
+      get edit_category_path(data.subscriptions)
+
+      expect(response.body).to include("payment_frequencies", "Octopus Energy", "South Staffs Water",
+                                       "ANCIENT STREAMING CO")
+      # The one that has gone quiet says so rather than simply not being there.
+      expect(response.body).to include("nothing since")
+    end
+
+    it "offers each payee a frequency to set by hand" do
+      get edit_category_path(data.subscriptions)
+
+      expect(response.body).to include("Work it out from the history", "Not a regular payment", "Quarterly")
+    end
+
+    it "shows a frequency already set as the one in force" do
+      create(:payment_schedule, category: data.subscriptions, counterparty: data.energy, cadence_months: 12)
+
+      get edit_category_path(data.subscriptions)
+
+      # The frequency itself is the selected option in the row's dropdown; what reads as prose is that the
+      # payee is in the forecast on the reader's word rather than on the history's.
+      expect(response.body).to include("at the frequency you set")
+    end
+
+    # The section is about payments, so a category predicted any other way has no business showing it.
+    # Asserted on the table rather than the heading, because "Its regular payments, one at a time" is one
+    # of the choices in the select on every category form.
+    it "shows nothing of the sort for a category predicted by an average" do
+      get edit_category_path(data.food)
+
+      expect(response.body).not_to include("payment_frequencies")
+      expect(response.body).to include("Months to average over")
+    end
+  end
+
   describe "GET /categories" do
     it "can be ordered by how each category is forecast" do
       Category.find_by!(name: "Travel").update!(forecast_method: :excluded)

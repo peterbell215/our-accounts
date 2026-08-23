@@ -40,11 +40,14 @@ Six tables carry the whole model.
         ImportColumnsDefinition ──── account
 
         ManualForecast ──── category
+
+        PaymentSchedule ──── category, counterparty (or a description)
 ```
 
 `Category` also carries how its spend is predicted — `forecast_method` and an optional
-`forecast_months` — and `ManualForecast` holds the figures the reader enters by hand for the categories
-nothing can be inferred about. Between them they are everything the forecast stores.
+`forecast_months`; `ManualForecast` holds the figures the reader enters by hand for the categories
+nothing can be inferred about; and `PaymentSchedule` holds the frequencies they set by hand for
+individual payees. Between them they are everything the forecast stores.
 
 ### Accounts are single-table inheritance
 
@@ -119,8 +122,18 @@ Two orderings inside the merge are load-bearing, and reversing either loses data
 - **Rename after destroying.** The wanted name is usually held by a member of the set — `Spotify` is held by
   `SPOTIFY`, which is being folded in — and `Account` validates `name` uniqueness case-insensitively across
   the whole STI table, so renaming first fails against a record about to disappear.
+- **Move the hand-set payment frequencies before destroying**, which is the first instruction again by the
+  opposite mechanism: those rows would have been *nullified*, these would have been *destroyed*, since
+  `Account#counterparty_payment_schedules` is `dependent: :destroy`. This is also the moment a frequency is
+  most wanted — a series split across two counterparties is not recognised at all, merging is the repair,
+  and losing the cadence on the way would undo half of it. It cannot go through the same `update_all` as
+  the other two: `payment_schedules` is uniquely indexed on `(category_id, counterparty_id)`, so a blanket
+  re-point collides wherever the survivor is already ruled on in that category. There the survivor's own
+  ruling wins — it is the one set against the name being kept — and the loser's is dropped, because two
+  cadences for one payee cannot both be right and nothing here can tell which. The notice says how many
+  moved, so a ruling that went does not go silently.
 
-Both are pinned by specs verified to fail when the order is inverted rather than merely to pass as written.
+All three are pinned by specs verified to fail when the order is inverted rather than merely to pass as written.
 Checking that caught a fault in the second: it originally made `SPOTIFY` the survivor, and a record is
 excluded from its own uniqueness check, so it passed whichever order was used. The survivor is the lowest id
 in the set, matching `Account.scope :named`, so the record other code already resolves to is the one kept.
@@ -301,7 +314,8 @@ anything held on disk.
 ### Nothing is stored but the configuration
 
 There is no forecast table. Each request rebuilds the month from the transactions; the only things
-written down are the method chosen on each category and the figures typed in by hand.
+written down are the method chosen on each category, the figures typed in by hand, and the frequencies
+set by hand for individual payees.
 
 The alternative was a snapshot — a row per category per month, written when the forecast was generated —
 which would have bought a record of what was predicted against what happened. It loses because a stored
@@ -310,6 +324,20 @@ with the transactions underneath it is worse than no number at all. It would als
 step, which is a thing to remember to do. Recomputing costs milliseconds over a few thousand rows, and
 a month that has finished already shows how the forecast did by comparing what was spent against what
 the same arithmetic predicts.
+
+All three stored things pass that test, which is what makes them configuration rather than cache. A
+frequency set by hand is an assertion by the reader about how a payee behaves, exactly like the method on
+the category; every number derived from it — the amount, whether it is due, whether the payee has gone
+quiet — is still computed from the transactions on every request, so there is nothing in it that the next
+import can contradict.
+
+What is new with the frequencies is that configuration can now outlive its subject. A ruling names a
+payee, and a payee can go: recategorise its transactions, or merge its counterparty away, and the row
+remains with nothing to apply to. That is why `Forecast::RegularPayments` builds its candidates from the
+union of the payees in the history and the payees it holds rulings for, rather than from the history
+alone — otherwise the row would appear on no screen at all, and the only place able to withdraw it could
+not show it. It is listed, saying it is doing nothing, which is the same instinct as everything else in
+this section: the store may hold something useless, but not something invisible.
 
 ### A category says how it is predicted
 
@@ -412,12 +440,59 @@ reads as due every month for ever.
 The rest: a payee is its counterparty where it has one and its exact description where it has not, since
 plenty of direct debits never acquired one. The cadence is the median gap in months, snapped to the
 nearest of 1, 3, 6 and 12, because a raw median of two or five is noise around one of those rather than
-a schedule anything is on; a median above twelve is reported on the workings page as too erratic to
-forecast, never dropped in silence, since silence there is money vanishing from the total with no trace.
-The predicted amount is the **most recent** occurrence rather than an average of them — the whole reason
-to use this method instead of the average is that a direct debit steps up and the new figure is what
-next month costs, and averaging lags precisely the change the method exists to catch. The price is a
-genuinely variable bill, where the answer is to forecast that category by its average instead.
+a schedule anything is on. The predicted amount is the **most recent** occurrence rather than an average
+of them — the whole reason to use this method instead of the average is that a direct debit steps up and
+the new figure is what next month costs, and averaging lags precisely the change the method exists to
+catch. The price is a genuinely variable bill, where the answer is to forecast that category by its
+average instead.
+
+**Every payee produces a candidate, not only the ones that pass.** There are five ways a payee ends up
+outside the forecast — one occurrence in a completed month, none at all, a median gap above twelve
+months, silence longer than the staleness rule allows, and a ruling by the reader — and each of them is
+named with its reason, on the workings page and on the category's own screen. Only the erratic ones used
+to be reported, which meant the most consequential case, a new direct debit invisible until its second
+occurrence, was the one that vanished without trace. Silence here is money missing from the total with
+nothing to explain it, which is worse than a poor prediction.
+
+### Correcting the detector
+
+Two of those five rejections are *inferences*, and the reader knows things the history does not. So a
+`PaymentSchedule` — one row per payee per category, existing only where the reader has ruled — can name
+a payee's frequency outright, or say it is not a regular payment at all.
+
+**A frequency given by hand overrides the two-occurrence minimum and the erratic test.** Both exist only
+because one sighting, or a ragged set of them, cannot *measure* a cadence — and being told one settles
+the question those tests were asking. This is the main thing the feature is for: a direct debit paid once
+is otherwise invisible for a month.
+
+**It does not override the staleness rule.** That rule is not an inference about how often a payment
+comes; it is a statement that *this payee has stopped*, which naming its frequency cannot have been meant
+to deny. Without it, a cancelled direct debit named by hand would be forecast for ever — the exact
+failure the staleness rule was invented for. It is measured against the frequency the reader gave, so
+their answer still shapes it.
+
+**One occurrence is still needed**, whatever the reader says, because the amount is the most recent
+occurrence and there is nothing else it could be. A payee whose only payment falls inside the month being
+forecast therefore joins the forecast the month after; it has already gone out, so nothing is owed for it
+either way.
+
+Three details of the record are load-bearing:
+
+- **Its identity mirrors the detector's grouping key**, `counterparty_id || description`, and the two
+  agreeing is not tidiness. If they diverged the ruling would simply never be found, and the screen would
+  save a frequency that did nothing.
+- **Three states live in one nullable column.** No row means "work it out"; a row with a cadence means
+  that cadence; a row with none means "not a regular payment". Zero as a sentinel lost because it would
+  reach the `silence % cadence` arithmetic and raise; a separate boolean lost because it spends two
+  columns and a cross-column validation on three states.
+- **Two partial unique indexes, not one over three columns.** SQLite treats NULLs as distinct, so a
+  single index on `(category_id, counterparty_id, description)` would happily hold the same counterparty
+  twice, both rows having a null description.
+
+The counterparty side is `dependent: :destroy`, where a counterparty's transactions and rules are
+`:nullify`. That is not an inconsistency: a nullified `counterparty_id` with no description would leave a
+row naming nobody, and there is nothing to preserve, because the transactions released by the delete
+regroup under their own descriptions.
 
 ### The uncategorised line
 
@@ -436,6 +511,9 @@ Uncategorised positive and the line would invert or disappear. One rule for ever
 `Forecast::History` loads the window across every category at once, and all history for the few
 categories forecast from their payments. Building the page a category at a time would be a query per
 category per month.
+
+The two small configuration loads follow the same rule: `Forecast::Month` reads the month's hand-entered
+figures and every hand-set payment frequency once for the page, not once per line.
 
 Rows are `pluck`ed and grouped in Ruby rather than grouped by `strftime('%Y-%m', date)` in SQL. That
 keeps SQLite's date functions out of the application and follows `CounterpartiesController#index`, which
@@ -605,9 +683,31 @@ said" and "nothing will be spent" are different statements and the screen shows 
 category awaiting a figure reads **not set**, and the count of them is reported above the table, that
 being much the likeliest way for the headline total to be quietly too small.
 
+The hand-set frequencies are **a second upsert**, `PATCH /categories/:category_id/payment_schedules`, and
+they take a whole screenful in one submission rather than a form per row. With no JavaScript there is
+nothing to save a row in place, and the reader rules on several payees at a sitting, so one **Save
+frequencies** button is both simpler and closer to how the screen is used. A row arrives as a hash inside
+an array — `payment_schedules[][counterparty_id]`, `[][description]`, `[][cadence_months]` — read with
+`params.expect(payment_schedules: [ [ ... ] ])`, whose doubled brackets are what make it refuse a hash
+arriving where the array belongs. The shape carries one constraint worth knowing: Rack starts a new hash
+in a `name[]` array only when it meets a key the last one already has, so every row must render all three
+fields, in the same order, and none of them may be a checkbox — a row that skipped a field would merge
+into its neighbour and both rulings would land on the wrong payee.
+
 Configuration has no screen of its own: the method and the lookback are two more fields on the category
 form, and the method is a sortable column on the categories list — ordering by it answers "which are
-still on the default?".
+still on the default?". The payees of a regular-payments category are a table on the same form, below it,
+in `categories/edit` rather than the shared `_form` — the partial is shared with `new`, where there is no
+history to list, and one `<form>` cannot be nested inside another. With no JavaScript the table cannot
+appear as the method select changes, so it appears when the *saved* method is regular payments, and the
+select carries a note saying so. That is the same compromise the lookback field already makes, and it
+costs one extra click after switching a category over.
+
+That table asks about `Forecast::Month.default_month`, not today's month, for the same reason the forecast
+opens there: against statements imported in arrears the calendar's current month holds nothing, and asked
+about it every payee in the category reads as having gone quiet. It also keeps the two screens answering
+about the same month, which is the only thing that makes them comparable — the table is meant to explain
+the figure on the workings page, and it cannot do that from a different month.
 
 **A Show screen names itself, and its data does not name it again.** Index, new and edit screens all
 carried an `<h1>` and a `content_for :title`; three of the five Show screens carried neither, so the strip
@@ -796,8 +896,8 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
 
 Working: the account model, both import forms, the categorisation rules and their per-transaction
 corrections, the category and counterparty screens with their roll-ups, the rules screens, the CSV
-analysis screen, transaction CRUD over Turbo,
-the monthly forecast and its workings pages, and seeding that rebuilds a development database end to end.
+analysis screen, transaction CRUD over Turbo, the monthly forecast and its workings pages, and seeding
+that rebuilds a development database end to end.
 
 The gap that matters:
 
@@ -811,20 +911,27 @@ The gap that matters:
 month cost, and how much of it has gone", which was the point of the application. What it does not do is
 look backwards: there are no charts, no totals by category over a period, no comparison between one period
 and another, and no record of how past forecasts actually did beyond recomputing them a month at a time.
-The one piece of it that exists is the counterparty breakdown on a category's Show screen — who a category
-was spent with, all-time, largest first. It is a useful reading and the obvious place to grow the rest, but
-it is one cut through the data, over no chosen period, and nothing aggregates a category by month or
-compares two of them.
+What does exist is two per-category cuts through the history, both in service of something else: the
+counterparty breakdown on a category's Show screen — who it was spent with, all-time, largest first — and
+the payee list behind the regular-payments method, which reports what each one last cost and when it was
+last seen. Both are useful readings and the obvious place to grow the rest, but each is a single cut over
+no chosen period; nothing aggregates a category by month, and nothing compares two periods.
 
-Three gaps the forecast opened, all of them visible rather than silent:
+Gaps the forecast opened, all of them visible rather than silent:
 
 - **A recurring series split by a counterparty added part-way through its history is not recognised.**
   The payee is grouped by counterparty where it has one and by description where it has not, so the two
-  halves can each fall below the two occurrences a cadence needs. Merging the two counterparties reunites
-  it, which is now a supported operation rather than a dead end.
+  halves can each fall below the two occurrences a cadence needs. It now fails in the open — both halves
+  are listed, each saying it was seen once — and there are two remedies rather than none: merge the two
+  counterparties, which carries any hand-set frequency with it, or set a frequency on each half.
 - **Refunds are ignored**, so averages read very slightly high — see the reasoning above.
 - **A category created after the transactions it should cover reads low**, being averaged over months of
   zeroes. The workings page shows the zeroes and `forecast_months` is the remedy, but nothing warns.
+- **Nothing prunes a frequency whose payee has gone.** The ruling is listed, saying it is doing nothing,
+  but only for a reader who goes and looks; nothing sweeps them up and nothing counts them.
+- **Nothing warns when a hand-set frequency is being contradicted by the history.** The workings page and
+  the category screen both say what the history would have guessed, so it can be seen, but a ruling that
+  has quietly become wrong — or quietly become redundant — raises no flag anywhere.
 
 Smaller ones elsewhere: nothing **suggests** which counterparties to merge, so the duplicates are found by
 eye; a rule cannot be created from a transaction you are looking at, so its description has to be retyped;

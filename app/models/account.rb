@@ -16,6 +16,13 @@ class Account < ApplicationRecord
   has_many :counterparty_matchers, class_name: "ImportMatcher", foreign_key: :counterparty_id,
            inverse_of: :counterparty, dependent: :nullify
 
+  # :destroy rather than :nullify, unlike the two above.  A PaymentSchedule names its payee either by
+  # counterparty or by description, never neither, so a nullified counterparty_id would leave a row that
+  # identifies nothing.  There is nothing to preserve either: the transactions this counterparty is
+  # released from regroup under their own descriptions, so the ruling no longer applies to anything.
+  has_many :counterparty_payment_schedules, class_name: "PaymentSchedule", foreign_key: :counterparty_id,
+           inverse_of: :counterparty, dependent: :destroy
+
   # A name is typed on one screen and matched against typed text on another (Transaction#counterparty_name=),
   # so stray or doubled spaces are only ever a nuisance: " Tesco " renders in a transaction row and then
   # fails to match itself, leaving a row that cannot be saved.  Squish on write, which also normalises the

@@ -43,10 +43,17 @@ class CounterpartyMergesController < ApplicationController
 
   def ids = Array(params[:ids]).map(&:to_s)
 
+  # Frequencies are named only when any moved, because on most merges none exist and a "0 payment
+  # frequencies" clause would be noise on every one.  When some did move it is worth saying: a merge can
+  # drop one, where the survivor was already ruled on in the same category, and a ruling that vanished
+  # silently is exactly what this notice is for.
   def merged_notice
-    "Merged into #{@merge.survivor.name}: " \
-      "#{helpers.pluralize(@merge.transactions_moved, 'transaction')} and " \
-      "#{helpers.pluralize(@merge.matchers_moved, 'rule')} moved."
+    moved = [ "#{helpers.pluralize(@merge.transactions_moved, 'transaction')}",
+              "#{helpers.pluralize(@merge.matchers_moved, 'rule')}" ]
+    moved << "#{helpers.pluralize(@merge.schedules_moved, 'payment frequency')}" if
+      @merge.schedules_moved.positive?
+
+    "Merged into #{@merge.survivor.name}: #{moved.to_sentence} moved."
   end
 
   # The distinct categories each member's rules assign, so the confirmation can show them per row.  That
