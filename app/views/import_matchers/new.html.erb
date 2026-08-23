@@ -2,10 +2,6 @@
 
 <h1>New rule for <%= @account.name %></h1>
 
+<%= form_actions back: account_import_matchers_path(@account) %>
+
 <%= render "form", import_matcher: @import_matcher, account: @account %>
-
-<br>
-
-<div>
-  <%= link_to "Back to rules", account_import_matchers_path(@account) %>
-</div>

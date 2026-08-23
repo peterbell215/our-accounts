@@ -4,6 +4,8 @@
 
 <h1>Editing category</h1>
 
+<%= form_actions back: categories_path, show: category_path(@category) %>
+
 <%= render "form", category: @category %>
 
 <% if @payments %>
@@ -78,10 +80,3 @@
     </p>
   <% end %>
 <% end %>
-
-<br>
-
-<div>
-  <%= link_to "Show this category", @category %> |
-  <%= link_to "Back to categories", categories_path %>
-</div>

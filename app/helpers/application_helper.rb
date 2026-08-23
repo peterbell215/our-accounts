@@ -53,4 +53,18 @@ module ApplicationHelper
     render "layouts/show_actions", back: back, edit: edit, destroy: destroy, confirm: confirm,
                                   model_actions: (capture(&block) if block)
   end
+
+  # The same strip, for the screens that carry a form rather than a record: every New and Edit screen, and
+  # the one list reached from somewhere other than the menu bar.  Back goes to the list, Show to the record
+  # as it currently stands — omitted on a New screen, where there is not one yet.
+  #
+  # There is deliberately no Destroy here.  A form screen offers nothing to delete that its own Show screen
+  # does not, and the one irreversible button in the application should not sit within reach of Save.
+  #
+  # @param [String] back path of the list this record belongs to
+  # @param [String, nil] show path of the record itself, where it exists
+  # @return [String]
+  def form_actions(back:, show: nil)
+    render "layouts/form_actions", back: back, show: show
+  end
 end

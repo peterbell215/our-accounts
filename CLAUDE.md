@@ -289,7 +289,7 @@ Every date the reader sees is formatted on the server by the `short_date` helper
 (`config/initializers/date_formats.rb`) — use it rather than adding another `strftime`. Date *fields*
 stay native, so the browser draws them in its own locale.
 
-### Show screens share one strip of actions
+### Every screen opens with a strip of actions
 
 Every `show.html.erb` is `content_for :title`, then an `<h1>`, then `show_actions` (`ApplicationHelper`,
 rendering `layouts/_show_actions`), then the record — the same opening as every index, new and edit screen.
@@ -303,6 +303,20 @@ its transactions with it, a counterparty leaves them behind. Actions belonging t
 page stay with that list: `Add New Transaction` is on the transaction list, not in the account's strip.
 `spec/system/show_actions_spec.rb` covers all five screens, and asserts by geometry that the strip is above
 the data rather than only that its buttons exist.
+
+**New and Edit screens have their own strip**, `form_actions` (rendering `layouts/_form_actions`), in the
+same position — under the `<h1>`, above the form. It draws **Back** to the list and, on an Edit screen,
+**Show** to the record; those bare words again, not per-model wording. There is no Destroy: a form offers
+nothing to delete that its Show screen does not, and Save should not sit next to it. Nothing goes at the
+foot of the page — that is what this replaced, and on the category edit screen, whose form is followed by
+the regular-payments table, it put the way back off the bottom of the screen. `.form-actions` is a second
+selector on the `.show-actions` rule in `application.css`; do **not** rename `.show-actions` to unify them,
+because `show_actions_spec.rb` selects on it to assert what a Show screen holds.
+`spec/system/form_actions_spec.rb` covers all ten screens, by geometry, the same way.
+
+`import_matchers/index` uses `form_actions` as well: it is the only list reached from somewhere other than
+the menu bar, so the only one with anywhere to go back to. Transaction rows are the exception to all of
+this, because the row is the form — the controller renders Turbo Streams and there is no `edit` route.
 
 ## Testing conventions
 

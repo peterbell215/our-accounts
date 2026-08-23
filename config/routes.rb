@@ -36,7 +36,8 @@ Rails.application.routes.draw do
   post "forecast/categories/:id/manual", to: "manual_forecasts#update", as: :forecast_category_manual
 
   resources :accounts do
-    resources :transactions, only: [ :index, :new, :create, :edit, :update, :destroy ]
+    # No `edit`: a transaction is edited in place in its own row, so there is no form screen to route to.
+    resources :transactions, only: [ :index, :new, :create, :update, :destroy ]
     # Rules belong to an account, so nesting them is what keeps that from being a field you have to
     # remember to set.
     resources :import_matchers

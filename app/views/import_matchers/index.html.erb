@@ -4,15 +4,15 @@
 
 <h1>Import rules for <%= @account.name %></h1>
 
+<%# The only list in the application reached from somewhere other than the menu bar, so the only one with
+    anywhere to go back to. %>
+<%= form_actions back: account_path(@account) %>
+
 <p>
   When a statement is imported, each transaction is checked against these rules.  The first rule whose
   description matches — and whose transaction type matches, if it names one — decides the transaction's
   category and counterparty.  An exact description is tried before a pattern.
 </p>
-
-<div>
-  <%= link_to "Back to this account", account_path(@account) %>
-</div>
 
 <%= form_with url: account_import_matchers_path(@account), method: :get, local: true,
               html: { class: "pure-form", style: "margin-top: 1rem" } do |form| %>

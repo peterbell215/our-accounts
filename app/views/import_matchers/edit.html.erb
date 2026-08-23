@@ -2,10 +2,7 @@
 
 <h1>Editing rule for <%= @account.name %></h1>
 
+<%= form_actions back: account_import_matchers_path(@account),
+                 show: account_import_matcher_path(@account, @import_matcher) %>
+
 <%= render "form", import_matcher: @import_matcher, account: @account %>
-
-<br>
-
-<div>
-  <%= link_to "Back to rules", account_import_matchers_path(@account) %>
-</div>
