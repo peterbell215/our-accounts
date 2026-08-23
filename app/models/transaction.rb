@@ -46,16 +46,30 @@ class Transaction < ApplicationRecord
   # one page.
   attr_reader :counterparty_name
 
-  # Blank clears the counterparty.  A name matching none is an error rather than a new Counterparty:
-  # counterparty names are already sprawling, because AnalysisImporter derived them from raw statement text,
-  # and creating one on a typo would add to that.  Counterparties are created deliberately, on their own
-  # screen.
+  # The name a second save would create, or nil.  The row round-trips it through a hidden field and hands it
+  # back as #confirmed_counterparty_name, and keeps its save button on offer while it is set.
+  attr_reader :counterparty_to_confirm
+
+  # The name the previous response offered to create, handed back by the row.  A plain accessor with no side
+  # effects, because strong params assign attributes in the order the form submitted them and nothing here
+  # may depend on whether this arrives before or after #counterparty_name=.  It carries the *name* rather
+  # than a bare "yes", so editing the field before saving again asks about the new name instead of quietly
+  # creating the old one.
+  attr_accessor :confirmed_counterparty_name
+
+  before_validation :accept_confirmed_counterparty
+
+  # Blank clears the counterparty.  A name matching none is not created outright — counterparty names are
+  # already sprawling, because AnalysisImporter derived them from raw statement text, and a typo would add to
+  # that — but neither is it refused: the row comes back marked, and saving it again creates the record.
+  # The confirmation itself is handled by #accept_confirmed_counterparty, so this stays a lookup.
   #
   # A value that already names this transaction's counterparty is left alone rather than resolved again.
   # #counterparty is an Account, and import data or the console can point it at one of the household's own
   # accounts; the cell then renders that account's name, which Counterparty does not contain, so submitting
   # the row — even to change nothing but the category — used to fail on a name the user never typed.
-  # Resolving a *changed* name still goes through Counterparty only, so an own account cannot be chosen.
+  # Resolving a *changed* name still goes through Counterparty only, so an own account can be neither chosen
+  # nor created.
   # @param [String, nil] value
   def counterparty_name=(value)
     @counterparty_name = value
@@ -67,6 +81,13 @@ class Transaction < ApplicationRecord
       match = Counterparty.named(value).first
       match ? self.counterparty = match : @unresolved_counterparty = value
     end
+  end
+
+  # True once a confirmed name was turned into a new Counterparty.  After a successful save that record
+  # exists, and its name belongs in the page's datalist alongside the rest.
+  # @return [Boolean]
+  def counterparty_created?
+    @counterparty_created == true
   end
 
   # Find if a match for this trx exists using the ImportMatcher class.
@@ -99,9 +120,49 @@ class Transaction < ApplicationRecord
 
   private
 
-  def counterparty_name_resolved
+  # Turns a confirmed name into an unsaved Counterparty, which belongs_to autosave then writes inside the
+  # transaction's own save, in the same database transaction.  Autosave does not check whether that write
+  # succeeded, so a name the record would reject has to be caught here and left for #counterparty_name_resolved
+  # to report — otherwise the row would save with a silently empty counterparty.
+  def accept_confirmed_counterparty
     return if @unresolved_counterparty.blank?
 
-    errors.add(:counterparty_name, "#{@unresolved_counterparty.squish.inspect} is not a counterparty")
+    name = @unresolved_counterparty.squish
+    return unless confirmed_counterparty_name.to_s.squish.casecmp?(name)
+    return if own_account_named?(name)
+
+    candidate = Counterparty.new(name: name)
+    return unless candidate.valid?
+
+    self.counterparty = candidate
+    @unresolved_counterparty = nil
+    @counterparty_created = true
+  end
+
+  # Whatever the confirmation did not settle.  Ordered so the reader is told what is actually wrong: a name
+  # that could never become a counterparty is refused rather than offered, so that saving again cannot turn
+  # into saving in vain.
+  def counterparty_name_resolved
+    @counterparty_to_confirm = nil
+    return if @unresolved_counterparty.blank?
+
+    name = @unresolved_counterparty.squish
+    candidate = Counterparty.new(name: name)
+
+    if own_account_named?(name)
+      errors.add(:counterparty_name, "#{name.inspect} is one of your own accounts")
+    elsif candidate.invalid?
+      errors.add(:counterparty_name, "#{name.inspect} #{candidate.errors[:name].first}")
+    else
+      @counterparty_to_confirm = name
+      errors.add(:counterparty_name, "#{name.inspect} is not a counterparty — save again to create it")
+    end
+  end
+
+  # Counterparty.named has already missed by the time this is asked, so any Account still answering to the
+  # name is one of the household's own.  Account names are case-insensitively unique across the whole STI
+  # table, which is why such a counterparty cannot be created at all, only refused.
+  def own_account_named?(name)
+    Account.named(name).exists?
   end
 end

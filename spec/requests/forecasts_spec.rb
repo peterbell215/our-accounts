@@ -4,11 +4,21 @@ RSpec.describe "Forecasts", type: :request do
   let!(:data) { ForecastDataBuilder.new(today: Date.current).build }
 
   describe "GET /forecast" do
-    it "shows this month by default" do
+    it "shows this month by default, where this month has transactions in it" do
       get forecast_path
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Forecast for #{Date.current.to_fs(:month_year)}")
+    end
+
+    # Statements are imported in arrears, so for most of a month the current one holds nothing, and
+    # opening there would show predictions with no actuals to weigh them against.
+    it "opens on the last month with transactions rather than the calendar's" do
+      Transaction.where(date: Date.current.beginning_of_month..).delete_all
+
+      get forecast_path
+
+      expect(response.body).to include("Forecast for #{(Date.current << 1).to_fs(:month_year)}")
     end
 
     it "shows the month asked for" do
@@ -24,14 +34,14 @@ RSpec.describe "Forecasts", type: :request do
     end
 
     # A mistyped query string should show the reader a page, not a 500.
-    it "falls back to this month rather than failing on a month it cannot read" do
+    it "falls back to the month it opens on rather than failing on a month it cannot read" do
       get forecast_path(month: "banana")
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Forecast for #{Date.current.to_fs(:month_year)}")
     end
 
-    it "falls back to this month on an empty month" do
+    it "falls back to the month it opens on when the parameter is empty" do
       get forecast_path(month: "")
 
       expect(response).to have_http_status(:ok)
@@ -92,6 +102,20 @@ RSpec.describe "Forecasts", type: :request do
       get forecast_category_path(data.subscriptions, month: Date.current.to_fs(:iso8601))
 
       expect(response.body).to include("The payments it is made up of", "Octopus Energy", "South Staffs Water")
+    end
+
+    # Two charges from one payee inside a single month used to be drawn as one charge for their total,
+    # dated the earlier of the two — on the page, a bill that had doubled rather than two ordinary ones.
+    it "shows each occurrence where a payment has gone out twice in the month" do
+      last_month = 1.month.ago.beginning_of_month
+      create(:transaction, account: data.account, category: data.subscriptions, counterparty: data.energy,
+                           date: last_month.change(day: 5), description: "OCTOPUS ENERGY",
+                           trx_type: "DD", amount: Money.from_amount(-218.85))
+
+      get forecast_category_path(data.subscriptions, month: last_month.strftime("%Y-%m"))
+
+      expect(response.body).to include("#{last_month.change(day: 5).to_fs(:short_date)}, £218.85")
+      expect(response.body).to include("#{last_month.change(day: 19).to_fs(:short_date)}, £218.85")
     end
 
     it "offers a form on a category forecast by hand" do

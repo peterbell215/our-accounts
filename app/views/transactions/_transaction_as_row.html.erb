@@ -8,6 +8,7 @@
               data: { controller: "transaction-row",
                       action: "input->transaction-row#refresh change->transaction-row#refresh",
                       transaction_row_unsaved_value: !transaction.persisted?,
+                      transaction_row_pending_value: transaction.counterparty_to_confirm.present?,
                       transaction_id: transaction.id} do |f| %>
 
   <%# Date Column - a date the reader can still edit needs the browser's own date field %>
@@ -41,8 +42,15 @@
   <%# Counterparty column.  A text field against a shared datalist rather than a select: there are hundreds
       of counterparties, and one select per row would put thousands of options on the page.  The error is
       shown on the field itself, not below it, because transactions_list_controller measures one row's
-      height and applies it to all of them. %>
+      height and applies it to all of them.
+
+      A name no counterparty has comes back marked, with the name it would create carried in a hidden field.
+      Saving again hands that name back and creates it; editing the field first makes the two disagree, so
+      the new name is asked about in its turn rather than the old one being created behind the reader. %>
   <div class="div-table-col">
+    <% if transaction.counterparty_to_confirm %>
+      <%= f.hidden_field :confirmed_counterparty_name, value: transaction.counterparty_to_confirm %>
+    <% end %>
     <%= f.text_field :counterparty_name,
                      value: transaction.counterparty_name || transaction.counterparty&.name,
                      list: "counterparty-names",
@@ -74,9 +82,13 @@
 
   <%# Actions Column - Use submit button and add delete button %>
   <div class="div-table-col actions-col"> <%# Added a class for potential styling %>
-    <%# Shown by the transaction_row controller once the row has an edit to save %>
+    <%# Shown by the transaction_row controller once the row has an edit to save.  Where a counterparty is
+        waiting to be confirmed the button says so: the error itself can only be a tooltip on the field,
+        and this is the control the reader has to press. %>
     <%= f.button type: :submit, class: "pure-button pure-button-primary pure-button-small save-button",
-                 name: "save", title: "Save Transaction",
+                 name: "save",
+                 title: transaction.counterparty_to_confirm ?
+                          "Create #{transaction.counterparty_to_confirm.inspect} and save" : "Save Transaction",
                  data: { transaction_row_target: "save" } do %>
       <span class="material-symbols-outlined">save</span>
     <% end %>

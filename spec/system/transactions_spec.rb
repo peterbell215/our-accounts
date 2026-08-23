@@ -113,20 +113,66 @@ RSpec.describe "Transactions", type: :system do
       expect(transaction.reload.counterparty).to be_nil
     end
 
-    # Creating one on a typo would add to the sprawl of raw statement names the analysis import left behind.
-    it "rejects a name no counterparty has, without creating one" do
+    # Creating one on the first save would let a typo add to the sprawl of raw statement names the analysis
+    # import left behind.  The second save is the guard that used to be an outright refusal.
+    it "creates a counterparty the second time an unknown name is saved" do
       visit account_path(account)
 
       transaction_id = first_row['data-transaction-id'].to_i
 
       within(first_row) do
-        fill_in 'transaction[counterparty_name]', with: 'Ocotpus Enrgy'
+        fill_in 'transaction[counterparty_name]', with: 'Bristol Water'
+        click_button 'save'
+      end
+
+      # The save button has to survive the rejection, or there is nothing left to press: nothing on the row
+      # looks edited once the server has rendered the typed name back as the field's own default.
+      expect(page).to have_selector('input.field-error')
+      expect(first_row).to have_button('save', title: 'Create "Bristol Water" and save')
+      expect(Counterparty.find_by(name: 'Bristol Water')).to be_nil
+
+      within(first_row) { click_button 'save' }
+
+      expect(page).to have_link(href: %r{/counterparties/\d+})
+      water = Counterparty.find_by!(name: 'Bristol Water')
+      expect(Transaction.find(transaction_id).counterparty).to eq water
+      expect(page).to have_selector("datalist#counterparty-names option[value='Bristol Water']",
+                                    visible: :all)
+    end
+
+    # The row hands back the name it offered rather than a bare yes, so a correction is asked about in its
+    # turn instead of the typo being created behind the reader.
+    it "asks again when the name is corrected before the second save" do
+      visit account_path(account)
+
+      within(first_row) do
+        fill_in 'transaction[counterparty_name]', with: 'Bristol Watr'
+        click_button 'save'
+      end
+
+      expect(first_row).to have_button('save', title: 'Create "Bristol Watr" and save')
+
+      within(first_row) do
+        fill_in 'transaction[counterparty_name]', with: 'Bristol Water'
+        click_button 'save'
+      end
+
+      expect(first_row).to have_button('save', title: 'Create "Bristol Water" and save')
+      expect(Counterparty.where(name: [ 'Bristol Watr', 'Bristol Water' ])).to be_empty
+    end
+
+    # Account names are case-insensitively unique across the whole STI table, so there is nothing to offer,
+    # and no save button either: pressing it again could only fail again.  Editing the field brings it back.
+    it "refuses one of the household's own account names outright" do
+      visit account_path(account)
+
+      within(first_row) do
+        fill_in 'transaction[counterparty_name]', with: 'Lloyds Account'
         click_button 'save'
       end
 
       expect(page).to have_selector('input.field-error')
-      expect(Transaction.find(transaction_id).counterparty).to be_nil
-      expect(Counterparty.find_by(name: 'Ocotpus Enrgy')).to be_nil
+      expect(first_row).to have_no_button('save')
     end
 
     it "offers the existing counterparties once for the whole page, not once per row" do

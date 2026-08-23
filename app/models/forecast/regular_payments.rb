@@ -160,7 +160,6 @@ class Forecast::RegularPayments
 
     def payment_for(key, rows, months, cadence:, status:, inferred:, set_by_hand:)
       last_index, amount = months.last
-      landed = rows.select { |row| row.month_index == @index }
 
       Forecast::Payment.new(
         key: key,
@@ -175,8 +174,8 @@ class Forecast::RegularPayments
         cadence: cadence,
         last_seen: last_index && rows.select { |row| row.month_index == last_index }.map(&:date).max,
         due: status == :forecast && ((@index - last_index) % cadence).zero?,
-        landed_on: landed.map(&:date).min,
-        landed_amount: landed.sum(Money.new(0), &:amount),
+        # Every occurrence in the month, not a total against one date — see Forecast::Payment#landed?.
+        landed: rows.select { |row| row.month_index == @index }.sort_by(&:date),
         status: status,
         inferred_cadence: inferred,
         set_by_hand: set_by_hand

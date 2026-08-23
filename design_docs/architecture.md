@@ -538,19 +538,43 @@ form sets `url:` explicitly, because `form_with(model: [account, matcher])` woul
 `bank_account_import_matchers_path` from the STI subclass and the route is nested under `:accounts`.
 
 **The counterparty is edited as a name, not an id.** `Transaction#counterparty_name=` resolves a typed name
-against `Counterparty`, case-insensitively, and records an unresolved one as a validation error rather than
-creating a record — counterparty names are already sprawling and a typo would add to it. A value that already
-names the transaction's *current* counterparty is left alone rather than resolved again, because
-`#counterparty` is an `Account` and import data can point it at one of the household's own accounts: the cell
-then renders a name no `Counterparty` holds, and re-resolving it would refuse a row over a name the user
-never typed. `Account#name` is squished on write and case-insensitively unique for the same lookup's sake —
-`" Tesco "` would otherwise fail to match itself, and `TESCO` alongside `Tesco` would make the match
-arbitrary. The transaction list
-therefore renders a text field against a single shared `<datalist>`: a `<select>` per row over several
-hundred counterparties would put thousands of `<option>` elements on one page, and the datalist is one list
-however many rows are on screen, with no JavaScript. The datalist is rendered once in
-`accounts/show.html.erb` and **not** in `transactions/_rows.html.erb`, or every fetched page would append
-another element with the same id.
+against `Counterparty`, case-insensitively. A value that already names the transaction's *current*
+counterparty is left alone rather than resolved again, because `#counterparty` is an `Account` and import
+data can point it at one of the household's own accounts: the cell then renders a name no `Counterparty`
+holds, and re-resolving it would refuse a row over a name the user never typed. `Account#name` is squished
+on write and case-insensitively unique for the same lookup's sake — `" Tesco "` would otherwise fail to
+match itself, and `TESCO` alongside `Tesco` would make the match arbitrary. The transaction list therefore
+renders a text field against a single shared `<datalist>`: a `<select>` per row over several hundred
+counterparties would put thousands of `<option>` elements on one page, and the datalist is one list however
+many rows are on screen, with no JavaScript. The datalist is rendered once in `accounts/show.html.erb` and
+**not** in `transactions/_rows.html.erb`, or every fetched page would append another element with the same
+id; a save that creates a counterparty appends the one extra `<option>` as a second Turbo Stream, so the
+rest of the rows offer it without a reload.
+
+**A name no counterparty has is confirmed, not refused.** It used to be a flat validation error: creating a
+record on a typo would add to the sprawl of raw statement names `AnalysisImporter` already left behind, so
+the reader was sent to the Counterparties screen instead. That argument still holds, but the detour was paid
+on every genuinely new supplier, which is exactly when the need arises. So the guard moved rather than went:
+the first save comes back marked, and saving the row a second time creates the `Counterparty`.
+
+Three things shape how that is carried:
+
+- **The confirmation is the name, not a flag.** The row round-trips it through a hidden
+  `confirmed_counterparty_name`, and `Transaction#accept_confirmed_counterparty` only acts when it still
+  matches what was typed. A bare "yes" would survive an edit to the field and create the name the reader had
+  just corrected away from.
+- **The new record is written by `belongs_to` autosave**, inside the transaction's own save and so in one
+  database transaction. Autosave does not check whether that write succeeded when `:autosave` is unset, so
+  anything the record would reject has to be caught on the `Transaction` first — otherwise the row would
+  save with a silently empty `counterparty_id`. That is why a name too short to be one, or belonging to one
+  of the household's own accounts, is refused outright with its own message rather than offered: saving
+  again could only fail again. Declaring `autosave: true` instead would file Rails' errors under
+  `:counterparty`, where the row is not looking.
+- **The save button has to survive the rejection.** `transaction_row_controller` decides a row is edited by
+  comparing each field with its `defaultValue`, and the server has just rendered the typed name back as that
+  default; hidden inputs are filtered out of the comparison. Without a `pending` value forcing the button
+  visible there would be nothing left to press. Its `title` carries the instruction — naming what the next
+  press will create — because the error itself can only be a tooltip on the field.
 
 That row's validation error is shown as a red border and a `title` on the input, not as a message beneath it,
 because of the row-height assumption recorded below.
@@ -602,17 +626,36 @@ a destroy path, and a forecast page is a report about a month rather than a reco
 edit as a record and nothing to delete. They open with a plain Back link instead, in the same position.
 
 **The forecast is one screen and a workings page behind each line.** `ForecastsController` is read-only
-and takes the month as `?month=`, coercing anything unreadable back to the current month rather than
-raising — the same view `TransactionPage#coerce_date` takes of a date arriving as a parameter — and
-clamping it to the same bounds the navigation buttons show, so a hand-edited URL cannot strand the reader
-where the buttons would not go. Month navigation reuses the disabled-span pattern of
+and takes the month as `?month=`, coercing anything unreadable — or absent — back to
+`Forecast::Month.default_month` rather than raising — the same view `TransactionPage#coerce_date` takes of
+a date arriving as a parameter — and clamping it to the same bounds the navigation buttons show, so a
+hand-edited URL cannot strand the reader where the buttons would not go.
+
+**It opens on the last month with a transaction in it, not the calendar's current month.** Statements are
+downloaded and imported in arrears, so for most of a month the current one holds nothing or a few days of
+it, and landing there showed a full set of predictions with almost no actuals against them — the reader's
+first move was always to press **«**. `default_month` is `Transaction.maximum(:date)` rounded to its
+month, falling back to this month on an empty database, and sits beside `earliest_month` and
+`latest_month` as a class method because the controller needs it before it has a forecast to ask. The
+consequence is that the default view is usually a *past* month, so the screen's "jump to this month" link
+has to name today's month explicitly rather than linking to the bare `forecast_path` it once did. Month navigation reuses the disabled-span pattern of
 `TransactionsHelper#transaction_anchor_link`, for the same reason: the controls keep their positions.
 
 A **workings page per line** rather than rows that expand. There is no JavaScript build step, the
 existing Stimulus controllers each earn their keep, and a fourth written for disclosure would not — while
 a page has room to print the months an average is taken over, or every recognised payment with the date
-and amount of the one that has already gone out. That page is where the reader can check the guess, which
-is the difference between a forecast they can act on and a number they have to take on trust.
+and amount of each occurrence that has already gone out. That page is where the reader can check the guess,
+which is the difference between a forecast they can act on and a number they have to take on trust.
+
+**What has gone out is a list, not a date and a total.** A payment on a monthly cadence can still fall twice
+inside one calendar month — billed on the 1st and again on the 29th — and the first version reduced the
+occurrences two different ways: it totalled the amounts but kept only the earliest date. Two ordinary £7.99
+charges were drawn as a single charge for £15.98, which on the one page whose purpose is checking the guess
+reads as a bill that has doubled. `Forecast::Payment#landed` carries the occurrences themselves and the cell
+prints a line each; no total is kept, because nothing needs one. The alternative was a count beside the
+total — "2 payments, £15.98" — which is honest but still withholds the dates the reader needs in order to
+recognise them. None of the arithmetic was ever wrong: `remaining` asks only whether a payment has landed,
+so it never read the total.
 
 The hand-entered figure is **an upsert on one route**, `POST /forecast/categories/:id/manual`, reached
 from the workings page: `find_or_initialize_by(category, month)`, saved, or destroyed when the field is
@@ -641,6 +684,12 @@ history to list, and one `<form>` cannot be nested inside another. With no JavaS
 appear as the method select changes, so it appears when the *saved* method is regular payments, and the
 select carries a note saying so. That is the same compromise the lookback field already makes, and it
 costs one extra click after switching a category over.
+
+That table asks about `Forecast::Month.default_month`, not today's month, for the same reason the forecast
+opens there: against statements imported in arrears the calendar's current month holds nothing, and asked
+about it every payee in the category reads as having gone quiet. It also keeps the two screens answering
+about the same month, which is the only thing that makes them comparable — the table is meant to explain
+the figure on the workings page, and it cannot do that from a different month.
 
 **A Show screen names itself, and its data does not name it again.** Index, new and edit screens all
 carried an `<h1>` and a `content_for :title`; three of the five Show screens carried neither, so the strip
@@ -869,11 +918,13 @@ One worth doing next time a migration is written: `Transaction#sequence` runs
 and there is no index on `(account_id, date)` — so a 2,626-row import scans a growing table 2,626 times.
 It was left alone here only because it has nothing to do with forecasting.
 
-One newly opened: **`AnalysisImporter` can resurrect a merged-away counterparty.** `counterparty_for` looks
-one up by name and creates it when absent, so re-running the analysis import recreates a name that a merge
-removed, for any description that does not already have a rule. The guard skipping descriptions the account
-already has a rule for is what limits the damage. Fixing it properly means an "absorbed into" pointer and a
-schema change, which was not worth adding before there is experience of whether re-imports cause it.
+One newly opened: **a merged-away counterparty can be resurrected.** `AnalysisImporter#counterparty_for`
+looks one up by name and creates it when absent, so re-running the analysis import recreates a name that a
+merge removed, for any description that does not already have a rule; the guard skipping descriptions the
+account already has a rule for is what limits the damage. Typing the old name into a transaction row and
+confirming it now does the same thing, though deliberately rather than behind the reader's back. Fixing
+either properly means an "absorbed into" pointer and a schema change, which was not worth adding before
+there is experience of whether it happens in practice.
 
 One trap worth recording for whoever writes the next migration: **Rails 8.1's schema dumper sorts columns
 alphabetically**, unconditionally. `ImportColumnsDefinition::CSV_HEADERS` used to be derived from

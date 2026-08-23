@@ -93,8 +93,10 @@
             <td><%= short_date payment.last_seen %></td>
             <td><%= payment.due? ? "Yes" : "No" %></td>
             <td>
-              <% if payment.landed? %>
-                ✓ <%= short_date payment.landed_on %>, <%= humanized_money_with_symbol payment.landed_amount %>
+              <%# One line per occurrence: a payment can fall twice inside one calendar month, and a %>
+              <%# total against the earlier date reads as one charge for twice the money. %>
+              <% payment.landed.each do |occurrence| %>
+                <div>✓ <%= short_date occurrence.date %>, <%= humanized_money_with_symbol occurrence.amount %></div>
               <% end %>
             </td>
           </tr>

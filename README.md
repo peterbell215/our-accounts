@@ -138,10 +138,17 @@ The **Counterparty** column names the supplier, where one is known. Start typing
 existing counterparties are offered as completions; pick one and save, and the transaction is linked to
 it. The small icon beside the name opens that counterparty's own page. Clearing the field unlinks it.
 
-A name that is not already a counterparty is **refused**, and the field turns red rather than the row
-saving. That is deliberate: counterparty names imported from statements are already untidy, and quietly
-creating a new one from a typo would make it worse. Create it on the Counterparties screen first. Case and
-stray spaces do not matter — `octopus energy` finds `Octopus Energy`.
+A name that is not already a counterparty is **not created on the first save**. The field turns red and
+the row does not save; hovering over the save button beside it says what it would create. Save the row a
+second time and the counterparty is created and linked, and its name is offered as a completion in every
+other row from then on. The second save is there because counterparty names imported from statements are
+already untidy and a typo should not quietly join them — correct the name before saving again and you are
+asked about the correction instead, so nothing is created behind you. Case and stray spaces do not matter —
+`octopus energy` finds `Octopus Energy`.
+
+Two names are refused outright rather than offered, and for those the save button goes away until you
+change what you typed: one shorter than three characters, which is too short to be a name, and the name of
+one of your own accounts, which already exists and cannot be a counterparty as well.
 
 ### Forecast
 
@@ -151,6 +158,11 @@ that is the number the screen is really for.
 
 **Still to come never goes below zero.** A category you have already overspent simply has nothing left
 to come; it does not start subtracting from the rest.
+
+The screen opens on **the last month you have imported transactions for**, which is usually the month
+just gone rather than the one the calendar is in: statements arrive in arrears, so opening on the
+calendar's month would show predictions with barely a day or two of spending to weigh them against.
+Where that month has finished, a **jump to this month** link sits beside the month buttons.
 
 Use **«** and **»** to move a month either way. Going back to a month that has finished swaps the last
 column for **Difference**, which is how far the month ran over or under what would have been predicted
@@ -201,6 +213,10 @@ the current account and the credit card you sometimes paid them with show up on 
 Not every transaction has one. A one-off purchase, or a description too cryptic to identify, simply has no
 counterparty, and that is expected rather than a gap to fill.
 
+Most of them arrive on their own, named after raw statement text, when you load a hand-categorised statement.
+You can add one here with **New Counterparty**, but the usual way is to type the name straight into a
+transaction's Counterparty column and save the row twice — see [the transaction list](#accounts).
+
 The list shows how many transactions each has and how much you have spent with it, and starts in
 alphabetical order so you can find the one you meant. Click any column heading to reorder it, and again to
 reverse it.
@@ -213,7 +229,9 @@ Names are tidied as they are saved: surrounding and doubled spaces are removed, 
 itself when you type it into a transaction row. Two counterparties cannot differ only in case, which would
 leave you guessing which of `TESCO` and `Tesco` a transaction had been linked to.
 
-Deleting a counterparty keeps its transactions; they simply stop naming anyone.
+Deleting a counterparty keeps its transactions; they simply stop naming anyone. Note that a name you delete
+or merge away can come back: typing it into a transaction row again will offer to create it, as will
+re-running the analysis import.
 
 #### Merging duplicates
 
@@ -484,6 +502,9 @@ they add nothing to the total.
 - That last point makes it the wrong choice for a genuinely variable bill — energy at £120 in summer and
   £300 in winter. Put that category on the average instead.
 - A bill you have cancelled drops off on its own once it has been silent for longer than its own cycle.
+- A bill can fall **twice inside one calendar month** — billed on the 1st and again on the 29th, say. The
+  workings page lists each charge on its own line, so two ordinary payments are not mistaken for a single
+  one that has doubled.
 - A payee that appears under two counterparties may not be recognised at all, because its history is
   split in two. Both halves are listed, each saying it was only seen once, so you can see what has
   happened; merge the counterparties on the [Counterparties](#counterparties) screen and it reunites,
@@ -514,6 +535,11 @@ Three things are worth knowing about a frequency you set yourself:
   its first payment.
 - **You can always give it back.** Choose **Work it out from the history** and the setting is cleared, as
   though you had never touched it.
+
+The list describes **the last month you have imported transactions for**, the same month the forecast
+opens on, so what it says lines up with the forecast's own workings page. If every payee reads *nothing
+since…*, that is not the list being broken: it means your last import is further back than those bills'
+own cycles, and loading a more recent statement is what brings them back.
 
 ### Reading the month
 

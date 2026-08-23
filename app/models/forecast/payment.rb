@@ -4,7 +4,7 @@
 # forecast: `status` says which, and it is rendered a row at a time both on the forecast's workings page
 # and on the category screen, where the reader can see whether the guess is a good one and overrule it.
 Forecast::Payment = Struct.new(
-  :key, :label, :counterparty, :amount, :cadence, :last_seen, :due, :landed_on, :landed_amount,
+  :key, :label, :counterparty, :amount, :cadence, :last_seen, :due, :landed,
   :status, :inferred_cadence, :set_by_hand,
   keyword_init: true
 ) do
@@ -37,7 +37,12 @@ Forecast::Payment = Struct.new(
   def due? = due
 
   # Has it already gone out?
-  def landed? = !landed_on.nil?
+  #
+  # `landed` is every occurrence inside the month being forecast, earliest first, rather than one date
+  # and one amount.  A monthly payment billed on the 1st and again on the 29th falls twice inside the
+  # same calendar month, and totalling the two against the earlier of the dates drew it as a single
+  # charge for twice the money — on the page indistinguishable from a bill that had doubled.
+  def landed? = landed.any?
 
   # Was its frequency set by hand rather than inferred?
   def set_by_hand? = set_by_hand
