@@ -15,7 +15,9 @@
     <% else %>
       Today is <%= short_date @forecast.today %>.
     <% end %>
-    <%= link_to "jump to this month", forecast_path unless @forecast.current? %>
+    <%# Named explicitly, because the screen with no month asked for opens on the last month with
+       transactions in it, which is usually not this one. %>
+    <%= link_to "jump to this month", forecast_path(month: @forecast.today.to_fs(:iso8601)) unless @forecast.current? %>
   </span>
 </div>
 

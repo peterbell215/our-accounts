@@ -106,6 +106,20 @@ describe Forecast::Month, type: :model do
     end
   end
 
+  describe 'the month it opens on' do
+    # Statements are imported in arrears, so the calendar's current month usually holds nothing yet.
+    it 'is the last month there is a transaction in' do
+      account = create(:lloyds_account, opening_date: Date.new(2026, 1, 1))
+      create(:transaction, account: account, date: Date.new(2026, 5, 20), amount: Money.from_amount(-10.00))
+
+      expect(described_class.default_month(today)).to eq(Date.new(2026, 5, 1))
+    end
+
+    it 'is this month where there is nothing imported at all' do
+      expect(described_class.default_month(today)).to eq(month)
+    end
+  end
+
   describe 'an empty database' do
     it 'still lists every category, at nothing' do
       create(:food_category)

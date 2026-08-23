@@ -24,13 +24,14 @@ class ForecastsController < ApplicationController
   end
 
   private
-    # The month asked for, as its first day.  Anything unreadable falls back to this month rather than
-    # raising: a mistyped query string should show the reader a page, not a 500.  Following
-    # TransactionPage#coerce_date, which takes the same view of a date arriving as a parameter.
+    # The month asked for, as its first day.  Nothing asked for, or anything unreadable, falls back to
+    # the last month with transactions in it rather than raising: a mistyped query string should show the
+    # reader a page, not a 500.  Following TransactionPage#coerce_date, which takes the same view of a
+    # date arriving as a parameter.
     #
     # @return [Date]
     def requested_month
-      clamp(parse_month(params[:month]) || Date.current)
+      clamp(parse_month(params[:month]) || Forecast::Month.default_month)
     end
 
     # @return [Date, nil]

@@ -4,11 +4,21 @@ RSpec.describe "Forecasts", type: :request do
   let!(:data) { ForecastDataBuilder.new(today: Date.current).build }
 
   describe "GET /forecast" do
-    it "shows this month by default" do
+    it "shows this month by default, where this month has transactions in it" do
       get forecast_path
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Forecast for #{Date.current.to_fs(:month_year)}")
+    end
+
+    # Statements are imported in arrears, so for most of a month the current one holds nothing, and
+    # opening there would show predictions with no actuals to weigh them against.
+    it "opens on the last month with transactions rather than the calendar's" do
+      Transaction.where(date: Date.current.beginning_of_month..).delete_all
+
+      get forecast_path
+
+      expect(response.body).to include("Forecast for #{(Date.current << 1).to_fs(:month_year)}")
     end
 
     it "shows the month asked for" do
@@ -24,14 +34,14 @@ RSpec.describe "Forecasts", type: :request do
     end
 
     # A mistyped query string should show the reader a page, not a 500.
-    it "falls back to this month rather than failing on a month it cannot read" do
+    it "falls back to the month it opens on rather than failing on a month it cannot read" do
       get forecast_path(month: "banana")
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Forecast for #{Date.current.to_fs(:month_year)}")
     end
 
-    it "falls back to this month on an empty month" do
+    it "falls back to the month it opens on when the parameter is empty" do
       get forecast_path(month: "")
 
       expect(response).to have_http_status(:ok)
