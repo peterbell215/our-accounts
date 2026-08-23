@@ -533,8 +533,18 @@ where the buttons would not go. Month navigation reuses the disabled-span patter
 A **workings page per line** rather than rows that expand. There is no JavaScript build step, the
 existing Stimulus controllers each earn their keep, and a fourth written for disclosure would not — while
 a page has room to print the months an average is taken over, or every recognised payment with the date
-and amount of the one that has already gone out. That page is where the reader can check the guess, which
-is the difference between a forecast they can act on and a number they have to take on trust.
+and amount of each occurrence that has already gone out. That page is where the reader can check the guess,
+which is the difference between a forecast they can act on and a number they have to take on trust.
+
+**What has gone out is a list, not a date and a total.** A payment on a monthly cadence can still fall twice
+inside one calendar month — billed on the 1st and again on the 29th — and the first version reduced the
+occurrences two different ways: it totalled the amounts but kept only the earliest date. Two ordinary £7.99
+charges were drawn as a single charge for £15.98, which on the one page whose purpose is checking the guess
+reads as a bill that has doubled. `Forecast::Payment#landed` carries the occurrences themselves and the cell
+prints a line each; no total is kept, because nothing needs one. The alternative was a count beside the
+total — "2 payments, £15.98" — which is honest but still withholds the dates the reader needs in order to
+recognise them. None of the arithmetic was ever wrong: `remaining` asks only whether a payment has landed,
+so it never read the total.
 
 The hand-entered figure is **an upsert on one route**, `POST /forecast/categories/:id/manual`, reached
 from the workings page: `find_or_initialize_by(category, month)`, saved, or destroyed when the field is

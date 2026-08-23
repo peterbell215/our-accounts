@@ -475,6 +475,9 @@ they add nothing to the total.
 - That last point makes it the wrong choice for a genuinely variable bill — energy at £120 in summer and
   £300 in winter. Put that category on the average instead.
 - A bill you have cancelled drops off on its own once it has been silent for longer than its own cycle.
+- A bill can fall **twice inside one calendar month** — billed on the 1st and again on the 29th, say. The
+  workings page lists each charge on its own line, so two ordinary payments are not mistaken for a single
+  one that has doubled.
 - A payee that appears under two counterparties may not be recognised at all, because its history is
   split in two. Merge the counterparties on the [Counterparties](#counterparties) screen and it reunites.
 

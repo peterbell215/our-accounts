@@ -94,6 +94,20 @@ RSpec.describe "Forecasts", type: :request do
       expect(response.body).to include("The payments it is made up of", "Octopus Energy", "South Staffs Water")
     end
 
+    # Two charges from one payee inside a single month used to be drawn as one charge for their total,
+    # dated the earlier of the two — on the page, a bill that had doubled rather than two ordinary ones.
+    it "shows each occurrence where a payment has gone out twice in the month" do
+      last_month = 1.month.ago.beginning_of_month
+      create(:transaction, account: data.account, category: data.subscriptions, counterparty: data.energy,
+                           date: last_month.change(day: 5), description: "OCTOPUS ENERGY",
+                           trx_type: "DD", amount: Money.from_amount(-218.85))
+
+      get forecast_category_path(data.subscriptions, month: last_month.strftime("%Y-%m"))
+
+      expect(response.body).to include("#{last_month.change(day: 5).to_fs(:short_date)}, £218.85")
+      expect(response.body).to include("#{last_month.change(day: 19).to_fs(:short_date)}, £218.85")
+    end
+
     it "offers a form on a category forecast by hand" do
       get forecast_category_path(data.holidays, month: Date.current.to_fs(:iso8601))
 

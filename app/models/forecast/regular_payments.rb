@@ -105,8 +105,6 @@ class Forecast::RegularPayments
       # Finished, not merely quiet.  A cadence's worth of silence plus a month's grace.
       return nil if silence > cadence + 1
 
-      landed = rows.select { |row| row.month_index == @index }
-
       Forecast::Payment.new(
         label: label,
         counterparty: counterparty_for(rows),
@@ -114,8 +112,8 @@ class Forecast::RegularPayments
         cadence: cadence,
         last_seen: rows.select { |row| row.month_index == last_index }.map(&:date).max,
         due: (silence % cadence).zero?,
-        landed_on: landed.map(&:date).min,
-        landed_amount: landed.sum(Money.new(0), &:amount)
+        # Every occurrence in the month, not a total against one date — see Forecast::Payment#landed?.
+        landed: rows.select { |row| row.month_index == @index }.sort_by(&:date)
       )
     end
 
