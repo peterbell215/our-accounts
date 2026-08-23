@@ -328,12 +328,13 @@ the data rather than only that its buttons exist.
 - **There is no UI or route for running an import.** `FileImporter` is only ever invoked from
   `AccountSeeder` and from its own spec, so loading a new statement means dropping into
   `bin/rails runner`. Wiring it to a controller/upload form is the obvious next step.
-- **Prediction exists; analysis of the past does not.** The monthly forecast answers what this month
+- **Prediction exists; analysis of the past barely does.** The monthly forecast answers what this month
   will cost and how much of it has already gone — `Forecast::Month`, the strategies beside it and the
-  `forecast` screens. Looking backwards is still missing: no charts, no totals by category over a
-  year, no comparison between one period and another, and no record of how past forecasts did beyond
-  recomputing them a month at a time. `design_docs/architecture.md` carries the detail, including
-  the gaps the forecast itself opened.
+  `forecast` screens. Looking backwards is almost entirely missing: no charts, no totals by category over
+  a period, no comparison between one period and another, and no record of how past forecasts did beyond
+  recomputing them a month at a time. The exception is `Category#counterparty_spend`, rendered on the
+  category Show screen — who a category was spent with, all-time, largest first.
+  `design_docs/architecture.md` carries the detail, including the gaps the forecast itself opened.
 - **A hand-set payment frequency can outlive its payee.** `PaymentSchedule` names a payee the way
   `Forecast::RegularPayments` groups it (`counterparty_id || description`), so recategorising its
   transactions leaves the row with nothing to apply to. `#candidates` therefore runs over the union of the

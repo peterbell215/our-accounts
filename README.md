@@ -181,6 +181,16 @@ second column says, which takes you straight to that category's form. See
 A flat list of names with optional descriptions — "Groceries", "Utilities", "Dine Out". Categories are
 shared across all accounts. You can add and rename them freely.
 
+Opening one shows **who you spent it with**: every supplier a transaction filed under this category names,
+how many of those transactions there are and what they came to, with the largest spend at the top. Each
+name is a link to that supplier's own page, where the same money is gathered the other way round — every
+dealing with them, whichever account paid. Transactions with no counterparty are simply left out; a one-off
+purchase not naming anyone is expected rather than something to fix.
+
+Below that are **the rules that file things here** — which account each belongs to, the description it
+matches, and the supplier it names, with a dash where it names none. This is also the list to read when a
+delete is refused, because those are the rules standing in the way.
+
 Deleting one is refused while any import rule still assigns it, and the message names the rules in the way,
 because a rule without a category has nothing left to do. Change or delete those rules first. Otherwise the
 delete goes ahead: transactions already filed under the category are kept, and simply stop naming one.

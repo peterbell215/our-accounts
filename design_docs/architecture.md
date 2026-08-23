@@ -600,6 +600,24 @@ its link with `url_for` and nothing but the two parameters, so it returns to whi
 and it reads the `@sort` and `@direction` that a sortable list's controller sets. What differs between the
 two lists is only how the ordering is *done*, which is where it belongs: in each controller.
 
+**A category reads its counterparties from both sides.** The relationship exists twice — `transactions`
+carries `category_id` and `counterparty_id`, and so does `import_matcher` — and the two answer different
+questions, so the category Show screen shows both rather than picking one. The spend rollup says who was
+actually paid and what it came to; the rules say which counterparties are wired to file here, which is
+visible before a single transaction has landed and is what a category with no history has to show. The
+rules table also puts the records that `:restrict_with_error` would refuse a delete over on screen
+*beforehand*, where previously they were only named in a flash after the Destroy button had already failed.
+
+`Category#counterparty_spend` does the rollup as one grouped `pluck` plus one load, and orders in Ruby for
+the reason `CounterpartiesController#index` does: the count and the total are grouped values, not columns to
+`ORDER BY`. It lives on the model rather than in the controller, which is where the counterparties list does
+the same arithmetic — that one aggregates over every counterparty at once and so has no single record to
+hang off, whereas this one is a question about one category and is worth unit-testing as such. The order is
+fixed at largest-spend-first rather than made sortable like the two index screens: a list inside a Show
+screen is there to be read, not navigated, and the one ordering worth having is the one that names the
+biggest payees. Amounts being negative, that ordering is `sort_by` ascending — the same trap as in
+`sort_key`, and the reason both carry the comment.
+
 **Every Show screen opens with the same strip of actions.** `ApplicationHelper#show_actions` and
 `layouts/_show_actions` render Back, Edit and Destroy, in that order, above the record's own data, with
 any actions particular to that model in a block between Edit and Destroy. The scaffold's per-screen
@@ -877,8 +895,9 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
 ## Where it stands
 
 Working: the account model, both import forms, the categorisation rules and their per-transaction
-corrections, the rules and counterparty screens, the CSV analysis screen, transaction CRUD over Turbo,
-the monthly forecast and its workings pages, and seeding that rebuilds a development database end to end.
+corrections, the category and counterparty screens with their roll-ups, the rules screens, the CSV
+analysis screen, transaction CRUD over Turbo, the monthly forecast and its workings pages, and seeding
+that rebuilds a development database end to end.
 
 The gap that matters:
 
@@ -888,10 +907,15 @@ The gap that matters:
   a year's actual downloads, the derived rules categorise about 64% of transactions automatically, and
   85% within the window that was analysed by hand.
 
-**Prediction now exists; analysis of the past still does not.** The forecast answers "what will this
+**Prediction now exists; analysis of the past barely does.** The forecast answers "what will this
 month cost, and how much of it has gone", which was the point of the application. What it does not do is
-look backwards: there are no charts, no totals by category over a year, no comparison between one period
+look backwards: there are no charts, no totals by category over a period, no comparison between one period
 and another, and no record of how past forecasts actually did beyond recomputing them a month at a time.
+What does exist is two per-category cuts through the history, both in service of something else: the
+counterparty breakdown on a category's Show screen — who it was spent with, all-time, largest first — and
+the payee list behind the regular-payments method, which reports what each one last cost and when it was
+last seen. Both are useful readings and the obvious place to grow the rest, but each is a single cut over
+no chosen period; nothing aggregates a category by month, and nothing compares two periods.
 
 Gaps the forecast opened, all of them visible rather than silent:
 

@@ -18,7 +18,14 @@ class CategoriesController < ApplicationController
   end
 
   # GET /categories/1 or /categories/1.json
+  #
+  # Both readings of "the counterparties in this category", because they answer different questions: the
+  # spend rollup says who was actually paid, the rules say which counterparties are wired to file here even
+  # before a transaction has landed.  The rules table also puts the records that would refuse a delete on
+  # screen beforehand, rather than only naming them in a flash once the delete has failed.
   def show
+    @counterparty_spend = @category.counterparty_spend
+    @matchers = @category.import_matchers.includes(:account, :counterparty).order(:description)
   end
 
   # GET /categories/new
