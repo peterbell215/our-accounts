@@ -15,13 +15,23 @@ describe Forecast::RegularPayments, type: :model do
                          trx_type: "DD", amount: Money.from_amount(-amount))
   end
 
-  def detector
+  def detector(schedules: [])
     history = Forecast::History.new(month: month, today: today, categories: [ subscriptions ])
 
-    described_class.new(rows: history.all_rows_for(subscriptions.id), month: month)
+    described_class.new(rows: history.all_rows_for(subscriptions.id), month: month, schedules: schedules)
   end
 
   def payment(label) = detector.payments.find { |candidate| candidate.label == label }
+
+  def candidate(label, schedules: []) = detector(schedules: schedules).candidates.find { |c| c.label == label }
+
+  def payment_with(rule, label) = detector(schedules: [ rule ]).payments.find { |c| c.label == label }
+
+  # A frequency the reader has set by hand, against the payee the given transaction names.
+  def schedule(months, counterparty: energy, description: nil)
+    create(:payment_schedule, category: subscriptions, counterparty: counterparty,
+                              description: counterparty ? nil : description, cadence_months: months)
+  end
 
   describe 'recognising a payment' do
     it 'finds a monthly direct debit and expects it again' do
@@ -164,5 +174,134 @@ describe Forecast::RegularPayments, type: :model do
     spend(0, 5000.00)
 
     expect(detector.remaining(Money.from_amount(5000.00))).to eq(Money.from_amount(0))
+  end
+
+  describe 'a frequency set by hand' do
+    # The point of the whole feature: two occurrences are needed to *measure* a cadence, and none are
+    # needed to be *told* one.  A brand-new direct debit is otherwise invisible for a month.
+    it 'forecasts a payee seen only once, at that occurrence' do
+      spend(1, 49.00)
+
+      expect(payment_with(schedule(1), "Octopus Energy"))
+        .to have_attributes(cadence: 1, due: true, amount: Money.from_amount(49.00), status: :forecast)
+    end
+
+    it 'forecasts a payee whose history is too erratic to read' do
+      [ 20, 6 ].each { |ago| spend(ago, 75.00) }
+
+      expect(candidate("Octopus Energy").status).to eq(:erratic)
+      expect(payment_with(schedule(12), "Octopus Energy")).to have_attributes(cadence: 12, status: :forecast)
+    end
+
+    # The requirement stated the other way round, and what keeps a cancelled direct debit from being
+    # predicted for ever: saying how often a payment came does not say it is still coming.
+    it 'still drops a payee gone quiet for longer than the frequency given allows' do
+      spend(14, 9.99)
+      rule = schedule(1)
+
+      expect(payment_with(rule, "Octopus Energy")).to be_nil
+      expect(detector(schedules: [ rule ]).expected).to eq(Money.from_amount(0))
+      expect(candidate("Octopus Energy", schedules: [ rule ]).status).to eq(:finished)
+    end
+
+    # Recognised is not the same as due: a quarterly bill paid last month is live and predicted, and adds
+    # nothing to *this* month.
+    it 'falls due only in the months the frequency given falls due' do
+      spend(1, 60.00)
+      rule = schedule(3)
+
+      expect(payment_with(rule, "Octopus Energy")).to have_attributes(cadence: 3, due: false)
+      expect(detector(schedules: [ rule ]).expected).to eq(Money.from_amount(0))
+      expect(detector(schedules: [ rule ]).remaining(Money.from_amount(0))).to eq(Money.from_amount(0))
+    end
+
+    it 'falls due again once the frequency given comes round' do
+      spend(3, 60.00)
+
+      expect(payment_with(schedule(3), "Octopus Energy")).to have_attributes(cadence: 3, due: true)
+    end
+
+    it 'overrides a cadence the history disagrees with, and still reports the guess' do
+      6.downto(1) { |ago| spend(ago, 30.00) }
+
+      payment = payment_with(schedule(3), "Octopus Energy")
+
+      expect(payment).to have_attributes(cadence: 3, inferred_cadence: 1, set_by_hand: true)
+      expect(payment.overrules_history?).to be true
+    end
+
+    # There is one thing a frequency cannot supply: the amount, which is always the most recent
+    # occurrence.  A payee first seen in the month being forecast has none in a completed month.
+    it 'forecasts nothing for a payee with no occurrence in a completed month' do
+      spend(0, 49.00)
+      rule = schedule(1)
+
+      expect(candidate("Octopus Energy", schedules: [ rule ]).status).to eq(:unseen)
+      expect(detector(schedules: [ rule ]).expected).to eq(Money.from_amount(0))
+    end
+
+    it 'groups on the description for a payee with no counterparty' do
+      spend(1, 15.99, description: "ANCIENT STREAMING CO", counterparty: nil)
+      rule = schedule(1, counterparty: nil, description: "ANCIENT STREAMING CO")
+
+      expect(payment_with(rule, "ANCIENT STREAMING CO")).to have_attributes(cadence: 1, status: :forecast)
+    end
+  end
+
+  describe 'a payee ruled out by hand' do
+    before { 6.downto(1) { |ago| spend(ago, 200.00) } }
+
+    let(:ruled_out) do
+      create(:payment_schedule, category: subscriptions, counterparty: energy, cadence_months: nil)
+    end
+
+    it 'is removed from the forecast it was part of' do
+      expect(payment("Octopus Energy")).to be_present
+
+      expect(detector(schedules: [ ruled_out ]).payments).to be_empty
+      expect(detector(schedules: [ ruled_out ]).expected).to eq(Money.from_amount(0))
+      expect(detector(schedules: [ ruled_out ]).remaining(Money.from_amount(0))).to eq(Money.from_amount(0))
+    end
+
+    it 'is still listed, saying it was ruled out rather than not found' do
+      expect(candidate("Octopus Energy", schedules: [ ruled_out ]))
+        .to have_attributes(status: :suppressed, set_by_hand: true, cadence: nil)
+    end
+  end
+
+  describe 'the payees it left out' do
+    it 'names each one and why, rather than dropping any in silence' do
+      6.downto(1) { |ago| spend(ago, 200.00) }
+      spend(1, 49.00, description: "NEW BROADBAND CO", counterparty: nil)
+      [ 30, 15 ].each { |ago| spend(ago, 75.00, description: "ODD JOB", counterparty: nil) }
+      [ 18, 17, 16 ].each { |ago| spend(ago, 9.99, description: "ANCIENT STREAMING CO", counterparty: nil) }
+
+      expect(detector.candidates.map { |c| [ c.label, c.status ] }).to contain_exactly(
+        [ "Octopus Energy", :forecast ], [ "NEW BROADBAND CO", :seen_once ],
+        [ "ODD JOB", :erratic ], [ "ANCIENT STREAMING CO", :finished ]
+      )
+    end
+
+    # The invariant that makes listing the rejects a strictly additive change: #payments is the :forecast
+    # subset of #candidates, in the order it always came out in.
+    it 'is exactly what #payments leaves behind, in the order it always had' do
+      6.downto(1) { |ago| spend(ago, 200.00) }
+      [ 9, 6, 3 ].each { |ago| spend(ago, 40.00, description: "SOUTH STAFFS WATER", counterparty: water, day: 3) }
+      spend(1, 49.00, description: "NEW BROADBAND CO", counterparty: nil)
+
+      expect(detector.payments.map(&:label)).to eq([ "Octopus Energy", "South Staffs Water" ])
+      expect(detector.candidates.select(&:forecast?).map(&:label)).to eq(detector.payments.map(&:label))
+    end
+
+    # A ruling outlives its payee: recategorise its transactions or merge its counterparty away and the
+    # row is still there.  Iterating the history alone would leave it on no screen at all, so the only
+    # place able to withdraw it could not show it.
+    it 'includes a frequency set against a payee with no history left' do
+      gone = create(:counterparty, name: "Cancelled Gym", account_number: "9")
+      rule = create(:payment_schedule, category: subscriptions, counterparty: gone, cadence_months: 1)
+
+      expect(candidate("Cancelled Gym", schedules: [ rule ]))
+        .to have_attributes(status: :unseen, amount: nil, set_by_hand: true)
+    end
   end
 end

@@ -92,6 +92,47 @@ RSpec.describe CounterpartyMerge, type: :model do
       expect(merge.survivor.reload.name).to eq "Spotify"
       expect(merge.survivor.counterparty_transactions.count).to eq 5
     end
+
+    # The same instruction as the transactions above, by the opposite mechanism: those would have been
+    # nullified by destroying a loser first, this would have been destroyed.  Both are silent.
+    it 'carries a hand-set payment frequency to the survivor' do
+      first = counterparty("PAYPAL *SPOTIFY", transactions: 2)
+      second = counterparty("SPOTIFY", transactions: 2)
+      create(:payment_schedule, category: utilities, counterparty: second, cadence_months: 1)
+
+      merge = described_class.new(ids: [ first.id, second.id ], name: "Spotify")
+
+      expect(merge.merge).to be true
+      expect(merge.schedules_moved).to eq 1
+      expect(PaymentSchedule.sole).to have_attributes(counterparty: first, cadence_months: 1)
+    end
+
+    # Nothing can pick between two frequencies for one payee, so the one set against the name being kept
+    # wins and the other goes.  Merging into a survivor already ruled on must not violate the index.
+    it 'keeps the survivor’s own frequency where both were ruled on in one category' do
+      first = counterparty("PAYPAL *SPOTIFY", transactions: 2)
+      second = counterparty("SPOTIFY", transactions: 2)
+      create(:payment_schedule, category: utilities, counterparty: first, cadence_months: 12)
+      create(:payment_schedule, category: utilities, counterparty: second, cadence_months: 1)
+
+      merge = described_class.new(ids: [ first.id, second.id ], name: "Spotify")
+
+      expect(merge.merge).to be true
+      expect(merge.schedules_moved).to be_zero
+      expect(PaymentSchedule.sole).to have_attributes(counterparty: first, cadence_months: 12)
+    end
+
+    it 'moves a frequency set in a category the survivor was not ruled on in' do
+      first = counterparty("PAYPAL *SPOTIFY", transactions: 2)
+      second = counterparty("SPOTIFY", transactions: 2)
+      create(:payment_schedule, category: utilities, counterparty: first, cadence_months: 12)
+      create(:payment_schedule, category: travel, counterparty: second, cadence_months: 1)
+
+      described_class.new(ids: [ first.id, second.id ], name: "Spotify").merge
+
+      expect(PaymentSchedule.pluck(:counterparty_id).uniq).to eq [ first.id ]
+      expect(PaymentSchedule.count).to eq 2
+    end
   end
 
   describe 'a name held outside the set' do

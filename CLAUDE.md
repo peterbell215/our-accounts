@@ -329,7 +329,13 @@ the data rather than only that its buttons exist.
   `forecast` screens. Looking backwards is still missing: no charts, no totals by category over a
   year, no comparison between one period and another, and no record of how past forecasts did beyond
   recomputing them a month at a time. `design_docs/architecture.md` carries the detail, including
-  three gaps the forecast itself opened.
+  the gaps the forecast itself opened.
+- **A hand-set payment frequency can outlive its payee.** `PaymentSchedule` names a payee the way
+  `Forecast::RegularPayments` groups it (`counterparty_id || description`), so recategorising its
+  transactions leaves the row with nothing to apply to. `#candidates` therefore runs over the union of the
+  payees in the history and the payees it holds rulings for — otherwise the row would appear on no screen,
+  and the only place able to withdraw it could not show it. Nothing prunes them, and nothing warns when the
+  history has come to contradict a ruling.
 - There is deliberately **no `bin/dev` or `Procfile.dev`**. With importmap and Propshaft there is no
   asset build to watch, and solid_queue only runs in production, so foreman would be supervising a
   single process — while costing the interactive debugger, since its stdout is not a TTY. Use
@@ -340,12 +346,17 @@ the data rather than only that its buttons exist.
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
 - The analysis file (form A) is the only import with a runnable entry point. **Form B has no UI or
   route** — see above.
-- **Merging counterparties is `CounterpartyMerge`**, driven from the counterparties list. Two orderings in
-  it are load-bearing and both fail silently if reversed: re-point `counterparty_id` on transactions and
+- **Merging counterparties is `CounterpartyMerge`**, driven from the counterparties list. Three orderings in
+  it are load-bearing and all fail silently if reversed: re-point `counterparty_id` on transactions and
   rules *before* destroying the losers, because `Account#counterparty_transactions` and
-  `#counterparty_matchers` are `dependent: :nullify`; and rename the survivor *after*, because the wanted
-  name is usually held by a member of the set and `Account` validates name uniqueness across the whole STI
-  table. Specs cover both, confirmed to fail when the order is inverted.
+  `#counterparty_matchers` are `dependent: :nullify`; move the losers' `PaymentSchedule` rows *before* too,
+  for the opposite reason — `#counterparty_payment_schedules` is `dependent: :destroy`, so they would be
+  deleted rather than nullified; and rename the survivor *after*, because the wanted name is usually held by
+  a member of the set and `Account` validates name uniqueness across the whole STI table. Note that the
+  schedules cannot go through the same `update_all` as the other two: the partial unique index on
+  `(category_id, counterparty_id)` collides where the survivor is already ruled on in that category, so
+  those are deleted first and the survivor's own ruling wins. Specs cover all three, confirmed to fail when
+  the order is inverted.
 - **Nothing suggests which counterparties to merge.** Of four grouping heuristics measured against the real
   names, only stripping digits and punctuation is safe (9 groups, no category conflicts); first-word and
   short-prefix grouping mix categories in roughly half their groups, file unrelated pubs under `THE`, and

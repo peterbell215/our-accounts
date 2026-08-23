@@ -26,6 +26,10 @@ class Category < ApplicationRecord
   # and nothing to refuse the delete over.
   has_many :manual_forecasts, dependent: :destroy
 
+  # And so is a frequency set by hand for one of this category's payees: it is a ruling about how this
+  # category's spending behaves, and means nothing once the category has gone.
+  has_many :payment_schedules, dependent: :destroy
+
   # How this category's spend is predicted.  Categories differ in kind: some are steady in aggregate and
   # unpredictable transaction by transaction, so an average of recent months is as good a guess as any;
   # some are a handful of direct debits, better predicted one at a time; some are too lumpy to infer

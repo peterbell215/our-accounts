@@ -19,6 +19,14 @@
 # so a stored hand-entered figure has to be positive and cannot sit beside computed negatives; and the
 # screen shows outgoings only, so the sign distinguishes nothing and only costs a column of minus signs.
 module Forecast
+  # The cadences a real payment actually uses, and what each is called on screen.
+  #
+  # One map rather than a list of numbers in the detector and a list of words in a view.  It is the
+  # source of both: `Forecast::RegularPayments::CADENCES` is its keys, the select on the category screen
+  # is its pairs, and `Forecast::Payment#cadence_label` is a lookup in it.  A raw median gap of two or
+  # five months is noise around one of these rather than a schedule anything is on.
+  CADENCE_LABELS = { 1 => "Monthly", 3 => "Quarterly", 6 => "Twice a year", 12 => "Yearly" }.freeze
+
   # A month as a single integer, so that "three months apart" is subtraction.
   #
   # @param [Date] date

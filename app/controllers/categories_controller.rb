@@ -28,6 +28,7 @@ class CategoriesController < ApplicationController
 
   # GET /categories/1/edit
   def edit
+    @payments = regular_payments
   end
 
   # POST /categories or /categories.json
@@ -52,6 +53,7 @@ class CategoriesController < ApplicationController
         format.html { redirect_to @category, notice: "Category was successfully updated." }
         format.json { render :show, status: :ok, location: @category }
       else
+        @payments = regular_payments
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @category.errors, status: :unprocessable_entity }
       end
@@ -76,6 +78,26 @@ class CategoriesController < ApplicationController
   end
 
   private
+    # Every payee in this category the forecast has considered, so that the frequencies it inferred can be
+    # seen and corrected here, beside the choice of method they belong to.
+    #
+    # Built from a whole Forecast::Month rather than a loader of its own.  That costs two queries this
+    # screen has no use for — every category, and the averaging window — and buys the guarantee that what
+    # is listed here is exactly what the forecast is using, which is the entire point of the screen.
+    #
+    # This month, because a frequency is not about any particular month.  Nothing else on the screen is
+    # either, which is why there is no month to step through as there is on the forecast.
+    #
+    # @return [Array<Forecast::Payment>, nil] nil where the category is not predicted this way
+    def regular_payments
+      # The *persisted* method rather than the one on the form.  After a failed update @category carries
+      # the method that was attempted, while the forecast is built from what is actually in the database —
+      # so reading the attribute directly would ask a monthly-average line for its payments.
+      return nil unless @category.forecast_method_was == "regular_payments"
+
+      Forecast::Month.new(month: Date.current).line_for(@category).strategy.candidates
+    end
+
     # Names the rules standing in the way, since the fix is to recategorise or delete them and they live on
     # another screen.
     def destroy_refused_alert

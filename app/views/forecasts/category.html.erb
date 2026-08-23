@@ -9,6 +9,7 @@
 <div class="show-actions">
   <%= link_to "Back", forecast_path(month: @forecast.month), class: "pure-button" %>
   <% unless @line.uncategorised? %>
+    <%# The same screen carries the frequencies of a regular-payments category, so the label names both. %>
     <%= link_to "Change how this is predicted", edit_category_path(@line.category), class: "pure-button" %>
   <% end %>
 </div>
@@ -64,9 +65,10 @@
 
   <% if @line.strategy.payments.any? %>
     <p>
-      Each of these was recognised from its own history.  A payment stops counting towards
-      <strong>still to come</strong> the moment it goes out, whatever it came in at — so a bill £30 over
-      its prediction does not eat into the ones still due.
+      Each of these was recognised from its own history, or from a frequency you set on
+      <%= link_to "the category's own screen", edit_category_path(@line.category) %>.  A payment stops
+      counting towards <strong>still to come</strong> the moment it goes out, whatever it came in at — so
+      a bill £30 over its prediction does not eat into the ones still due.
     </p>
 
     <table id="regular_payments" class="pure-table pure-table-striped">
@@ -87,7 +89,7 @@
               <% end %>
             </td>
             <td class="currency"><%= humanized_money_with_symbol payment.amount %></td>
-            <td><%= payment.cadence_label %></td>
+            <td><%= payment_cadence payment %></td>
             <td><%= short_date payment.last_seen %></td>
             <td><%= payment.due? ? "Yes" : "No" %></td>
             <td>
@@ -102,16 +104,42 @@
   <% else %>
     <p>
       No repeating payments were found in this category's history.  Two occurrences are needed before a
-      cadence can be worked out, so a new direct debit will not appear until its second one.  A category
-      that is not really made of regular payments is better predicted by an average.
+      frequency can be worked out, so a new direct debit will not appear until its second one — unless you
+      name its frequency yourself, on
+      <%= link_to "the category's own screen", edit_category_path(@line.category) %>.  A category that is
+      not really made of regular payments is better predicted by an average.
     </p>
   <% end %>
 
-  <% if @line.strategy.irregular.any? %>
-    <p id="irregular_payments">
-      These repeat, but too erratically to put a schedule on, so nothing is predicted for them:
-      <%= safe_join(@line.strategy.irregular, ", ") %>.
+  <% left_out = @line.strategy.candidates.reject(&:forecast?) %>
+  <% if left_out.any? %>
+    <h3>Payees left out</h3>
+
+    <p>
+      These payees are in this category's history but add nothing to the figure above.  Each says why:
+      money missing from the total with nothing to explain it would be worse than a poor prediction.
+      Where the reason is wrong, name the frequency yourself on
+      <%= link_to "the category's own screen", edit_category_path(@line.category) %>.
     </p>
+
+    <table id="not_forecast" class="pure-table pure-table-striped">
+      <thead><tr><th>Payee</th><th>Last amount</th><th>Why not</th></tr></thead>
+      <tbody>
+        <% left_out.each do |payment| %>
+          <tr>
+            <td>
+              <% if payment.counterparty %>
+                <%= link_to payment.label, counterparty_path(payment.counterparty) %>
+              <% else %>
+                <%= payment.label %>
+              <% end %>
+            </td>
+            <td class="currency"><%= forecast_money payment.amount %></td>
+            <td><%= payment_reason payment %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   <% end %>
 
 <% when :manual %>
