@@ -97,6 +97,64 @@ RSpec.describe 'Import rules', type: :system do
     expect(page).to have_no_content('OCTOPUS ENERGY')
   end
 
+  # The reason the whole feature exists: GITHUB INC. arrives monthly, four of them sat uncategorised, and a
+  # rule written on this screen used only to affect the next import.
+  describe 'made from a transaction row' do
+    let!(:subscriptions) { FactoryBot.create(:subscriptions_category) }
+
+    def github_rows(count = 4, **attributes)
+      Array.new(count) do |month|
+        FactoryBot.create(:github_subscription, account: account,
+                                                date: Date.new(2024, 9, 12) + month.months, **attributes)
+      end
+    end
+
+    it 'catches the rest of that history, not just the next import' do
+      rows = github_rows
+
+      visit account_path(account)
+      within(find('form.transaction-row', match: :first)) { click_link 'rule' }
+
+      expect(page).to have_field('Description', with: 'GITHUB INC.')
+      select 'Subscriptions', from: 'Category'
+      click_button 'Create Import matcher'
+
+      expect(page).to have_content('It also categorised 4 transactions already imported.')
+
+      matcher = account.import_matchers.sole
+      expect(rows.map { |row| row.reload.category }).to all eq subscriptions
+      expect(rows.map { |row| row.reload.import_matcher_id }).to all eq matcher.id
+
+      # The Matched column is the sixth, and it is the count the reader has to be able to trust.
+      within("#import_matcher_#{matcher.id}") { expect(all('.div-table-col')[5]).to have_content('4') }
+    end
+
+    # Hand judgement wins, so the row somebody categorised themselves keeps its category, stays unclaimed by
+    # the rule, and is not counted.  That is why the Matched count can read one lower than the number of
+    # transactions sharing a description.
+    it 'leaves a transaction categorised by hand out of it' do
+      by_hand = github_rows(1, category: Category.find_by!(name: 'Travel')).first
+      github_rows(2)
+
+      visit new_account_import_matcher_path(account, import_matcher: { description: 'GITHUB INC.' })
+      select 'Subscriptions', from: 'Category'
+      click_button 'Create Import matcher'
+
+      expect(page).to have_content('It also categorised 2 transactions already imported.')
+      expect(by_hand.reload.category.name).to eq 'Travel'
+      expect(by_hand.import_matcher_id).to be_nil
+    end
+
+    it 'says nothing about existing transactions when it caught none' do
+      visit new_account_import_matcher_path(account, import_matcher: { description: 'GITHUB INC.' })
+      select 'Subscriptions', from: 'Category'
+      click_button 'Create Import matcher'
+
+      expect(page).to have_content('Rule was successfully created.')
+      expect(page).to have_no_content('already imported')
+    end
+  end
+
   it 'allows a rule to be edited' do
     matcher = FactoryBot.create(:import_matcher_octopus_energy, account: account)
 

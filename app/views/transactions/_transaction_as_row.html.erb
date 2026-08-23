@@ -93,6 +93,35 @@
       <span class="material-symbols-outlined">save</span>
     <% end %>
 
+    <%# A rule made from the row the reader is looking at, rather than its description retyped on the rules
+        screen.  The description and transaction type are spans on a persisted row, not fields, so they
+        cannot be submitted — they travel in the query string instead and the rules form opens prefilled.
+
+        A link and not a second submit button on this form: creating a rule can fail three ordinary ways —
+        a duplicate description, a missing category, a pattern that will not compile — and a row that may
+        not change its height has nowhere to report any of them.  The rules form is the review, and it
+        arrives already filled in.  An <a> is not a member of form.elements either, so
+        transaction_row_controller's field comparison never sees it, where a second submit would need the
+        controller to branch on which button was pressed.
+
+        Offered even where a rule already claims the row.  That reads wrong and is not: an exact rule for
+        one particular charge that a broad pattern otherwise sweeps up is a documented thing to want, and
+        hiding this on import_matcher_id would be the one way to make it impossible.  A description that
+        already has a literal rule is refused by a uniqueness validation, on the form, where it can be read.
+
+        Not offered while a counterparty is waiting to be confirmed: leaving the page would discard the
+        confirmation, and the name it offered is not a record yet, so there is no counterparty to carry. %>
+    <% if transaction.persisted? && transaction.description.present? && transaction.counterparty_to_confirm.nil? %>
+      <%= link_to new_account_import_matcher_path(account, import_matcher: {
+                    description: transaction.description,
+                    category_id: transaction.category_id,
+                    counterparty_id: transaction.counterparty_id }.compact),
+                  class: "pure-button pure-button-small",
+                  title: "Create an import rule from #{transaction.description.inspect}" do %>
+        <span class="material-symbols-outlined">rule</span>
+      <% end %>
+    <% end %>
+
     <%# Delete link - Replaces button_to %>
     <% if transaction.persisted? %>
       <%= link_to account_transaction_path(account, transaction),

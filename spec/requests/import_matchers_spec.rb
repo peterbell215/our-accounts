@@ -29,6 +29,54 @@ RSpec.describe "ImportMatchers", type: :request do
     end
   end
 
+  describe "GET /accounts/:account_id/import_matchers/new" do
+    it "opens an empty form when nothing is handed to it" do
+      get new_account_import_matcher_path(account)
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "prefills the form from a transaction handed to it in the query string" do
+      get new_account_import_matcher_path(account, import_matcher: { description: "GITHUB INC.",
+                                                                     category_id: utilities.id,
+                                                                     counterparty_id: octopus.id })
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('value="GITHUB INC."')
+      expect(response.body).to include(%(<option selected="selected" value="#{utilities.id}">))
+      expect(response.body).to include(%(<option selected="selected" value="#{octopus.id}">))
+    end
+
+    # nil means "any transaction type", which is nearly always what a rule generalised from one example
+    # wants, so the row deliberately does not offer the one it happened to see.
+    it "leaves the transaction type blank even where one is handed to it" do
+      get new_account_import_matcher_path(account, import_matcher: { description: "GITHUB INC.",
+                                                                     trx_type: "DEB" })
+
+      expect(response.body).not_to include('value="DEB"')
+    end
+
+    # A literal rule compares the description exactly, spaces included, so a description that really has
+    # them has to arrive with them intact or the rule made from it would never fire.
+    it "keeps a description's leading and trailing spaces" do
+      get new_account_import_matcher_path(account, import_matcher: { description: "  GITHUB INC. " })
+
+      expect(response.body).to include('value="  GITHUB INC. "')
+    end
+
+    it "ignores a nonsense import_matcher parameter rather than failing on it" do
+      get new_account_import_matcher_path(account, import_matcher: "nonsense")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "ignores an account_id in the query string" do
+      get new_account_import_matcher_path(account, import_matcher: { account_id: other_account.id })
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
   describe "POST /accounts/:account_id/import_matchers" do
     it "creates a rule against the account in the route" do
       expect {
@@ -69,6 +117,43 @@ RSpec.describe "ImportMatchers", type: :request do
       expect(response.headers["Location"]).to eq account_import_matcher_url(account, ImportMatcher.last)
     end
 
+    # A rule is written because a transaction went uncategorised, so it has to reach backwards as well as
+    # forwards; ImportMatcher.find_match otherwise runs only inside the import.
+    it "applies the new rule to transactions already imported, and says how many" do
+      rows = Array.new(4) do |month|
+        create(:github_subscription, account: account, date: Date.new(2024, 9, 12) + month.months)
+      end
+
+      post account_import_matchers_path(account),
+           params: { import_matcher: { description: "GITHUB INC.", category_id: utilities.id,
+                                       counterparty_id: octopus.id } }
+
+      expect(flash[:notice])
+        .to eq "Rule was successfully created. It also categorised 4 transactions already imported."
+      expect(rows.map { |row| row.reload.category_id }).to all eq utilities.id
+      expect(rows.map { |row| row.reload.import_matcher_id }).to all eq ImportMatcher.last.id
+    end
+
+    it "says nothing about existing transactions when it caught none" do
+      post account_import_matchers_path(account),
+           params: { import_matcher: { description: "GITHUB INC.", category_id: utilities.id } }
+
+      expect(flash[:notice]).to eq "Rule was successfully created."
+    end
+
+    it "leaves a transaction somebody categorised by hand out of it" do
+      travel = Category.find_by!(name: "Travel")
+      by_hand = create(:github_subscription, account: account, date: Date.new(2024, 9, 12), category: travel)
+      create(:github_subscription, account: account, date: Date.new(2024, 10, 12))
+
+      post account_import_matchers_path(account),
+           params: { import_matcher: { description: "GITHUB INC.", category_id: utilities.id } }
+
+      expect(flash[:notice])
+        .to eq "Rule was successfully created. It also categorised 1 transaction already imported."
+      expect(by_hand.reload.category_id).to eq travel.id
+    end
+
     it "re-renders the form when the regex will not compile" do
       expect {
         post account_import_matchers_path(account),
@@ -89,6 +174,20 @@ RSpec.describe "ImportMatchers", type: :request do
             params: { import_matcher: { trx_type: "" } }
 
       expect(matcher.reload.trx_type).to be_nil
+    end
+
+    # The rules screen exists to correct what the analysis import derived, and a description with a typo in
+    # it caught nothing at all — fixing it is the moment the reader expects it to start working.
+    it "applies a corrected rule to transactions already imported" do
+      matcher = create(:import_matcher, account: account, description: "GITHUB INK.", category: utilities)
+      row = create(:github_subscription, account: account, date: Date.new(2024, 9, 12))
+
+      patch account_import_matcher_path(account, matcher),
+            params: { import_matcher: { description: "GITHUB INC." } }
+
+      expect(flash[:notice])
+        .to eq "Rule was successfully updated. It also categorised 1 transaction already imported."
+      expect(row.reload.import_matcher_id).to eq matcher.id
     end
 
     it "returns the nested URL of the rule as JSON" do

@@ -266,6 +266,40 @@ Rules generalise a category across every transaction sharing a description. That
 genuinely belong to different categories on different occasions, and the cases where the analysis was
 split evenly and the importer declined to guess.
 
+A second thing it lost, until recently, was time. `ImportMatcher.find_match` is called from one place in
+the pipeline — `FileImporter`, as each row is read — so a rule written by hand only ever affected the *next*
+import. That is the wrong way round: a rule gets written *because* something already imported went
+uncategorised, and the row that prompted it would have stayed blank. `RuleApplication` closes that
+direction. `ImportMatchersController` runs it after a rule is saved, on create and on update, and the flash
+reports the count.
+
+Four decisions in it are load-bearing:
+
+- **It claims only rows where `import_matcher_id` and `category_id` are both null.** Those two nulls are the
+  whole of "hand judgement wins", the same principle `AnalysisCategoriser` embodies: a null category means
+  nobody chose, and a null matcher means no rule got there first on match order. Overriding either would
+  silently reverse a decision somebody made deliberately. The visible consequence is that a rule's
+  **Matched** count can read one lower than the number of transactions sharing its description — the row
+  categorised by hand before the rule was written keeps its category and stays unclaimed.
+- **`ImportMatcher#match` is the single authority.** It is duck-typed on `account_id`, `trx_type` and
+  `description`, which a saved `Transaction` satisfies exactly, so it is reused unchanged rather than
+  reimplemented in SQL. The literal case *is* narrowed by a `where(description: …)` first, which is a pure
+  narrowing because the column collates `BINARY` — the same comparison Ruby's `==` makes — but `#match` is
+  still asked, so the two paths cannot come to disagree about what a rule means. A pattern has to be
+  compared in Ruby regardless: SQLite has no `REGEXP`.
+- **`update_all`, for the reason `CounterpartyMerge#repoint` gives.** No callback on `Transaction` needs to
+  run to re-point three foreign keys, and `#sequence` must emphatically *not* run — the balances are already
+  correct, and re-deriving one against itself would raise `ImportError`. `updated_at` is left alone: a rule
+  claiming a row is not an edit the reader made to that transaction.
+- **A rule naming no counterparty leaves the row's own alone.** `Transaction#find_match` assigns the rule's
+  counterparty unconditionally, which is safe at import time because the row has none to lose. Applied
+  backwards it is not — the counterparty may have been created from that very row a moment earlier.
+
+It is invoked from the controller rather than from a callback on `ImportMatcher` because `AnalysisImporter`
+creates a few hundred rules in one run, against an account whose statements are already imported; a callback
+would turn one rake task into a few hundred silent sweeps of the transactions table and quietly change what
+re-seeding means.
+
 `AnalysisCategoriser` puts those judgements back, after the import, by matching analysis rows to
 transactions on **date and running balance**. That pair is unique — a running balance cannot repeat
 within a day — and it is reliable by construction, because `Transaction#sequence` has already verified
@@ -708,6 +742,33 @@ controller lets the user drag detected header names or column indexes into the m
 "has header" checkbox based on what the analysis found. It exists because writing an
 `ImportColumnsDefinition` by hand against an unfamiliar bank export is tedious and error-prone.
 
+**A rule is made from the row, not retyped.** The third icon in a transaction's actions cell links to
+`import_matchers#new` with the description, category and counterparty in the query string, and `#new` reads
+them through a `prefill_params` that permits those three and nothing else. `trx_type` is deliberately not
+among them — `nil` means "any type", which is what a rule generalised from one example nearly always wants —
+and neither is `description_is_regex`, an exact description being the more specific claim. The reader still
+sees the form, because a rule is a generalisation: it claims rows they are not looking at, and now reaches
+backwards as well.
+
+Four details shape it:
+
+- **A link, not a second submit button on the row's form.** Creating a rule fails three ordinary ways — a
+  duplicate description, a missing category, a pattern that will not compile — and a row that may not change
+  its height has nowhere to report any of them. The form has `#error_explanation` already. An `<a>` is also
+  not a member of `form.elements`, so `transaction_row_controller`'s field comparison never sees it, where a
+  second submit would need the controller to branch on which button was pressed.
+- **It is offered even where a rule already claims the row.** That reads wrong and is not: an exact rule for
+  one particular charge that a broad pattern otherwise sweeps up is a documented thing to want, and hiding
+  the link on `import_matcher_id` would be the one way to make it impossible. A description that already has
+  a literal rule is refused by the uniqueness validation, on the form, where it can be read.
+- **It is not offered while a counterparty is waiting to be confirmed.** Leaving the page would discard the
+  confirmation, and the name it offered is not a record yet, so there would be no `counterparty_id` to carry.
+- **`prefill_params` uses `permit` and a class check, not `expect` and `blank?`.** `params.expect` raises
+  when the key is absent, which is the ordinary case of arriving from "New rule", and a hand-written
+  `?import_matcher=nonsense` arrives as a `String` — not blank, and it does not answer `#permit`. The
+  description's leading and trailing spaces survive the round trip intact, which is the point: a literal rule
+  compares them.
+
 Transaction rows are rendered as CSS div-tables (`div-tables.css`), not `<table>` elements.
 
 ---
@@ -804,13 +865,31 @@ Three gaps the forecast opened, all of them visible rather than silent:
   zeroes. The workings page shows the zeroes and `forecast_months` is the remedy, but nothing warns.
 
 Smaller ones elsewhere: nothing **suggests** which counterparties to merge, so the duplicates are found by
-eye; a rule cannot be created from a transaction you are looking at, so its description has to be retyped;
-and the accounts index renders raw ISO dates while the show page renders localised ones.
+eye, and the accounts index renders raw ISO dates while the show page renders localised ones.
+
+Two the rule-by-example work opened, both of them "only ever more, never fewer":
+
+- **Nothing de-applies.** Narrowing a rule, or deleting it, leaves the rows it already claimed exactly as
+  they are, still pointing at it. Doing this properly means deciding what an un-applied row reverts *to*,
+  which is a different question from applying one.
+- **A literal rule does not take rows off a regex rule.** `in_match_order` gives a literal precedence at
+  import time, but one created afterwards leaves the pattern's rows where they are, the candidates excluding
+  anything already claimed. And there is no preview: the rules index cannot say how many existing
+  transactions a rule would catch before it is saved, which would be one candidate query per rule with the
+  regex ones unable to go into SQL.
+
+One noticed while checking whether an update could safely re-assert a rule over rows it already owns: **a
+hand edit through the transaction row does not clear `import_matcher_id`.** `transaction_params` permits
+`category_id` and nothing nulls the matcher, so a row whose category was corrected by hand still points at
+the rule that got it wrong. Nothing depends on it today — `RuleApplication` reads the *category* to decide
+what to leave alone, not the matcher — but it makes "which rule categorised this" only approximately true.
 
 One worth doing next time a migration is written: `Transaction#sequence` runs
 `account.transactions.where("date <= ?", date).order(:date, :day_index).last` **once per imported row**,
 and there is no index on `(account_id, date)` — so a 2,626-row import scans a growing table 2,626 times.
-It was left alone here only because it has nothing to do with forecasting.
+It was left alone here only because it has nothing to do with forecasting. `RuleApplication#candidates`
+wants a similar one: it filters on `(account_id, category_id, import_matcher_id)`, of which only the three
+single-column indexes exist, though it runs once per rule saved rather than once per row imported.
 
 One newly opened: **a merged-away counterparty can be resurrected.** `AnalysisImporter#counterparty_for`
 looks one up by name and creates it when absent, so re-running the analysis import recreates a name that a

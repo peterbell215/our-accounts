@@ -230,6 +230,76 @@ RSpec.describe "Transactions", type: :system do
     end
   end
 
+  # Rules used to have to be written from scratch on the rules screen, with the description retyped by hand.
+  # The row the reader noticed is the obvious place to start one from.
+  describe "making a rule from a row" do
+    let!(:octopus) { Counterparty.find_by(name: "Octopus Energy") || FactoryBot.create(:octopus_energy) }
+    let(:newest) { account.transactions.newest_first.first }
+
+    def first_row
+      find('form.transaction-row', match: :first)
+    end
+
+    it "opens the rules form already filled in from the row" do
+      visit account_path(account)
+
+      within(first_row) do
+        expect(find_link('rule')[:title]).to eq(%(Create an import rule from "#{newest.description}"))
+        click_link 'rule'
+      end
+
+      expect(page).to have_field('Description', with: newest.description)
+    end
+
+    # nil means "any transaction type", which is nearly always what is wanted, so the type the one example
+    # happened to carry is deliberately left behind.
+    it "leaves the transaction type blank" do
+      visit account_path(account)
+
+      within(first_row) { click_link 'rule' }
+
+      expect(page).to have_field('Transaction type', with: '')
+      expect(page).to have_unchecked_field('Treat as a pattern')
+    end
+
+    it "carries the row's category and counterparty across" do
+      newest.update!(category: Category.find_by!(name: 'Travel'), counterparty: octopus)
+
+      visit account_path(account)
+
+      within(first_row) { click_link 'rule' }
+
+      expect(page).to have_select('Category', selected: 'Travel')
+      expect(page).to have_select('Counterparty', selected: 'Octopus Energy')
+    end
+
+    # Leaving the page would throw the confirmation away, and the name it offered is not a record yet, so
+    # there would be no counterparty to carry into the rule either.
+    it "offers nothing while a counterparty is waiting to be confirmed" do
+      visit account_path(account)
+
+      within(first_row) do
+        fill_in 'transaction[counterparty_name]', with: 'Bristol Water'
+        click_button 'save'
+      end
+
+      expect(page).to have_selector('input.field-error')
+
+      within(first_row) do
+        expect(page).to have_no_link('rule')
+        expect(page).to have_button('save')
+      end
+    end
+
+    it "offers nothing on a row that has never been saved" do
+      visit account_path(account)
+
+      click_link 'Add New Transaction'
+
+      within('#new_transaction') { expect(page).to have_no_link('rule') }
+    end
+  end
+
   after(:all) do
     Account.destroy_all
   end
