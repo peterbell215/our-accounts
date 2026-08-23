@@ -2,14 +2,19 @@
 # annual premium.  Built by Forecast::RegularPayments; rendered a row at a time on the workings page,
 # which is where the reader can see whether the guess is a good one.
 Forecast::Payment = Struct.new(
-  :label, :counterparty, :amount, :cadence, :last_seen, :due, :landed_on, :landed_amount,
+  :label, :counterparty, :amount, :cadence, :last_seen, :due, :landed,
   keyword_init: true
 ) do
   # Is this payment expected in the month being forecast?
   def due? = due
 
   # Has it already gone out?
-  def landed? = !landed_on.nil?
+  #
+  # `landed` is every occurrence inside the month being forecast, earliest first, rather than one date
+  # and one amount.  A monthly payment billed on the 1st and again on the 29th falls twice inside the
+  # same calendar month, and totalling the two against the earlier of the dates drew it as a single
+  # charge for twice the money — on the page indistinguishable from a bill that had doubled.
+  def landed? = landed.any?
 
   # What this payment still adds to the month.
   #

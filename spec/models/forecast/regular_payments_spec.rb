@@ -146,6 +146,37 @@ describe Forecast::RegularPayments, type: :model do
     end
   end
 
+  # What has gone out is a list rather than a date and a total. A monthly payment billed on the 1st and
+  # again on the 29th falls twice inside one calendar month; totalling the two against the earlier of the
+  # dates drew it as a single charge for twice the money, which on the page is a bill that has doubled.
+  describe 'a payment that goes out more than once in a month' do
+    before { 6.downto(1) { |ago| spend(ago, 7.99, day: 1) } }
+
+    def landed_twice
+      spend(0, 7.99, day: 1)
+      spend(0, 7.99, day: 29)
+      payment("Octopus Energy")
+    end
+
+    it 'keeps both occurrences, earliest first' do
+      expect(landed_twice.landed.map(&:date)).to eq([ month.change(day: 1), month.change(day: 29) ])
+    end
+
+    it 'reports each occurrence at its own amount rather than their total' do
+      expect(landed_twice.landed.map(&:amount)).to eq([ Money.from_amount(7.99), Money.from_amount(7.99) ])
+    end
+
+    it 'counts as settled, so nothing is left to come' do
+      expect(landed_twice.remaining).to eq(Money.new(0))
+    end
+
+    it 'keeps the single occurrence where the payment went out once' do
+      spend(0, 7.99, day: 1)
+
+      expect(payment("Octopus Energy").landed.map(&:date)).to eq([ month.change(day: 1) ])
+    end
+  end
+
   # Forecasting a month gone by has to use only what was known at the time, or it is not a test of the
   # method at all.
   describe 'forecasting a month in the past' do
