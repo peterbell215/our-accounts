@@ -4,6 +4,10 @@
 
 <h1>Merge <%= pluralize(@counterparties.size, "counterparty") %></h1>
 
+<%# The Cancel beside Merge below is this screen's answer to the question it asks, and stays there.  This is
+    the way back out, in the same place as on every other screen, without reading the whole page first. %>
+<%= form_actions back: counterparties_path %>
+
 <p>
   Everything below is folded into one, keeping all its transactions and rules.  Nothing is deleted except the
   spare names, and <strong>no category changes</strong> — each rule keeps the one it has, which is how one

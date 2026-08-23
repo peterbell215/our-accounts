@@ -645,6 +645,11 @@ rather than knowing which model it is looking at. And **`.form-actions` is a sec
 identically, and `.show-actions` could not simply be reused for both because `spec/system/show_actions_spec.rb`
 selects on it to assert what a *Show* screen contains.
 
+The merge confirmation screen takes the strip as well, and keeps its own `Cancel` beside `Merge`. The two
+are not the same thing: `Cancel` is that screen's answer to the question it asks, and belongs with the
+button that says yes, while `Back` is where the way out lives on every other screen — reachable without
+reading the whole page first, which on a merge of a dozen names is the point.
+
 The rule reaches one list, too. `import_matchers/index` is the only index in the application reached from
 somewhere other than the sticky menu bar — the other four *are* menu-bar destinations, so "back" from them
 would mean nothing — and it had the same plain text link, below its explanatory paragraph. It now draws

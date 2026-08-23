@@ -134,6 +134,23 @@ RSpec.describe 'The actions on a form screen', type: :system do
     it_behaves_like 'an Edit screen', 'Editing rule for Lloyds Account', 'Rule for Lloyds Account'
   end
 
+  # The merge confirmation keeps its own Cancel beside Merge — that is its answer to the question it asks —
+  # but the way out is where it is on every other screen.
+  describe 'the merge confirmation' do
+    let(:counterparties) { [ create(:octopus_energy), create(:amazon) ] }
+
+    it 'offers the way back above the names it is about to fold together' do
+      visit new_counterparty_merge_path(ids: counterparties.map(&:id))
+
+      within('.form-actions') { expect(page).to have_link('Back') }
+      expect(element_box('.form-actions')['bottom']).to be <= element_box('#merge_members')['top']
+
+      within('.form-actions') { click_link 'Back' }
+
+      expect(page).to have_css('h1', text: 'Counterparties')
+    end
+  end
+
   # The rules list is the only index reached from somewhere other than the menu bar, so the only one with
   # anywhere to go back to.
   describe 'the rules list' do

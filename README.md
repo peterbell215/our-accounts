@@ -106,7 +106,9 @@ you are about to change without losing your place. There is no **Destroy** here:
 it first. Saving is the button at the foot of the form itself, where you finish filling it in.
 
 The one list with a **Back** button of its own is an account's import rules, because it is the only list
-you reach from somewhere else rather than from the menu bar; **Back** there returns you to the account.
+you reach from somewhere else rather than from the menu bar; **Back** there returns you to the account. The
+screen that confirms a merge has one too, above the names it is about to fold together, as well as the
+**Cancel** beside **Merge** at the foot of it.
 
 Every date you are shown is written the same way throughout — `1-Jan-23`. The one exception is a date
 you can type into, which your browser draws in its own style.
