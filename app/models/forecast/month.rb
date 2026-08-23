@@ -32,6 +32,20 @@ class Forecast::Month
   # @return [Date]
   def self.latest_month(today = Date.current) = today.beginning_of_month >> FORWARD_LIMIT
 
+  # The month the screen opens on with nothing asked for: the last one that has a transaction in it,
+  # rather than the calendar's current month.  Statements are imported in arrears, so for most of a month
+  # the current one holds either nothing or a few days of it, and opening there shows predictions with
+  # almost no actuals to weigh them against.  The last imported month is the one the reader is working
+  # on.  Where there are no transactions at all it is this month, there being nothing else to offer.
+  #
+  # @param [Date] today
+  # @return [Date]
+  def self.default_month(today = Date.current)
+    latest = Transaction.maximum(:date)
+
+    latest ? latest.beginning_of_month : today.beginning_of_month
+  end
+
   attr_reader :month, :today
 
   # @param [Date] month any date within the month to forecast

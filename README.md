@@ -159,6 +159,11 @@ that is the number the screen is really for.
 **Still to come never goes below zero.** A category you have already overspent simply has nothing left
 to come; it does not start subtracting from the rest.
 
+The screen opens on **the last month you have imported transactions for**, which is usually the month
+just gone rather than the one the calendar is in: statements arrive in arrears, so opening on the
+calendar's month would show predictions with barely a day or two of spending to weigh them against.
+Where that month has finished, a **jump to this month** link sits beside the month buttons.
+
 Use **«** and **»** to move a month either way. Going back to a month that has finished swaps the last
 column for **Difference**, which is how far the month ran over or under what would have been predicted
 for it — the closest thing to a report card the application has.

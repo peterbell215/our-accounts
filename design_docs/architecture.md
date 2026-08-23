@@ -548,10 +548,19 @@ a destroy path, and a forecast page is a report about a month rather than a reco
 edit as a record and nothing to delete. They open with a plain Back link instead, in the same position.
 
 **The forecast is one screen and a workings page behind each line.** `ForecastsController` is read-only
-and takes the month as `?month=`, coercing anything unreadable back to the current month rather than
-raising — the same view `TransactionPage#coerce_date` takes of a date arriving as a parameter — and
-clamping it to the same bounds the navigation buttons show, so a hand-edited URL cannot strand the reader
-where the buttons would not go. Month navigation reuses the disabled-span pattern of
+and takes the month as `?month=`, coercing anything unreadable — or absent — back to
+`Forecast::Month.default_month` rather than raising — the same view `TransactionPage#coerce_date` takes of
+a date arriving as a parameter — and clamping it to the same bounds the navigation buttons show, so a
+hand-edited URL cannot strand the reader where the buttons would not go.
+
+**It opens on the last month with a transaction in it, not the calendar's current month.** Statements are
+downloaded and imported in arrears, so for most of a month the current one holds nothing or a few days of
+it, and landing there showed a full set of predictions with almost no actuals against them — the reader's
+first move was always to press **«**. `default_month` is `Transaction.maximum(:date)` rounded to its
+month, falling back to this month on an empty database, and sits beside `earliest_month` and
+`latest_month` as a class method because the controller needs it before it has a forecast to ask. The
+consequence is that the default view is usually a *past* month, so the screen's "jump to this month" link
+has to name today's month explicitly rather than linking to the bare `forecast_path` it once did. Month navigation reuses the disabled-span pattern of
 `TransactionsHelper#transaction_anchor_link`, for the same reason: the controls keep their positions.
 
 A **workings page per line** rather than rows that expand. There is no JavaScript build step, the
