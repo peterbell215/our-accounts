@@ -607,11 +607,27 @@ Three things shape how that is carried:
 - **The save button has to survive the rejection.** `transaction_row_controller` decides a row is edited by
   comparing each field with its `defaultValue`, and the server has just rendered the typed name back as that
   default; hidden inputs are filtered out of the comparison. Without a `pending` value forcing the button
-  visible there would be nothing left to press. Its `title` carries the instruction — naming what the next
-  press will create — because the error itself can only be a tooltip on the field.
+  visible there would be nothing left to press. Its `title` names what the next press will create.
 
-That row's validation error is shown as a red border and a `title` on the input, not as a message beneath it,
-because of the row-height assumption recorded below.
+**The words go outside the row, because inside it there is only room for a colour.** A message beneath the
+field is unavailable — the row-height assumption recorded below — so the first version of this said
+everything through a red border and two `title` tooltips. That reads as a save that failed and will not say
+why: a reader who does not think to hover sees a red field, no text, and their category edit apparently
+thrown away. It was reported as a bug within a day of being built.
+
+Two changes, neither of which touches the row's height:
+
+- **A question is no longer coloured like a failure.** `field-pending` is amber where the row is offering to
+  create a name; `field-error` stays red where the name cannot be saved at all. They shared one class before,
+  so an invitation to confirm and a flat refusal were indistinguishable — and the only visible difference,
+  whether the save button survived, is not something a reader reads as the distinction.
+- **The message itself is a second Turbo Stream** into `#transaction-message`, an empty div above the list.
+  It is replaced on *every* create and update rather than only the rejected ones, because replacing it with
+  an empty container is what clears a question the reader has since answered; streaming only on failure
+  would leave the last one on screen for ever. `layouts/_notice` could not be reused: it draws its
+  containers only when a flash is set, so there would be nothing in the document to target on the first
+  rejection. Both messages say that the rest of the row is *held* rather than lost, which is the part a
+  coloured border cannot express and the part the reader actually doubts.
 
 **The counterparties list sorts in Ruby, not SQL.** Two of its four columns — the transaction count and the
 total — are grouped queries rather than columns on `accounts`, so there is nothing to `ORDER BY`; sorting a

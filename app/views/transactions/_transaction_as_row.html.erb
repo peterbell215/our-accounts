@@ -41,8 +41,10 @@
 
   <%# Counterparty column.  A text field against a shared datalist rather than a select: there are hundreds
       of counterparties, and one select per row would put thousands of options on the page.  The error is
-      shown on the field itself, not below it, because transactions_list_controller measures one row's
-      height and applies it to all of them.
+      marked on the field itself, never with a message below it, because transactions_list_controller
+      measures one row's height and applies it to all of them.  The words go to `#transaction-message`
+      above the list instead — see transactions/_message — because a coloured border and a tooltip alone
+      read as a save that failed rather than a question waiting for an answer.
 
       A name no counterparty has comes back marked, with the name it would create carried in a hidden field.
       Saving again hands that name back and creates it; editing the field first makes the two disagree, so
@@ -54,7 +56,7 @@
     <%= f.text_field :counterparty_name,
                      value: transaction.counterparty_name || transaction.counterparty&.name,
                      list: "counterparty-names",
-                     class: "pure-input-1 #{'field-error' if transaction.errors[:counterparty_name].any?}",
+                     class: "pure-input-1 #{counterparty_field_class(transaction)}",
                      title: transaction.errors[:counterparty_name].first %>
     <% if transaction.counterparty %>
       <%= link_to counterparty_path(transaction.counterparty),

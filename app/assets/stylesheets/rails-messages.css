@@ -52,13 +52,27 @@ div.field_with_errors {
     border-radius: 4px;
 }
 
-/* A merge whose members disagree about their category.  Not an error — the merge is allowed — but the one
-   thing most likely to mean the group is wrong, so it is given the weight of one. */
-.merge-warning {
+/* Something the reader has to answer rather than something that has gone wrong: a merge whose members
+   disagree about their category, and the counterparty name a transaction row is offering to create.  In
+   both cases the action is allowed and waiting on a decision, so it is given the weight of an error
+   without the colour of one. */
+.merge-warning,
+.row-question {
     box-sizing: border-box;
     padding: 0.5em;
     border: 1px solid #d29d10;
     border-radius: 4px;
     background-color: #fdf3d3;
     color: #6b4c00;
+}
+
+/* A row's edit that cannot be saved as it stands.  Same red as #error_explanation, but a class rather than
+   an id: the account page already renders that id from layouts/_notice, and two of them would be invalid. */
+.row-error {
+    box-sizing: border-box;
+    padding: 0.5em;
+    border: 1px solid #e00;
+    border-radius: 4px;
+    background-color: #fdd;
+    color: #900;
 }

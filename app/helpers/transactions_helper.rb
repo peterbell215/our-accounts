@@ -1,4 +1,17 @@
 module TransactionsHelper
+  # How the counterparty cell marks itself.  Amber where the row is asking whether to create a name, red
+  # where the name cannot be saved at all.  The two shared `field-error` until now, so an invitation to
+  # confirm and a flat refusal were drawn identically — and the reader had no way to tell which they had.
+  #
+  # @param [Transaction] transaction
+  # @return [String, nil]
+  def counterparty_field_class(transaction)
+    return "field-pending" if transaction.counterparty_to_confirm
+    return "field-error" if transaction.errors[:counterparty_name].any?
+
+    nil
+  end
+
   # Where to ask for the page after this one, or nil at the end of the account's history.  `rows` asks
   # for a bare fragment rather than a redirect back to the account page.
   #

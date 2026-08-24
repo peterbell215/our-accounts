@@ -47,6 +47,14 @@
     background-color: #fff0f0;
 }
 
+/* A field the row is asking about rather than rejecting — the counterparty name it is offering to create.
+   Amber, not red: nothing is broken, and pressing Save again is the answer.  Matches .row-question, which
+   carries the words. */
+.div-table-col input.field-pending {
+    border-color: #d29d10;
+    background-color: #fdf3d3;
+}
+
 /* A row's save button only means anything once the row has been edited. It keeps its space so the
    delete button beside it does not move when it appears. */
 .save-button.is-unchanged {
