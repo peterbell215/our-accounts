@@ -23,8 +23,12 @@ class ImportMatchersController < ApplicationController
   end
 
   # GET /accounts/:account_id/import_matchers/new
+  #
+  # The form can arrive prefilled from a transaction row, so a rule no longer has to have its description
+  # retyped.  The prefill is display only — nothing is saved here, and #create re-reads every field from the
+  # submitted form — so this is a convenience rather than a second way in.
   def new
-    @import_matcher = @account.import_matchers.new
+    @import_matcher = @account.import_matchers.new(prefill_params)
   end
 
   # GET /accounts/:account_id/import_matchers/1/edit
@@ -37,8 +41,11 @@ class ImportMatchersController < ApplicationController
 
     respond_to do |format|
       if @import_matcher.save
+        # After the save, not before: applying the rule stamps its id onto the rows it claims.
+        applied = RuleApplication.new(matcher: @import_matcher).apply
+
         format.html do
-          redirect_to account_import_matchers_path(@account), notice: "Rule was successfully created."
+          redirect_to account_import_matchers_path(@account), notice: notice_for("created", applied)
         end
         format.json { render :show, status: :created, location: account_import_matcher_url(@account, @import_matcher) }
       else
@@ -52,8 +59,13 @@ class ImportMatchersController < ApplicationController
   def update
     respond_to do |format|
       if @import_matcher.update(import_matcher_params)
+        # A corrected rule should catch what it now matches — a description with a typo in it caught nothing,
+        # and fixing the typo is the moment the reader expects it to start working.  Rows the rule already
+        # claims are untouched, being neither uncategorised nor unclaimed.
+        applied = RuleApplication.new(matcher: @import_matcher).apply
+
         format.html do
-          redirect_to account_import_matchers_path(@account), notice: "Rule was successfully updated."
+          redirect_to account_import_matchers_path(@account), notice: notice_for("updated", applied)
         end
         format.json { render :show, status: :ok, location: account_import_matcher_url(@account, @import_matcher) }
       else
@@ -90,5 +102,32 @@ class ImportMatchersController < ApplicationController
     def import_matcher_params
       params.expect(import_matcher: [ :description, :description_is_regex, :trx_type,
                                       :category_id, :counterparty_id ])
+    end
+
+    # What a transaction row can hand to the new-rule form.  Three attributes rather than the five #create
+    # permits: trx_type is left blank because nil means "any type", which is what a rule generalised from one
+    # example nearly always wants, and description_is_regex unticked because an exact description is the more
+    # specific claim and beats a pattern anyway.  account_id is absent for the same reason as above.
+    #
+    # #permit rather than #expect, and a class check rather than #blank?: expect raises when the key is
+    # absent, which is the ordinary case of arriving from "New rule", and a hand-written
+    # ?import_matcher=nonsense arrives as a String, which is not blank and does not answer #permit.
+    def prefill_params
+      prefill = params[:import_matcher]
+      return {} unless prefill.is_a?(ActionController::Parameters)
+
+      prefill.permit(:description, :category_id, :counterparty_id)
+    end
+
+    # A rule made from a transaction row is nearly always one of several identical transactions, and the
+    # count is what says it did its job.  Silent when it caught nothing: "0 transactions" reads as a failure,
+    # and a rule written for a description not yet seen legitimately catches none.  Two sentences, so the
+    # first is the same on every save.
+    # @return [String]
+    def notice_for(verb, applied)
+      notice = "Rule was successfully #{verb}."
+      return notice if applied.zero?
+
+      "#{notice} It also categorised #{helpers.pluralize(applied, 'transaction')} already imported."
     end
 end

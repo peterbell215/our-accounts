@@ -46,6 +46,15 @@ FactoryBot.define do
         description { 'TESCO STORES 2889' }
         amount      { Money.from_amount(-5.95) }
       end
+
+      # A subscription, which is what makes it useful: the same description arrives every month, so one rule
+      # made from any of them should claim the rest.  No date, so the caller places each occurrence.
+      factory :github_subscription do
+        account     { BankAccount.find_by_name("Lloyds Account") || FactoryBot.create(:lloyds_account) }
+        trx_type    { "DEB" }
+        description { 'GITHUB INC.' }
+        amount      { Money.from_amount(-7.67) }
+      end
   end
 
     factory :matched_transaction do

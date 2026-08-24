@@ -141,9 +141,10 @@ straight back. Buttons that would take you past the beginning or end of the acco
 You can edit a transaction's category straight from the list using the dropdown in its row. A save
 button appears at the end of that row as soon as you change something, and goes again if you put it
 back as it was, so at a glance you can see which rows are waiting to be saved. Each row also has a
-delete button; both are icons, and hovering over either one says what it does. **Add New Transaction**
-adds a row you can fill in by hand, for anything that did not come from a statement — it offers its save
-button straight away.
+delete button, and a third that makes an import rule out of the row — see
+[Import rules](#import-rules). All three are icons, and hovering over any of them says what it does.
+**Add New Transaction** adds a row you can fill in by hand, for anything that did not come from a
+statement — it offers its save button straight away.
 
 The **Counterparty** column names the supplier, where one is known. Start typing in it and your
 existing counterparties are offered as completions; pick one and save, and the transaction is linked to
@@ -312,6 +313,41 @@ match at all.
 Most rules are created for you in bulk by [Teaching it your categories](#teaching-it-your-categories).
 This screen is for correcting those and adding the ones it could not work out.
 
+#### Making a rule out of a transaction
+
+Noticing that something is filed wrongly happens on the account screen, not here, so you can start a rule
+from the row itself. The third icon in a transaction's row opens this form with the **Description** already
+filled in from that transaction, exactly as the statement writes it, along with its category and
+counterparty if it has them. Hovering over the icon shows the description it would use, which is also the
+one place a stray leading or trailing space is visible before you save.
+
+Two fields are deliberately left alone rather than copied from the transaction. **Transaction type** stays
+blank, so the rule matches any type — the same payee can arrive as a `DD` one month and a `DEB` the next.
+And **Treat as a pattern** stays unticked, an exact description being the more specific claim.
+
+You still see the form before anything is saved, because a rule is a generalisation: it will claim rows you
+are not looking at, and it will reach backwards.
+
+#### Saving a rule categorises what you have already imported
+
+A new rule used to affect only the next statement you loaded, which was the wrong way round — you write a
+rule *because* something already imported went uncategorised. Now saving one also applies it to the
+transactions already in the database, and the message says how many it caught:
+
+```
+Rule was successfully created. It also categorised 4 transactions already imported.
+```
+
+It only takes rows that **no rule has claimed and nobody has categorised**. A category you chose yourself
+is never overwritten, and neither is one another rule won — your judgement always wins, exactly as it does
+when you [apply a hand analysis](#correcting-categories). So the **Matched** count above can read one lower
+than the number of transactions sharing the description: the row you categorised by hand before writing the
+rule keeps your category and is left out.
+
+Editing a rule does the same thing, which is what makes fixing a typo in a description worth doing. Note
+that it only ever *adds*: narrowing a rule, or deleting one, does not release the transactions it has
+already claimed.
+
 ### Input Columns Definition
 
 Every bank lays its CSV out differently, so the application needs to be told, once per account, which
@@ -443,10 +479,14 @@ reconcile and it will stop with an error — but you will then have a half-loade
 The rules work on the transaction description, so they treat every `NON-GBP TRANS FEE` the same way. In
 practice one might be a holiday and the next a work trip, and only you know which.
 
-Two ways to fix this.
+Three ways to fix this.
 
 **One at a time, on the account screen.** Change the dropdown in the transaction's row and press the
 save button that appears at the end of it.
+
+**By writing a rule for it.** Where a whole payee is filed wrongly, or not filed at all, make a rule from
+one of its rows and let it catch the rest — see
+[Saving a rule categorises what you have already imported](#saving-a-rule-categorises-what-you-have-already-imported).
 
 **In bulk, from your hand analysis.** If your spreadsheet already has the right answer for a period you
 have just imported, apply it wholesale:
@@ -474,7 +514,8 @@ Where your analysis disagreed with the rules:
 `No matching trx: 0` is the number to look at — anything above zero means some spreadsheet rows could
 not be tied to a transaction, usually because that period has not been imported yet.
 
-Your hand judgement always wins over a rule, and re-running changes nothing.
+Your hand judgement always wins over a rule, and re-running changes nothing. That is the same rule a
+newly saved import rule follows: it steps over anything you categorised yourself.
 
 ---
 
@@ -622,6 +663,11 @@ Check its **Matched** count on the rules list. If it is zero, the usual causes a
 leading or trailing spaces — a literal rule matches exactly, and the list marks those with ⚠ — or a
 **Transaction type** that does not match the statement's. Leave the type blank unless you mean it.
 
+**A rule's Matched count is lower than the number of transactions I can see**
+Any of those rows that you had already categorised yourself is left alone and not claimed, so it does not
+count towards the rule. That is deliberate: your judgement wins. The same is true of a row some other rule
+got to first.
+
 **A category's forecast looks far too low**
 Open its workings from the forecast. If the months it is averaged over are mostly zeroes, the category
 is younger than the six months it looks back over — it is being averaged against months it did not
@@ -653,14 +699,14 @@ Being honest about the gaps, in the order they matter:
 2. **No look at the past.** The forecast tells you about the month ahead, but there is nothing that
    shows a year of Food side by side, no charts, and no comparison of one period against another. The
    only backward view is stepping the forecast back a month at a time to see how it did.
-3. **A rule cannot be created from a transaction you are looking at.** Having spotted an uncategorised
-   row, you have to go to the rules screen and retype its description rather than saying "make a rule from
-   this".
-4. **Nothing suggests which counterparties to merge.** You find the duplicates yourself; alphabetical order
+3. **Nothing suggests which counterparties to merge.** You find the duplicates yourself; alphabetical order
    brings most of them together, but the tool does not propose groups.
-5. **Nothing warns that a category is too young to average.** A category you created last month and never
+4. **Nothing warns that a category is too young to average.** A category you created last month and never
    applied to older transactions is averaged over five months of zeroes, so it reads low. The workings
    page shows the zeroes, but you have to go and look.
+5. **A rule only ever claims more, never fewer.** Narrowing a rule, or deleting it, leaves the transactions
+   it already categorised exactly as they are. Nor is there any preview: you cannot see how many existing
+   transactions a rule would catch until you save it.
 
 How well the automatic categorisation does depends on how much hand analysis you feed it. Against a
 year of real statements with one quarter analysed by hand, roughly two thirds of transactions were

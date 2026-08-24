@@ -284,6 +284,17 @@ id; a save that creates a counterparty appends one `counterparties/_option` to i
 shown as a red border plus a `title` on the input, never as a message beneath it: `transactions_list_controller.js`
 measures one row's height and applies it to all of them, so a row that grows breaks the scroll arithmetic.
 
+The row's third action icon is a **link** to `import_matchers#new`, carrying the description, category and
+counterparty in the query string so a rule can be made without retyping them. A link and not a second
+submit on the row's form: creating a rule fails three ordinary ways (duplicate description, missing
+category, uncompilable pattern) and a row that may not change its height has nowhere to report them, and an
+`<a>` is not in `form.elements` so `transaction_row_controller` never sees it. `trx_type` is deliberately not
+prefilled (`nil` means "any type"), the link is offered even where a rule already claims the row (an exact
+rule beating a broad pattern is a documented thing to want), and it is withheld while a counterparty is
+awaiting confirmation. `ImportMatchersController#new` reads the prefill with `permit` plus an
+`ActionController::Parameters` check — `params.expect` raises on the absent key, which is the ordinary case,
+and `?import_matcher=nonsense` arrives as a String.
+
 Transaction rows are rendered as CSS div-tables (`app/assets/stylesheets/div-tables.css`), not `<table>`.
 Every date the reader sees is formatted on the server by the `short_date` helper, as `1-Jan-23`
 (`config/initializers/date_formats.rb`) — use it rather than adding another `strftime`. Date *fields*
@@ -354,7 +365,9 @@ this, because the row is the form — the controller renders Turbo Streams and t
   transactions leaves the row with nothing to apply to. `#candidates` therefore runs over the union of the
   payees in the history and the payees it holds rulings for — otherwise the row would appear on no screen,
   and the only place able to withdraw it could not show it. Nothing prunes them, and nothing warns when the
-  history has come to contradict a ruling.
+  history has come to contradict a ruling. Note that `RuleApplication` is now a ready way to orphan one:
+  a rule naming a counterparty assigns it to every row it claims, so a ruling held by *description* stops
+  matching the payee the detector now groups by id.
 - There is deliberately **no `bin/dev` or `Procfile.dev`**. With importmap and Propshaft there is no
   asset build to watch, and solid_queue only runs in production, so foreman would be supervising a
   single process — while costing the interactive debugger, since its stdout is not a TTY. Use
@@ -365,6 +378,12 @@ this, because the row is the form — the controller renders Turbo Streams and t
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
 - The analysis file (form A) is the only import with a runnable entry point. **Form B has no UI or
   route** — see above.
+- **Applying a rule backwards is `RuleApplication`**, invoked from `ImportMatchersController` rather than
+  from a callback on `ImportMatcher`: `AnalysisImporter` creates a few hundred rules in one run against an
+  already-imported account, so a callback would turn one rake task into a few hundred sweeps of the
+  transactions table. It reuses `ImportMatcher#match` unchanged — it duck-types on `account_id`, `trx_type`
+  and `description`, which a saved `Transaction` satisfies — and `update_all`, because `#sequence` must not
+  run again. A rule naming no counterparty leaves the row's own alone, unlike `Transaction#find_match`.
 - **Merging counterparties is `CounterpartyMerge`**, driven from the counterparties list. Three orderings in
   it are load-bearing and all fail silently if reversed: re-point `counterparty_id` on transactions and
   rules *before* destroying the losers, because `Account#counterparty_transactions` and
@@ -385,8 +404,16 @@ this, because the row is the form — the controller renders Turbo Streams and t
   for any description that does not already have a rule; the guard skipping descriptions the account already
   has a rule for is what limits it. Confirming the old name in a transaction row does the same, though
   deliberately. Fixing either properly needs an "absorbed into" pointer and a schema change.
-- A rule cannot be created **from** a transaction you are looking at — its description has to be retyped
-  on the rules screen.
+- **A rule only ever claims more, never fewer.** `RuleApplication` runs from `ImportMatchersController` on
+  create and update, and takes only transactions where `import_matcher_id` *and* `category_id` are both
+  null — hand judgement wins, so a rule's **Matched** count can read one lower than the number of
+  transactions sharing its description. Nothing de-applies: narrowing or deleting a rule leaves the rows it
+  claimed pointing at it, and a literal rule created after a regex one does not take that rule's rows. There
+  is no preview of what a rule would catch before it is saved.
+- **A hand edit through the transaction row does not clear `import_matcher_id`.** `transaction_params`
+  permits `category_id` and nothing nulls the matcher, so a row whose category was corrected by hand still
+  points at the rule that got it wrong. Nothing depends on it — `RuleApplication` reads the category, not the
+  matcher — but "which rule categorised this" is only approximately true.
 - `TransactionPresenter` is now **entirely unreferenced**. It was instantiated once in
   `transactions/_transaction_as_row.html.erb` and its return value never used; that line is gone, so the
   class is dead code kept only because deleting it was outside the change that orphaned it.
