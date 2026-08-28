@@ -98,6 +98,13 @@ Capybara.register_driver :chrome_en_gb do |app|
   options.add_preference("intl.accept_languages", "en-GB,en")
   options.add_argument("--headless=new") if ENV["CI"].present?
 
+  # The window has to be said out loud now that this driver is really the one in use.  Until it was, the
+  # size came from ActionDispatch's own :selenium_chrome_headless registration, which defaults to
+  # 1400x1400 — and the geometry specs were all written against that without anyone choosing it.  Headless
+  # Chrome on its own opens at 800x600, which leaves the specs measuring a viewport where the menu bar
+  # wraps and buttons fall below the fold: locally it survived, and on CI's Chrome eleven of them did not.
+  options.add_argument("--window-size=1400,1400")
+
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
 end
 
