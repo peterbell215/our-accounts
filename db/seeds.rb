@@ -38,7 +38,7 @@ else
 
     puts "Account:      #{account.name}, opening #{account.opening_balance.format} on #{account.opening_date}"
     puts "Rules:        #{seeder.rules_created} created, #{ImportMatcher.where(account: account).count} in total"
-    puts "Transactions: #{seeder.import_skipped ? "#{total} already present, import skipped" : "#{seeder.transactions_imported} imported"}"
+    puts "Transactions: #{seeder.transactions_imported} imported, #{seeder.transactions_skipped} already present"
     puts "Labels:       #{seeder.labels_applied} applied, of which #{seeder.labels_corrected} corrected a rule"
     puts "Categorised:  #{categorised} of #{total}#{" (#{(100.0 * categorised / total).round(1)}%)" if total.positive?}"
   end

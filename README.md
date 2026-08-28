@@ -11,8 +11,9 @@ import afterwards.
 It is built for one household. There is no login, no user accounts, and the data lives in a SQLite file
 on your own machine.
 
-> **Status: usable, but unfinished in one important way.** Loading a statement has no screen yet — it is
-> a command you type. Everything downstream of that works, including forecasting what a month will cost.
+> **Status: usable.** Everything you need for the monthly routine has a screen — setting up an account,
+> loading a statement, correcting how things are filed, and forecasting what the month will cost. What it
+> does not do is look *backwards*: there are no charts and no comparison of one period against another.
 > See [What isn't built yet](#what-isnt-built-yet).
 
 ---
@@ -108,6 +109,10 @@ The landing page lists your accounts with their number, sort code, opening date 
 **Show this account** opens the account, headed by its name, with its buttons and details at the top and
 the transactions below, newest first: date, description, category, counterparty, amount, and the running balance after
 that transaction. Money out is red, money in is green.
+
+Two buttons at the top belong to the account rather than to the list: **Import Statement**, which is how
+you load a download from the bank, and **Manage Import Rules**, which is how you tell it where things
+should be filed.
 
 The details at the top spread across the width of the window — three to a line on a wide screen, so an
 account fits on two lines — and fold down to one field per line as the window narrows.
@@ -326,7 +331,8 @@ tell you if you get this wrong.
 
 **The opening balance matters more than it looks.** The application recalculates a running balance for
 every transaction and checks it against the balance printed in the statement. If the opening balance is
-wrong, the very first import stops with an error rather than loading thousands of subtly wrong rows.
+wrong, the very first import stops with an error rather than loading thousands of subtly wrong rows — and
+nothing is saved, so you can correct the balance and import the same file again.
 
 The easiest way to get it right is to work backwards from the statement you are about to load: take the
 oldest transaction in the file, and subtract its amount from the balance shown against it. If the file
@@ -335,7 +341,9 @@ is newest-first, the oldest transaction is the **last line**.
 4. Now go to **Input Columns Definition** and create one for the account, using the sample-CSV panel
    described above.
 
-The account is now ready to accept statements.
+The account is now ready to accept statements: open it and press **Import Statement**. Until it has a
+column layout that button explains what is missing and offers the link to create one, rather than
+refusing to work without saying why.
 
 ---
 
@@ -398,22 +406,49 @@ screen, import your statements, and categorise transactions from the account scr
 
 ## Importing a statement
 
-⚠️ **There is no screen for this yet.** It is a command:
+Download the statement from your bank as a CSV, then open the account and press **Import Statement**.
+Choose the file, press **Import**, and you are returned to the account with a line saying what happened:
 
-```sh
-bin/rails runner 'FileImporter.new(Rails.root.join("db", "statement.csv"), Account.find_by(name: "Joint")).import'
+```
+Imported 43 transactions into Joint, 1-Aug-24 to 14-Sep-24.  31 categorised by rule, 12 left uncategorised.
 ```
 
-Put the downloaded CSV in the `db/` directory first, and use the exact name you gave the account.
+Transactions matching one of your rules are filed as they load; the rest arrive uncategorised for you to
+deal with on the account screen. Check the list afterwards — the balance against the newest transaction
+should be the closing balance on your real statement.
 
-A few thousand transactions take a handful of seconds. Transactions that match a rule are categorised as
-they load; the rest arrive uncategorised for you to deal with on the account screen.
+**Loading a file twice is safe.** The application recognises the rows it already has and skips them, so
+you do not have to remember exactly where you got to. Downloading the last couple of months and importing
+the lot is a perfectly good way to catch up:
 
-Then open the account and check the list. The closing balance on the newest transaction should match the
-balance on your real statement.
+```
+Imported 12 transactions into Joint, 1-Sep-24 to 14-Sep-24, and skipped 31 rows already loaded.
+9 categorised by rule, 3 left uncategorised.
+```
 
-**Do not import the same file twice.** The application will notice — the running balance will not
-reconcile and it will stop with an error — but you will then have a half-loaded account to tidy up.
+And if the whole file is one you have already loaded, it says so and does nothing:
+
+```
+All 43 rows in that file are already loaded in Joint, so nothing was imported.
+```
+
+**If anything does not add up, nothing at all is imported.** The application recalculates the running
+balance for every row and checks it against the balance in your statement. Where they disagree it stops,
+tells you which row and what the two figures were, and leaves the account exactly as it was — you will
+never be left with a half-loaded account to tidy up:
+
+```
+Nothing was imported.  Line 2627: 2-Jan-24 EOE COOP FOOD £-1.80 — the statement says the balance is
+£3,644.73, where the account works out £998.19.  Check the account's opening balance, and whether this
+file covers a period already loaded.
+```
+
+The usual causes are an opening balance that is wrong (see [Setting up a new
+account](#setting-up-a-new-account)) or a gap — a period between what you have already loaded and the file
+you are importing now, which you have not downloaded. Load the missing period first.
+
+A statement of a few thousand rows takes about five seconds; an ordinary month is quicker than you can
+notice.
 
 ---
 
@@ -586,11 +621,31 @@ Your shell is on the wrong Ruby. Run `rvm use ruby-4.0.6`. If it keeps happening
 something long-running — your editor, or the desktop session — is passing an old environment down to
 them; restarting it, or logging out and back in, fixes it.
 
-**The import stops with `ImportError`**
-The running balance did not match the statement. Almost always the account's opening balance is wrong —
-see [Setting up a new account](#setting-up-a-new-account). It can also mean you are importing a file
-that overlaps one already loaded. Nothing is saved when this happens, so correct the opening balance and
-try again.
+**The import says the statement does not reconcile**
+The running balance it works out does not match the one printed in your statement, and the message names
+the row and both figures. Almost always the account's opening balance is wrong — see [Setting up a new
+account](#setting-up-a-new-account). The other cause is a gap: a period between what you have already
+loaded and this file, which was never downloaded. Load the missing period first. Nothing is saved when
+this happens, so correct whichever it was and import the same file again.
+
+**The import says the file does not look like a statement for this account**
+None of the columns the account's layout expects are in the file. Either it is a download from a different
+account, or it has no header row — its first line is a transaction rather than column names — while the
+layout says it has one. Untick **Header** on the layout, or choose the file you meant.
+
+**The import says the file has no such-and-such column**
+The column layout for that account expects a column your file does not have — usually because the bank
+has changed what it exports, or because the file came from a different account. The message lists the
+columns your file actually has. Edit the layout under **Input Columns Definition**, or choose the file
+you meant.
+
+**The balances on a credit card look wrong**
+Card statements from some providers carry no running balance, so the application works it out rather than
+checking it. That means it cannot tell when a month is missing: if you import September and November but
+never October, every balance from November on is out by whatever October cost, and nothing will say so.
+Import the missing month and delete the affected rows, or check the card's own statement for the true
+figure. Accounts whose statements do carry a balance — a Lloyds current account, for instance — are
+checked on every row and cannot drift this way.
 
 **Transactions imported but none are categorised**
 Either no rules exist yet — run the analysis step — or the rules belong to a different account. Rules
@@ -627,17 +682,21 @@ which file is missing.
 
 Being honest about the gaps, in the order they matter:
 
-1. **No screen for importing a statement.** `FileImporter` works and is well tested, but you have to
-   invoke it from the command line. This is the most worthwhile thing to build next.
-2. **No look at the past.** The forecast tells you about the month ahead, but there is nothing that
+1. **No look at the past.** The forecast tells you about the month ahead, but there is nothing that
    shows a year of Food side by side, no charts, and no comparison of one period against another. The
    only backward view is stepping the forecast back a month at a time to see how it did.
-3. **A rule cannot be created from a transaction you are looking at.** Having spotted an uncategorised
+2. **An import cannot be undone.** If you load the right file into the wrong account, or simply the wrong
+   file, you have to delete the transactions by hand. A file that *fails* is safe — nothing is saved —
+   but one that succeeds is not reversible.
+3. **Nothing notices a missing month on an account whose statements carry no balance.** See the note in
+   [When something goes wrong](#when-something-goes-wrong). Accounts with a balance column are checked
+   row by row and cannot drift.
+4. **A rule cannot be created from a transaction you are looking at.** Having spotted an uncategorised
    row, you have to go to the rules screen and retype its description rather than saying "make a rule from
    this".
-4. **Nothing suggests which counterparties to merge.** You find the duplicates yourself; alphabetical order
+5. **Nothing suggests which counterparties to merge.** You find the duplicates yourself; alphabetical order
    brings most of them together, but the tool does not propose groups.
-5. **Nothing warns that a category is too young to average.** A category you created last month and never
+6. **Nothing warns that a category is too young to average.** A category you created last month and never
    applied to older transactions is averaged over five months of zeroes, so it reads low. The workings
    page shows the zeroes, but you have to go and look.
 

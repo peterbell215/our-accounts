@@ -1,0 +1,60 @@
+<%= render "layouts/notice", notice: notice %>
+
+<% content_for :title, "Import a statement into #{@account.name}" %>
+
+<h1>Import a statement into <%= @account.name %></h1>
+
+<% if @definition.nil? %>
+  <%# The button on the account screen is drawn whatever state the account is in, so the explanation has to
+      live here.  A flash could say the same thing but could not carry the link, and the fix is one screen
+      away — which is the whole of what the reader needs to know. %>
+  <p>
+    <strong><%= @account.name %> has no column layout yet</strong>, so there is nothing to say which column
+    of its statements holds the date, which holds the amount, and so on.  Describe its layout once and every
+    statement from then on can be loaded here.
+  </p>
+
+  <p>
+    <%= link_to "Describe its layout", new_import_columns_definition_path, class: "pure-button pure-button-primary" %>
+    <%= link_to "Back", account_path(@account), class: "pure-button" %>
+  </p>
+<% else %>
+  <p>
+    Choose a statement you have downloaded from the bank.  Rows already loaded are recognised and skipped, so
+    a file overlapping one you have already imported is safe — downloading the last couple of months and
+    loading the lot is the ordinary way to catch up.
+  </p>
+
+  <p>
+    If anything in the file does not reconcile against what is already here, <strong>nothing at all is
+    imported</strong> and the reason is shown on this screen.  You will not be left with an account half
+    loaded.
+  </p>
+
+  <%= form_with url: account_statement_imports_path(@account), method: :post, multipart: true,
+                class: "pure-form" do |form| %>
+    <fieldset>
+      <legend>Statement CSV</legend>
+
+      <div class="pure-control-group">
+        <%= label_tag :csv_file, "Downloaded statement" %>
+        <%= file_field_tag :csv_file, accept: ".csv", class: "pure-input-1" %>
+      </div>
+
+      <div class="pure-controls">
+        <%= form.submit "Import", class: "pure-button pure-button-primary" %>
+        <%= link_to "Cancel", account_path(@account), class: "pure-button" %>
+      </div>
+    </fieldset>
+  <% end %>
+
+  <h2>The layout it will be read against</h2>
+
+  <p>
+    A file whose columns are not these will be refused rather than misread.
+    <%= link_to "Edit this layout", edit_import_columns_definition_path(@definition) %> if the bank has
+    changed what it exports.
+  </p>
+
+  <%= render @definition %>
+<% end %>

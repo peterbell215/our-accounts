@@ -23,8 +23,8 @@ class AccountSeeder
     balance_column: "Balance"
   }.freeze
 
-  attr_reader :account_name, :account, :rules_created, :transactions_imported, :labels_applied,
-              :labels_corrected, :import_skipped
+  attr_reader :account_name, :account, :rules_created, :transactions_imported, :transactions_skipped,
+              :labels_applied, :labels_corrected
 
   # @return [AccountSeeder, nil] nil when the credentials carry no seed_data
   def self.from_credentials(directory: Rails.root.join("db"))
@@ -40,7 +40,6 @@ class AccountSeeder
     @raw_statement = raw_statement
     @analysis = analysis
     @directory = Pathname(directory)
-    @import_skipped = false
   end
 
   # @return [Boolean] whether the credentials name all three things
@@ -110,18 +109,16 @@ class AccountSeeder
     definition.save! if definition.new_record? || definition.changed?
   end
 
-  # FileImporter is not idempotent: a second run would double the rows up and Transaction#sequence would
-  # reject the balances, so only import into an account that has none.
+  # FileImporter skips the rows an account already holds, so re-seeding loads whatever the statement has
+  # gained and leaves the rest alone.  This used to guard it by refusing to import into an account holding
+  # anything at all, which was the cruder of the two behaviours once the importer could tell one row from
+  # another: it would decline a statement that had grown since the last seed.
   # @return [void]
   def import_transactions
-    if account.transactions.any?
-      @import_skipped = true
-      @transactions_imported = 0
-      return
-    end
+    importer = FileImporter.new(raw_path, account).import
 
-    FileImporter.new(raw_path, account).import
-    @transactions_imported = account.transactions.count
+    @transactions_imported = importer.imported
+    @transactions_skipped = importer.skipped
   end
 
   # @param [String, nil] value

@@ -165,7 +165,19 @@ previous balance plus the amount.
 Where the statement supplies its own balance, `sequence` compares the two and raises `ImportError` on a
 mismatch rather than accepting either. That strictness is the system's main integrity check, and it has
 already earned its place: an incorrect opening balance was caught on the first row of a 2,626-row import
-rather than producing thousands of subtly wrong records.
+rather than producing thousands of subtly wrong records. The message names the row, both balances and the
+two things usually behind the difference, because it is now read on a screen by whoever chose the file
+rather than in a terminal by whoever wrote the importer.
+
+**Everything above assumes the preceding transaction is one `sequence` itself placed.** A transaction added
+by hand through the UI is not: `TransactionsController` permits neither `balance` nor `day_index` and never
+calls `sequence`, so it carries null in both. That was unreachable while a statement was only ever loaded
+into an empty account, and the import screen makes it ordinary. The missing `day_index` is coalesced to
+zero, as `Transaction::ORDER` already does for the same null. The missing balance is **refused by name**,
+which is the more important of the two: `previous&.balance || opening_balance` reads as a sensible default,
+but where the predecessor is real and merely has no balance of its own it restarts the running total as
+though the account were empty — producing a figure wrong by everything in between, and on a statement
+carrying no balance of its own, wrong with nothing to catch it.
 
 Views list transactions `order(date: :desc, day_index: :desc)`.
 
@@ -241,8 +253,53 @@ Categories are global and are taken from the whole file; only the rules are acco
 
 `ImportColumnsDefinition` (one per account) records how a given institution's CSV maps onto a
 `Transaction`: which column holds the date, the description, the debit and credit or a single signed
-amount, the balance, and so on. `FileImporter` walks the file and, for each row, calls
-`ImportedTransactionFactory.build` → `Transaction#find_match` → `Transaction#sequence` → `save!`.
+amount, the balance, and so on. `FileImporter` parses the file in full, then walks it calling
+`Transaction#find_match` → `Transaction#sequence` → `save!` for each row that is not already loaded, and
+returns itself carrying counts of what it did.
+
+**Parsing happens before anything is written**, which is the difference between a refusal and a rollback.
+Everything the factory can object to — a date the format cannot read, a statement downloaded for the other
+account — is settled while the account is still untouched, and each objection can name the line of the file
+it came from. A few thousand unsaved records cost nothing. The mapped column names are checked against the
+file's own headers in the same pass, and that check has to be explicit rather than caught as it goes wrong:
+the factory reads each mapped column straight off the row, so a name the file does not carry arrives as
+`nil`, and `nil.to_f` is `0.0`. A mis-mapped balance column therefore used to report every balance as
+£0.00 and tell the reader their account did not reconcile — true, but a description of the symptom that
+sent them to the wrong screen.
+
+**The whole file is one database transaction.** Every row used to be its own `save!`, so a statement that
+stopped part-way left the rows before the failure behind and nothing to say where it got to — the outcome
+the README warned readers about rather than one the application prevented. All or nothing is what lets the
+import screen open every failure message by saying nothing was imported. `#sequence` reads back rows
+written earlier in the same loop, which is safe because they are the same connection's own uncommitted
+writes; and under transactional fixtures the inner transaction is a real savepoint, because Rails opens the
+fixture transaction `joinable: false` — so the guarantee is directly testable, and a spec asserts the table
+is empty after a refusal.
+
+**Rows already loaded are skipped rather than duplicated.** Statements are downloaded by date range and
+those ranges overlap: the natural way to catch up is to download the last couple of months and load the
+lot. That used to double the rows up until `#sequence` refused one on a balance it could no longer
+reconcile, which is why `AccountSeeder` guarded it by declining to import into an account holding anything
+at all — the cruder of the two behaviours, since it also refused a statement that had merely grown.
+
+What counts as the same row is `[date, description, amount_pence]`, and the balance too where the layout
+has a balance column. It is a **tally rather than a set**, and the difference is not pedantic: a statement
+legitimately repeats the same description and amount on the same day — two coffees from one shop — so a
+set would silently drop the second for ever. Counting each existing row once and consuming one per match
+means a file holding two identical rows against a database holding one loads exactly one of them. The
+counts are `pluck`ed rather than loaded, since the range can span a year and every row of it only becomes
+a hash key.
+
+**The rules are loaded once, not once per row.** `ImportMatcher.find_match` takes an optional preloaded
+collection, and `FileImporter` passes one. Without it, every row queried and instantiated every rule the
+account has — against the real statement, 2,626 rows over 282 rules, measured at 9.1 seconds against 5.1
+with the rules held. Passing an array cannot leak a rule across accounts, because `#match` re-checks
+`account_id` itself; it does have to be `in_match_order`, since that is what makes a literal beat a regex.
+
+That, with an index on `transactions (account_id, date)` for `#sequence`'s per-row lookup, is what makes
+an import runnable inside a web request. A real 2,626-row statement takes about five seconds; a month's
+download is a few hundred rows, and re-loading a file already imported is a tenth of a second, because
+nothing is written.
 
 `ImportMatcher.find_match` walks the matchers for that account and returns the first whose description
 (literal or regex, per `description_is_regex`) and optional `trx_type` match. A hit fills in
@@ -265,6 +322,14 @@ Four quirks live in this pipeline, all of them driven by what the banks actually
   running balances correct. Lloyds exports newest-first; Barclaycard does not.
 - **`credit_sign`** (1 or −1) flips the sign for providers such as Barclaycard that report spending as a
   positive number.
+- **A layout with no balance column has no integrity check at all**, which is the cost of the paragraph
+  above and worth stating plainly. Where the statement carries a balance, `#sequence` compares the two and
+  a missing period is caught on the first row. Where it does not — Barclaycard — the balance is derived and
+  never verified, so statements loaded out of order, or with a month missing between them, produce a
+  running balance wrong by a constant with nothing anywhere to say so. Skipping duplicates still works, as
+  that only needs the date, description and amount; detecting a *gap* is what cannot be done. Refusing a
+  file that does not abut what is loaded was considered and rejected: card statements arrive month by month
+  and legitimately abut without overlapping, so the rule would refuse the ordinary case.
 - **Leading single quotes.** CSVs that have been through Excel prefix some fields with `'`;
   `ImportedTransactionFactory.strip_leading_quote` removes them, and
   `ImportColumnsDefinition#extract_data` re-adds them when writing CSV back out.
@@ -289,7 +354,10 @@ repeat with the same amount on the same day.
 
 `AccountSeeder` runs the whole chain in order — account, columns definition, rules, import, labels — and
 is what `db/seeds.rb` calls. Each step is idempotent or skipped once done, so seeding can be re-run
-against an existing database. `AnalysisImporter` therefore **skips a description this account already has a
+against an existing database. The import step is idempotent because `FileImporter` is: this class used to
+guard it by refusing to import into an account holding any transactions at all, which was the right
+instinct and the wrong place — it also declined a statement that had merely grown since the last seed.
+Recognising a row belongs in the loop that can see one row at a time. `AnalysisImporter` therefore **skips a description this account already has a
 rule for**, rather than reasserting the spreadsheet's category and counterparty over it: since the rules are
 editable in the web layer, updating them here would make every re-seed silently revert corrections made by
 hand. It counts those separately from the ones it created so the run still reports what it did. It runs in development and production, and does nothing in test.
@@ -529,13 +597,40 @@ top level.
 
 ## The web layer
 
-Conventional Rails: eight controllers, ERB views, no client-side framework.
+Conventional Rails: thirteen controllers, ERB views, no client-side framework.
 
 **Rules are nested under the account.** `ImportMatchersController` lives at
 `/accounts/:account_id/import_matchers`, and `account_id` is deliberately absent from its permitted
 parameters — the account comes from the route, so a rule cannot be filed against the wrong one. The rule
 form sets `url:` explicitly, because `form_with(model: [account, matcher])` would derive
 `bank_account_import_matchers_path` from the STI subclass and the route is nested under `:accounts`.
+
+**Loading a statement is nested under the account too, and for a stronger reason.** `StatementImportsController`
+lives at `/accounts/:account_id/statement_imports`, with `new` and `create` only. The account is not merely
+the owner of the result: it is what says how the file is laid out and what the running balance continues
+from, so it has to come from the route rather than from a field on a form that could name the wrong one.
+The operation is the noun, as with `CsvAnalysesController` and `CounterpartyMergesController`, and there is
+no record to show afterwards — what an import produces is the account's own transaction list, which is
+where `create` lands.
+
+**One step, not a preview and a confirmation.** The obvious shape, following `counterparty_merges`, would
+have been a `new` that showed what was about to happen and a `create` that did it. It was rejected because
+the file would have to be kept alive between the two requests — ActiveStorage's engine is configured but has
+no tables and is used nowhere, so that means a path in `tmp/` and something to sweep it — in exchange for a
+reassurance that atomicity already provides. Since the whole file is one database transaction, every failure
+message can open by saying nothing was imported and be telling the truth, which is the thing a preview would
+have been for.
+
+**The button does not disappear when the account cannot use it.** An account with no `ImportColumnsDefinition`
+still shows **Import Statement**, and the screen behind it explains why nothing can be read and links to the
+form that fixes it. Hiding the button would leave a reader with nothing to click and no account of why, and
+the strip should read the same on every account, which is the point of `show_actions`. A flash could say as
+much but could not carry the link.
+
+It rescues `ImportError` alone, deliberately unlike `CsvAnalysesController`'s blanket `rescue => e`. That
+controller renders into a Turbo frame, where an unhandled exception leaves the frame blank with nothing
+said; this one redirects, so Rails' own error report is a better account of a genuine bug — and the
+transaction has already rolled back, so nothing is at stake in letting one through.
 
 **The counterparty is edited as a name, not an id.** `Transaction#counterparty_name=` resolves a typed name
 against `Counterparty`, case-insensitively. A value that already names the transaction's *current*
@@ -615,7 +710,9 @@ is the one action there that cannot be undone and it should not fall under the c
 what the confirmation *says* is each screen's to write, since what is lost differs — an account takes its
 transactions with it, a counterparty leaves them behind. And **the strip does not swallow list actions**:
 `Add New Transaction` stays above the transaction list, where the row it inserts appears, while
-`Manage Import Rules` moved up into the strip because it acts on the account rather than on the list.
+`Manage Import Rules` and `Import Statement` moved up into the strip because they act on the account rather
+than on the list. Importing is drawn first of the two, being the errand that brings you to an account most
+months, where the rules are looked at occasionally.
 
 This is also why `.pure-button-error` is defined in `application.css`. Pure ships only the primary
 variant, so the delete buttons throughout the app — the transaction rows, the rules list, and now Destroy
@@ -876,17 +973,32 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
 
 ## Where it stands
 
-Working: the account model, both import forms, the categorisation rules and their per-transaction
-corrections, the rules and counterparty screens, the CSV analysis screen, transaction CRUD over Turbo,
-the monthly forecast and its workings pages, and seeding that rebuilds a development database end to end.
+Working: the account model, both import forms and the screen that drives the routine one, the
+categorisation rules and their per-transaction corrections, the rules and counterparty screens, the CSV
+analysis screen, transaction CRUD over Turbo, the monthly forecast and its workings pages, and seeding
+that rebuilds a development database end to end.
 
-The gap that matters:
+The application no longer has a step that has to be done from a terminal. Loading a statement was the last
+one, and closing it was worth doing because the categorisation behind it is real: against a year's actual
+downloads the derived rules categorise about 64% of transactions automatically, and 85% within the window
+that was analysed by hand.
 
-- **Form B has no UI or route.** `FileImporter` is only ever invoked from `AccountSeeder` and from its
-  spec. Loading a new statement means dropping into `bin/rails runner`. This is the obvious next piece of
-  work, and it is now a much more attractive one, because the categorisation behind it is real: against
-  a year's actual downloads, the derived rules categorise about 64% of transactions automatically, and
-  85% within the window that was analysed by hand.
+What the import screen still does not do:
+
+- **Nothing undoes an import that succeeded.** A file that loaded correctly but was the wrong file has to
+  be unpicked by deleting rows by hand. Atomicity covers the file that fails, which is the more likely
+  accident, and an "undo this import" would need a record of which rows came from which run — a schema
+  change, not worth making before there is evidence the mistake happens.
+- **A long import blocks its request, silently.** About five seconds for a 2,626-row statement, which is
+  the largest file in evidence; a month's download is a few hundred rows. There is no progress indication
+  beyond the browser's own. A background job is the answer if that becomes uncomfortable, and it is a
+  larger change than it looks, because `solid_queue` only runs in production here.
+- **A missing period cannot be detected where the layout has no balance column** — see the note beside
+  `credit_sign` above. Nothing on a Barclaycard-style account will notice a month that was never loaded.
+- **Nothing recomputes the balances of rows after an insertion point.** A file that fits badly is refused
+  rather than merged, which is the safe half of the same problem; the unsafe half — a file loaded into the
+  middle of an account whose later balances then become stale — is prevented only because the balance
+  check refuses it first.
 
 **Prediction now exists; analysis of the past still does not.** The forecast answers "what will this
 month cost, and how much of it has gone", which was the point of the application. What it does not do is
@@ -913,10 +1025,12 @@ Smaller ones elsewhere: nothing **suggests** which counterparties to merge, so t
 eye; a rule cannot be created from a transaction you are looking at, so its description has to be retyped;
 and the accounts index renders raw ISO dates while the show page renders localised ones.
 
-One worth doing next time a migration is written: `Transaction#sequence` runs
-`account.transactions.where("date <= ?", date).order(:date, :day_index).last` **once per imported row**,
-and there is no index on `(account_id, date)` — so a 2,626-row import scans a growing table 2,626 times.
-It was left alone here only because it has nothing to do with forecasting.
+The index that paragraph used to ask for now exists. `transactions (account_id, date)` was added with the
+import screen, because `#sequence`'s per-row lookup scanning a growing table is tolerable from a terminal
+and not tolerable inside a request. What it left behind is the opposite question, recorded in TODO.md:
+`index_transactions_on_account_id` is now a strict prefix of the composite one and earns nothing it does
+not, but the composite is wider and an import writes a few thousand rows at a time, so dropping the cheaper
+index deserves a measurement rather than an assumption.
 
 One newly opened: **a merged-away counterparty can be resurrected.** `AnalysisImporter#counterparty_for`
 looks one up by name and creates it when absent, so re-running the analysis import recreates a name that a
@@ -933,6 +1047,7 @@ silently reordered the layout of every CSV the application writes, and broke the
 `CSV_HEADERS` is now spelled out by hand, with a spec asserting it still names exactly the `_column`
 attributes the table has.
 
-Until form B gets a UI, the entry points are rake tasks — `import:analysis` to derive the rules,
-`import:categorise` to apply the hand labels, and `db:seed` to run the whole chain through
-`AccountSeeder`.
+Loading a statement is a screen. What remains at the command line is form A and the work either side of
+it — `import:analysis` to derive the rules from a hand-analysed spreadsheet, `import:categorise` to apply
+its labels over the top, and `db:seed` to run the whole chain through `AccountSeeder`. All three are
+one-off or occasional, which is why they have not earned screens of their own.

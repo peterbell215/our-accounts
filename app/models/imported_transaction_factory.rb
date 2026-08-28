@@ -40,11 +40,18 @@ class ImportedTransactionFactory
   # @return [Money]
   def self.set_account_id(csv_row, import_columns_definition)
     if import_columns_definition.sortcode_column
-      account_details_match =
-        csv_row[import_columns_definition.sortcode_column]==import_columns_definition.account.sortcode &&
-        csv_row[import_columns_definition.account_number_column]==import_columns_definition.account.account_number
+      account = import_columns_definition.account
+      sortcode = csv_row[import_columns_definition.sortcode_column]
+      account_number = csv_row[import_columns_definition.account_number_column]
 
-      raise ImportError, "Sortcode and/or account number do not match with input file" unless account_details_match
+      unless sortcode == account.sortcode && account_number == account.account_number
+        # Naming both sides is the difference between a dead end and an obvious next move — the usual cause
+        # is a statement downloaded for the household's other account, and seeing the two side by side says
+        # so at once.
+        raise ImportError, "that row is for sort code #{sortcode}, account #{account_number}, but " \
+                           "#{account.name} is sort code #{account.sortcode}, account " \
+                           "#{account.account_number}.  Is this the right account for this statement?"
+      end
     end
 
     import_columns_definition.account.id

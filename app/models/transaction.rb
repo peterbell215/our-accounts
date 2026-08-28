@@ -91,9 +91,12 @@ class Transaction < ApplicationRecord
   end
 
   # Find if a match for this trx exists using the ImportMatcher class.
+  #
+  # @param [Enumerable<ImportMatcher>, nil] matchers the rules to consider, where the caller has already
+  #   loaded them — see ImportMatcher.find_match for why an importer should.
   # @return [Transaction]
-  def find_match
-    match = ImportMatcher.find_match(self)
+  def find_match(matchers = nil)
+    match = ImportMatcher.find_match(self, matchers)
 
     if match
       self.import_matcher_id = match.id
@@ -103,22 +106,68 @@ class Transaction < ApplicationRecord
   end
 
   # Add an imported transaction to the account, taking account of whether other transactions have already been added.
-
+  #
+  # The running balance is chained off the transaction before this one, so everything here depends on that
+  # predecessor being a row this method itself once placed.  A transaction added by hand through the UI is
+  # not: TransactionsController permits neither balance nor day_index, and nothing calls #sequence for it,
+  # so it carries null in both.  While importing only ever happened into an empty account that could not
+  # arise; with an import screen it can, and both nulls are refused below rather than worked around.
+  #
   # @return [void]
   def sequence
     previous_transaction = self.account.transactions.where("date <= ?", self.date).order(:date, :day_index).last
-    self.day_index = previous_transaction&.date == self.date ? previous_transaction.day_index + 1 : 0
 
-    calculated_balance = (previous_transaction&.balance || self.account.opening_balance) + self.amount
+    # `|| 0` because a hand-added predecessor has no day_index, and nil + 1 is a NoMethodError.
+    # Transaction::ORDER already coalesces the same null for the same reason.
+    self.day_index = previous_transaction&.date == self.date ? (previous_transaction.day_index || 0) + 1 : 0
+
+    calculated_balance = previous_balance(previous_transaction) + self.amount
 
     if self.balance
-      raise ImportError if calculated_balance != self.balance
+      # The system's main integrity check, so it says enough to act on: which row failed, what the statement
+      # claimed, what the account works out, and the two things usually behind the difference.
+      if calculated_balance != self.balance
+        raise ImportError, "#{summary} — the statement says the balance is #{self.balance.format}, where " \
+                           "the account works out #{calculated_balance.format}.  Check the account's opening " \
+                           "balance, and whether this file covers a period already loaded."
+      end
     else
       self.balance = calculated_balance
     end
   end
 
+  # A one-line description of this transaction, for the messages an import fails with.  Public because the
+  # messages naming a *previous* transaction are built from that transaction rather than from this one.
+  #
+  # @return [String]
+  def summary = "#{date&.to_fs(:short_date)} #{description.to_s.squish} #{amount&.format}"
+
   private
+
+  # The balance to chain this transaction onto.
+  #
+  # Both nils here used to pass silently, and the second was the worse of the two: `previous&.balance ||
+  # opening_balance` reads as a sensible default, but where the predecessor is real and merely has no balance
+  # of its own it restarts the running total from the opening balance as though the account were empty —
+  # producing a figure wrong by everything in between, and on a statement carrying no balance of its own,
+  # wrong with nothing to catch it.  Neither is a state this can compute through, so both are refused by name.
+  #
+  # @param [Transaction, nil] previous_transaction
+  # @return [Money]
+  def previous_balance(previous_transaction)
+    if previous_transaction.nil?
+      return account.opening_balance if account.opening_balance
+
+      raise ImportError, "#{account.name} has no opening balance, and every balance is calculated from it.  " \
+                         "Set one on the account, working back from the oldest row of this statement."
+    end
+
+    return previous_transaction.balance if previous_transaction.balance
+
+    raise ImportError, "the transaction before #{summary} (#{previous_transaction.summary}) has no balance " \
+                       "of its own, so the running balance cannot be continued from it.  It was added by " \
+                       "hand rather than imported."
+  end
 
   # Turns a confirmed name into an unsaved Counterparty, which belongs_to autosave then writes inside the
   # transaction's own save, in the same database transaction.  Autosave does not check whether that write

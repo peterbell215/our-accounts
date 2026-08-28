@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_23_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_28_100000) do
   create_table "accounts", force: :cascade do |t|
     t.string "account_number"
     t.datetime "created_at", null: false
@@ -100,6 +100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_23_090000) do
     t.string "description"
     t.integer "import_matcher_id"
     t.string "trx_type"
+    t.index ["account_id", "date"], name: "index_transactions_on_account_id_and_date"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
     t.index ["counterparty_id"], name: "index_transactions_on_counterparty_id"

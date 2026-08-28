@@ -40,6 +40,15 @@ Rails.application.routes.draw do
     # Rules belong to an account, so nesting them is what keeps that from being a field you have to
     # remember to set.
     resources :import_matchers
+
+    # Loading a statement.  Nested for the same reason as the rules, and more pressingly: the account is
+    # what says how the file is laid out and what the running balance continues from, so it must come from
+    # the route rather than from a field on a form that could name the wrong one.
+    #
+    # The operation is the noun, as with csv_analyses and counterparty_merges.  `new` and `create` only —
+    # an import is not a record to show or revisit, and what it produces is the account's own transaction
+    # list, which is where `create` lands.
+    resources :statement_imports, only: [ :new, :create ]
   end
 
   resources :bank_accounts, controller: :accounts

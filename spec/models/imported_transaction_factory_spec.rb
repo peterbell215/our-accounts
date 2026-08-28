@@ -35,8 +35,11 @@ RSpec.describe ImportedTransactionFactory, type: :model do
     describe '#build raises AccountError' do
       let(:csv_data) { [ "12/12/2024", "DEB", "'30-00-01", "01234567", "Maison Bertaux", 5.95, nil, 1525.80 ] }
 
+      # The message names both sides, because the usual cause is a statement downloaded for the household's
+      # other account and seeing the two together says so at once.
       it 'raises an AccountError when account details do not match' do
-        expect { ImportedTransactionFactory.build(csv_row, import_columns_definition) }.to raise_error(ImportError, "Sortcode and/or account number do not match with input file")
+        expect { ImportedTransactionFactory.build(csv_row, import_columns_definition) }
+          .to raise_error(ImportError, /row is for sort code 30-00-01.*Lloyds Account is sort code 30-00-00/m)
       end
     end
   end

@@ -214,15 +214,39 @@ This is the heart of the app. Reading `FileImporter`, `ImportColumnsDefinition` 
 
 1. `ImportColumnsDefinition` (one per account) records how that institution's CSV maps onto a
    `Transaction`: which column holds the date, description, debit/credit or single amount, balance, etc.
-2. `FileImporter.new(path, account).import` reads the CSV and, for each row, calls
-   `ImportedTransactionFactory.build` → `Transaction#find_match` → `Transaction#sequence` → `save!`.
+2. `FileImporter.new(path, account).import` parses the **whole file first**, then walks it calling
+   `Transaction#find_match` → `Transaction#sequence` → `save!` for each row that is not already loaded.
+   It returns `self`, carrying `rows_read`, `imported`, `skipped`, `categorised`, `uncategorised` and the
+   period covered, in the manner of `AnalysisImporter`.
 3. `ImportMatcher.find_match` walks the matchers for that account **in `in_match_order`** —
    `(description_is_regex, id)`, so a literal description beats a regex — and returns the first whose
    `description` (literal or regex, per `description_is_regex`) and optional `trx_type` match. A hit
    fills in `category_id`, `counterparty` and `import_matcher_id` on the transaction.
 
+Three things about that loop are load-bearing and were added when the import got a screen:
+
+- **The whole file is one `ActiveRecord::Base.transaction`.** Every row used to be its own `save!`, so a
+  statement that stopped part-way left an account half loaded. All or nothing is what lets the screen
+  promise a refused file changed nothing. `#sequence` reads back rows written earlier in the same loop,
+  which works because they are the same connection's own uncommitted writes. A spec asserts `Transaction.count`
+  is zero after a refusal, and it fails if the wrapper is removed.
+- **Rows already loaded are skipped, counted as a multiset.** Before the loop, the account's transactions
+  over the file's date range are `pluck`ed into a `Hash` of key → count; each matching row decrements the
+  count and is skipped. Key is `[date, description, amount_pence]`, plus `balance_pence` where the layout
+  has a `balance_column`. A tally rather than a `Set` because a statement legitimately repeats the same
+  description and amount on the same day, and a file holding two identical rows against a database holding
+  one must load exactly one.
+- **The matchers are loaded once, not per row.** `ImportMatcher.find_match` takes an optional preloaded,
+  `in_match_order` collection. Without it, it queried and instantiated every rule for every row — measured
+  at 9.1s against a real 2,626-row statement versus 5.1s with it. Passing an array cannot leak a rule
+  across accounts because `#match` re-checks `account_id`.
+
 Quirks that live in this pipeline and are easy to break:
 
+- **Mapped columns are checked against the file's headers before any of it is read as data.** This has to
+  be an explicit check, because it does not fail loudly: the factory reads each mapped column straight off
+  the row, a name the file lacks arrives as `nil`, and `nil.to_f` is `0.0`. A mis-mapped `balance_column`
+  therefore used to report every balance as £0.00 and blame the account for not reconciling.
 - **`*_column` fields are dual-purpose.** When `header` is true they hold CSV header names; when it is
   false they hold integer column indexes. `ImportColumnsDefinition` metaprograms an override for every
   attribute in `CSV_HEADERS` that casts the value to `Integer` when `header` is false. Access these
@@ -253,7 +277,28 @@ Quirks that live in this pipeline and are easy to break:
 by `date`, then `day_index`), sets `day_index` to disambiguate same-day transactions, and derives
 `balance` from the previous balance plus the amount. If the CSV supplied a balance that disagrees with
 the calculated one it raises `ImportError` — that mismatch is a real data problem, not something to
-paper over. Views list transactions `order(date: :desc, day_index: :desc)`.
+paper over — and the message names the row and both balances, because it is shown on the import screen.
+Views list transactions `order(date: :desc, day_index: :desc)`.
+
+**A transaction added by hand never runs `#sequence`**, so it carries null `day_index` *and* null
+`balance`. While a statement was only ever loaded into an empty account neither could be met; the import
+screen makes both reachable, so `#sequence` coalesces the missing `day_index` to 0 and **refuses** a
+predecessor with no balance by name. The refusal matters more than it looks: `previous&.balance ||
+opening_balance` reads as a sensible default but silently restarts the running total as though the
+account were empty.
+
+### The statement import screen
+
+`StatementImportsController`, routed as `new`/`create` under `/accounts/:account_id/statement_imports` —
+the operation is the noun, and nesting is what stops a file landing against the wrong account. One step
+and atomic, so there is no preview and no uploaded file to keep alive between two requests; every failure
+message can therefore open by saying nothing was imported. The upload is a plain multipart param read off
+`tempfile.path`, as on the CSV analysis screen — ActiveStorage's engine is configured but has no tables
+and is used nowhere. It rescues `ImportError` only, deliberately unlike `CsvAnalysesController`'s blanket
+rescue: that one renders into a Turbo frame where an exception leaves the frame blank, this one redirects,
+so Rails' error report is the better account of a genuine bug. **Import Statement** is drawn on the account
+whatever state it is in, and `new` explains a missing `ImportColumnsDefinition` with a link to the screen
+that fixes it — a vanishing button leaves nothing to click and no reason why.
 
 ### CSV analysis UI
 
@@ -294,7 +339,8 @@ stay native, so the browser draws them in its own locale.
 Every `show.html.erb` is `content_for :title`, then an `<h1>`, then `show_actions` (`ApplicationHelper`,
 rendering `layouts/_show_actions`), then the record — the same opening as every index, new and edit screen.
 `show_actions` draws **Back**, **Edit** and **Destroy**, with any model-specific buttons passed as a block
-and rendered between Edit and Destroy. A new Show screen uses it rather than writing its own links; the
+and rendered between Edit and Destroy — for an account those are **Import Statement** then **Manage Import
+Rules**, importing first because it is the errand that brings you to an account most months. A new Show screen uses it rather than writing its own links; the
 labels are those three words on every screen, so a spec can `click_button 'Destroy'` anywhere. The heading
 names the record, so the record partials do not repeat it as a `Name:` field.
 
@@ -321,13 +367,26 @@ the data rather than only that its buttons exist.
   CSV file (`generate(output: path)`) formatted per the account's `ImportColumnsDefinition`. It is also
   used by the `data:create_sample_data` rake task, so it is not test-only code.
 - `ImportTestHelpers` wraps generating/cleaning up those CSV fixtures under `tmp/`.
+  `write_statement(account, transactions)` writes an explicit list of transactions through the same
+  `#build_csv_data` round-trip — the right fixture for the skip logic, where what matters is two rows
+  deliberately identical or one balance tampered with, rather than a realistic history.
+- **`AccountTrxDataGenerator` leaves `day_index` unset when emitting to the database**, so a spec that
+  seeds that way and then imports rows on the same dates is exercising the hand-added-transaction path in
+  `Transaction#sequence` whether it means to or not.
 - `.github/prompts/rspec-system-test.md` documents the house template for new system specs.
 
 ## Known gaps
 
-- **There is no UI or route for running an import.** `FileImporter` is only ever invoked from
-  `AccountSeeder` and from its own spec, so loading a new statement means dropping into
-  `bin/rails runner`. Wiring it to a controller/upload form is the obvious next step.
+- **An import cannot be undone, and shows no progress.** The statement import screen is one atomic step:
+  a file either lands whole or not at all. Nothing reverses a file that loaded correctly but was the
+  wrong one — that is a matter of deleting the rows by hand. A real 2,626-row statement takes about five
+  seconds inside the request, with no indication on screen beyond the browser's own; a background job is
+  the answer if that ever becomes uncomfortable, and `solid_queue` only runs in production today.
+- **A missing period is undetectable where the statement carries no balance.** Skipping already-loaded
+  rows is keyed on date, description and amount, plus the balance where the layout has one. For Lloyds
+  the balance chain catches a gap on the first row. For a Barclaycard-style layout with no balance column
+  there is nothing to catch it: statements loaded out of order, or with a month missing between them,
+  produce derived balances wrong by a constant and nothing says so.
 - **Prediction exists; analysis of the past does not.** The monthly forecast answers what this month
   will cost and how much of it has already gone — `Forecast::Month`, the strategies beside it and the
   `forecast` screens. Looking backwards is still missing: no charts, no totals by category over a
@@ -348,8 +407,6 @@ the data rather than only that its buttons exist.
 - `data:create_sample_data` appends to whatever is already in the development database — its
   `Rake::Task["db:truncate_all"]` "clear out the database" step is missing an `.invoke` and so does
   nothing. Fixing that would make the task wipe the dev db, so it has been left alone deliberately.
-- The analysis file (form A) is the only import with a runnable entry point. **Form B has no UI or
-  route** — see above.
 - **Merging counterparties is `CounterpartyMerge`**, driven from the counterparties list. Three orderings in
   it are load-bearing and all fail silently if reversed: re-point `counterparty_id` on transactions and
   rules *before* destroying the losers, because `Account#counterparty_transactions` and
