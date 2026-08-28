@@ -24,6 +24,13 @@
 if Rails.env.test?
   puts "Test environment: not seeding any data."
 else
+  # Said rather than done.  A default login seeded here would be created silently on every fresh
+  # database — db:prepare runs this file by itself, which is what the worktree instructions rely on —
+  # and a household finance application is the last place to leave a known password lying about.  An
+  # extra step to type is cheaper than that, and without the message a new database is a sign-in screen
+  # with no way past it, which reads as a broken build rather than an unfinished setup.
+  puts "No users yet: run bin/rails users:create before starting the server." if User.none?
+
   seeder = AccountSeeder.from_credentials
 
   if seeder.nil? || !seeder.configured?

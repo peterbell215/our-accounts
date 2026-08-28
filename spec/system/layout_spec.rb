@@ -40,6 +40,33 @@ RSpec.describe 'The menu bar', type: :system do
     expect(menu_top).to eq(0)
   end
 
+  # Your own login is at the far end, away from the five screens the application is about.  By geometry
+  # rather than by order in the document, because what is promised is where it is drawn: the flex rule
+  # that puts it there is the whole of the change, and a plain `have_link` would pass without it.
+  it 'keeps the way to your own login at the far end of the bar, inside it' do
+    visit account_path(account)
+
+    boxes = page.evaluate_script(<<~JS)
+      (() => {
+        const box = (sel) => {
+          const r = document.evaluate(sel, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+            .singleNodeValue.getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+        };
+        const nav = document.querySelector('nav').getBoundingClientRect();
+        return {
+          columns: box("//nav//a[normalize-space()='Input Columns Definition']"),
+          out: box("//nav//a[normalize-space()='Sign out']"),
+          nav: { left: nav.left, right: nav.right, top: nav.top, bottom: nav.bottom }
+        };
+      })()
+    JS
+
+    expect(boxes['out']['left']).to be > boxes['columns']['right']
+    expect(boxes['out']['right']).to be <= boxes['nav']['right']
+    expect(boxes['out']['bottom']).to be <= boxes['nav']['bottom']
+  end
+
   it 'is not covered by the transaction list passing underneath it' do
     visit_a_page_worth_scrolling
     page.execute_script("window.scrollTo(0, document.body.scrollHeight)")

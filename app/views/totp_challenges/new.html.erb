@@ -1,0 +1,27 @@
+<% content_for :title, "Enter your code" %>
+
+<h1>Enter your code</h1>
+
+<%= render "layouts/notice", notice: notice %>
+
+<p>Your password was accepted. Open your authenticator app and type the six digits it is showing.</p>
+
+<%# No form_actions strip: Back would mean the sign-in screen, and "Start again" says what pressing it
+    actually does here — this screen's own answer to the question it is asking, the way the merge
+    confirmation carries its own Cancel. %>
+<%= form_with url: totp_challenge_path, class: "pure-form pure-form-aligned" do |form| %>
+  <fieldset>
+    <div class="pure-control-group">
+      <%= form.label :otp_code, "Code" %>
+      <%# inputmode numeric rather than a number field: a code is a string of six digits, and a number
+          field would offer to step it up and down. %>
+      <%= form.text_field :otp_code, required: true, autofocus: true, autocomplete: "one-time-code",
+                          inputmode: "numeric", pattern: "[0-9]*", class: "pure-input-1-3" %>
+    </div>
+
+    <div class="pure-controls">
+      <%= form.submit "Confirm", class: "pure-button pure-button-primary" %>
+      <%= link_to "Start again", new_session_path, class: "pure-button" %>
+    </div>
+  </fieldset>
+<% end %>

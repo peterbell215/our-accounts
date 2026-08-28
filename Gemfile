@@ -35,7 +35,12 @@ gem "money-rails"
 gem "csv"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
+
+# The second factor.  rotp is the TOTP arithmetic of RFC 6238; rqrcode draws the enrolment QR, which is
+# rendered as inline SVG on the server because there is no JavaScript build step here to add one to.
+gem "rotp"
+gem "rqrcode"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

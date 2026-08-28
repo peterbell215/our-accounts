@@ -24,6 +24,9 @@
   </head>
 
   <body>
+    <%# Hidden while signed out.  Every item on it would bounce straight back to the sign-in screen, so
+        the bar is noise on the only two screens a signed-out reader can see. %>
+    <% if authenticated? %>
     <nav>
       <div class="pure-menu pure-menu-horizontal">
         <ul class="pure-menu-list">
@@ -44,9 +47,20 @@
           <li class="pure-menu-item">
             <%= link_to 'Input Columns Definition', import_columns_definitions_path, class: "pure-menu-link" %>
           </li>
+          <%# Your own login, at the far end, away from the five screens the application is about.
+              link_to with turbo_method rather than button_to: button_to would put a <form> inside the
+              <li>, which Pure's horizontal menu lays out as though it were another item. %>
+          <li class="pure-menu-item nav-end">
+            <%= link_to Current.user.email_address, profile_path, class: "pure-menu-link" %>
+          </li>
+          <li class="pure-menu-item">
+            <%= link_to 'Sign out', session_path, class: "pure-menu-link",
+                        data: { turbo_method: :delete } %>
+          </li>
         </ul>
       </div>
     </nav>
+    <% end %>
     <div class="container">
       <%= yield %>
     </div>

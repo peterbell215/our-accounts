@@ -49,6 +49,29 @@ RSpec.configure do |config|
   end
 
   config.include Rails.application.routes.url_helpers
+  config.include AuthenticationHelpers
+  # `travel` and `travel_back`, for the specs that are about something expiring.
+  config.include ActiveSupport::Testing::TimeHelpers
+
+  # Pin the driver ourselves, and pin it first.
+  #
+  # rspec-rails registers `driven_by(:selenium_chrome_headless) unless @driver` as an example-group hook
+  # of its own, and ActionDispatch's Driver#use sets Capybara.current_driver whether or not the driver is
+  # one it can register.  So Capybara.default_driver below has in fact never been the driver in use —
+  # every system spec has run headless, including locally, and the --lang switch has never applied.  That
+  # was invisible while ENV["LANGUAGE"] was doing the real work of pinning the locale.
+  #
+  # It stops being invisible with a sign-in hook: config-level hooks run *before* example-group ones, so
+  # signing in and then having the driver swapped underneath would throw the browser away along with the
+  # session it had just established.  Naming the driver here is what puts it back in the right order.
+  config.before(type: :system) { driven_by(:chrome_en_gb) }
+
+  # Every screen is behind a sign-in now, so one household member is signed in before each request and
+  # each system example.  Doing it here rather than in each file is what keeps the twenty-two specs that
+  # are about something else from having to say so; a spec that is *about* signing in opts out with
+  # `signed_out: true` on its describe.
+  config.before(type: :request) { |example| sign_in_as(create(:user)) unless example.metadata[:signed_out] }
+  config.before(type: :system) { |example| sign_in_through_the_form(create(:user)) unless example.metadata[:signed_out] }
 end
 
 # Categories referenced by the factories (:matched_transaction, the import matchers) and by

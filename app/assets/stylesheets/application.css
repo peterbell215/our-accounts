@@ -37,6 +37,17 @@ nav {
     .pure-menu-selected .pure-menu-link {
         background-color: #000;
     }
+
+    /* Your own login sits at the far end, apart from the five screens the application is about.  The
+       flex is what makes that possible at all: Pure lays horizontal menu items out as inline-block, and
+       margin-left: auto does nothing to one of those. */
+    .pure-menu-list {
+        display: flex;
+    }
+
+    .pure-menu-item.nav-end {
+        margin-left: auto;
+    }
 }
 
 body div.container {
@@ -118,4 +129,10 @@ td.positive {
 
 td.negative {
     color: #ee0000;
+}
+/* The enrolment QR.  Capped rather than left at its natural size: the SVG has a viewBox and no
+   dimensions, so it would otherwise grow to fill the width of the page. */
+.qr-code svg {
+    width: 12em;
+    height: 12em;
 }
