@@ -45,13 +45,14 @@ class TransactionsController < ApplicationController
       render turbo_stream: [ turbo_stream.replace(helpers.dom_id(@transaction, "new"),
                                                   partial: "transactions/transaction_as_row",
                                                   locals: { transaction: @transaction, account: @account, categories: @categories }),
-                             *new_counterparty_stream ]
+                             *new_counterparty_stream, message_stream ]
     else
       # If saving fails, re-render the row with errors (within the temporary row).
       # Ensure the temporary ID is used so Turbo knows which element to update.
-      render turbo_stream: turbo_stream.replace(helpers.dom_id(@transaction, "new"),
-                                                partial: "transactions/transaction_as_row",
-                                                locals: { transaction: @transaction, account: @account, categories: @categories }),
+      render turbo_stream: [ turbo_stream.replace(helpers.dom_id(@transaction, "new"),
+                                                  partial: "transactions/transaction_as_row",
+                                                  locals: { transaction: @transaction, account: @account, categories: @categories }),
+                             message_stream ],
              status: :unprocessable_entity
     end
   end
@@ -62,12 +63,13 @@ class TransactionsController < ApplicationController
       render turbo_stream: [ turbo_stream.replace(@transaction,
                                                   partial: "transactions/transaction_as_row",
                                                   locals: { transaction: @transaction, account: @account, categories: @categories }),
-                             *new_counterparty_stream ]
+                             *new_counterparty_stream, message_stream ]
     else
-      render turbo_stream: turbo_stream.replace(@transaction,
-                                                partial: "transactions/transaction_as_row",
-                                                locals: { transaction: @transaction, account: @account, categories: @categories }),
-                                                status: :unprocessable_entity
+      render turbo_stream: [ turbo_stream.replace(@transaction,
+                                                  partial: "transactions/transaction_as_row",
+                                                  locals: { transaction: @transaction, account: @account, categories: @categories }),
+                             message_stream ],
+             status: :unprocessable_entity
     end
   end
 
@@ -111,6 +113,15 @@ class TransactionsController < ApplicationController
 
     [ turbo_stream.append("counterparty-names", partial: "counterparties/option",
                           locals: { counterparty: @transaction.counterparty }) ]
+  end
+
+  # The counterparty question, or the refusal, in words — outside the row, which can only carry a border
+  # and a tooltip without changing its own height.  Rendered on every save, not only the rejected ones:
+  # replacing it with an empty container is what clears a message the reader has since answered.
+  # @return [Turbo::Streams::TagBuilder]
+  def message_stream
+    turbo_stream.replace("transaction-message", partial: "transactions/message",
+                         locals: { transaction: @transaction })
   end
 
   # The last row the browser already has, so the next page resumes immediately after it.

@@ -150,17 +150,24 @@ The **Counterparty** column names the supplier, where one is known. Start typing
 existing counterparties are offered as completions; pick one and save, and the transaction is linked to
 it. The small icon beside the name opens that counterparty's own page. Clearing the field unlinks it.
 
-A name that is not already a counterparty is **not created on the first save**. The field turns red and
-the row does not save; hovering over the save button beside it says what it would create. Save the row a
-second time and the counterparty is created and linked, and its name is offered as a completion in every
-other row from then on. The second save is there because counterparty names imported from statements are
-already untidy and a typo should not quietly join them — correct the name before saving again and you are
-asked about the correction instead, so nothing is created behind you. Case and stray spaces do not matter —
-`octopus energy` finds `Octopus Energy`.
+A name that is not already a counterparty is **not created on the first save**. The field turns amber, and
+a message above the list says which name it is offering to create and that the rest of your edits to the
+row are being held. Save the row a second time and the counterparty is created and linked, and its name is
+offered as a completion in every other row from then on; the message goes when you have answered it. The
+second save is there because counterparty names imported from statements are already untidy and a typo
+should not quietly join them — correct the name before saving again and you are asked about the correction
+instead, so nothing is created behind you. Case and stray spaces do not matter — `octopus energy` finds
+`Octopus Energy`.
 
-Two names are refused outright rather than offered, and for those the save button goes away until you
-change what you typed: one shorter than three characters, which is too short to be a name, and the name of
-one of your own accounts, which already exists and cannot be a counterparty as well.
+Two names are refused outright rather than offered. For those the field turns **red** rather than amber,
+the message says why, and the save button goes away until you change what you typed: a name shorter than
+three characters, which is too short to be a name, and the name of one of your own accounts, which already
+exists and cannot be a counterparty as well.
+
+The colours are worth knowing apart. **Amber is a question** — the row is asking whether to create
+something and waiting for you to say yes. **Red is a refusal** — nothing you can do but change the name. In
+both cases the row itself is not saved, but the edits you made to its other columns are still sitting in
+the form, not thrown away.
 
 ### Forecast
 

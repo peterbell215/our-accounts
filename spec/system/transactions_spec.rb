@@ -127,9 +127,17 @@ RSpec.describe "Transactions", type: :system do
 
       # The save button has to survive the rejection, or there is nothing left to press: nothing on the row
       # looks edited once the server has rendered the typed name back as the field's own default.
-      expect(page).to have_selector('input.field-error')
+      # Amber rather than red: the row is asking, not refusing.
+      expect(page).to have_selector('input.field-pending')
       expect(first_row).to have_button('save', title: 'Create "Bristol Water" and save')
       expect(Counterparty.find_by(name: 'Bristol Water')).to be_nil
+
+      # The border and the tooltip are not enough on their own — the question has to be in words somewhere
+      # the reader is actually looking.
+      within('#transaction-message') do
+        expect(page).to have_selector('.row-question', text: /Bristol Water.*is not a counterparty yet/)
+        expect(page).to have_text('Your other edits to the row are held')
+      end
 
       within(first_row) { click_button 'save' }
 
@@ -138,6 +146,9 @@ RSpec.describe "Transactions", type: :system do
       expect(Transaction.find(transaction_id).counterparty).to eq water
       expect(page).to have_selector("datalist#counterparty-names option[value='Bristol Water']",
                                     visible: :all)
+
+      # A question the reader has answered must not stay on the screen.
+      expect(page).to have_no_selector('#transaction-message .row-question')
     end
 
     # The row hands back the name it offered rather than a bare yes, so a correction is asked about in its
@@ -173,6 +184,12 @@ RSpec.describe "Transactions", type: :system do
 
       expect(page).to have_selector('input.field-error')
       expect(first_row).to have_no_button('save')
+
+      # Red, and worded so the reader knows the rest of the row is waiting rather than lost.
+      within('#transaction-message') do
+        expect(page).to have_selector('.row-error', text: /Lloyds Account.*is one of your own accounts/)
+        expect(page).to have_text('Change the name to save the row')
+      end
     end
 
     it "offers the existing counterparties once for the whole page, not once per row" do
@@ -283,7 +300,7 @@ RSpec.describe "Transactions", type: :system do
         click_button 'save'
       end
 
-      expect(page).to have_selector('input.field-error')
+      expect(page).to have_selector('input.field-pending')
 
       within(first_row) do
         expect(page).to have_no_link('rule')

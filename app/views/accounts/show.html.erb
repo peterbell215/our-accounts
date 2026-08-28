@@ -18,6 +18,13 @@
 <%= link_to "Add New Transaction", new_account_transaction_path(@account), data: { turbo_stream: true }, class: "pure-button pure-button-primary" %>
 <br><br> <%# Add some spacing %>
 
+<%# Where the counterparty question and its refusals are said out loud.  Rendered empty and always
+    present, because a Turbo Stream needs something to replace: `layouts/_notice` draws its containers
+    only when a flash is set, so there would be nothing here to target on the first rejection.  It sits
+    outside the scrolling box on purpose — a message inside a row would change that row's height, and
+    transactions_list_controller measures one row and applies it to all of them. %>
+<div id="transaction-message"></div>
+
 <%# Rendered once for the whole page, not per row and not in transactions/_rows: a second element with this
     id would arrive with every page the transactions_list controller fetches.  Rows fetched later resolve
     list="counterparty-names" against this one, and a save that creates a counterparty appends one more

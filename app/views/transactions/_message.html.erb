@@ -1,0 +1,20 @@
+<%# What the row cannot say itself.  Replaced on every create and update — including the ones that
+    succeed, which is what clears it — so a message never outlives the save that produced it.
+
+    Both branches say the rest of the row is held, because the whole row is rejected and the reader's
+    other edits are still in the form rather than in the database.  A red field on its own reads as
+    "nothing was saved", which is true of the row and false of the edits. %>
+<div id="transaction-message">
+  <% if transaction.counterparty_to_confirm %>
+    <p class="row-question">
+      <strong><%= transaction.counterparty_to_confirm %></strong> is not a counterparty yet.
+      Press <strong>Save</strong> on that row again to create it and save the row — or change the name
+      to something else. Your other edits to the row are held until you do.
+    </p>
+  <% elsif transaction.errors[:counterparty_name].first.present? %>
+    <p class="row-error">
+      <%= transaction.errors[:counterparty_name].first %>.
+      Change the name to save the row; your other edits to it are held until you do.
+    </p>
+  <% end %>
+</div>

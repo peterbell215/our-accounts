@@ -280,9 +280,16 @@ the first save comes back marked and the row carries the offered name back in a 
 is why anything the record would reject (too short, or one of the household's own account names) has to be
 refused on the `Transaction` instead. The datalist is rendered **once** in `accounts/show.html.erb` and must
 not be added to `transactions/_rows.html.erb`, or every fetched page appends another element with the same
-id; a save that creates a counterparty appends one `counterparties/_option` to it as a second stream. Its error is
-shown as a red border plus a `title` on the input, never as a message beneath it: `transactions_list_controller.js`
-measures one row's height and applies it to all of them, so a row that grows breaks the scroll arithmetic.
+id; a save that creates a counterparty appends one `counterparties/_option` to it as a second stream.
+
+**Nothing is ever written beneath a field.** `transactions_list_controller.js` measures one row's height and
+applies it to all of them, so a row that grows breaks the scroll arithmetic. The cell therefore only marks
+itself — **amber `field-pending`** where the row is offering to create a name, **red `field-error`** where the
+name cannot be saved at all (`TransactionsHelper#counterparty_field_class`) — and the words go to
+`#transaction-message`, an always-empty div rendered above the list in `accounts/show.html.erb`. Every create
+and update replaces it, *including the ones that succeed*, which is what clears a message the reader has
+answered. It cannot reuse `layouts/_notice`, whose containers exist only when a flash is set, so a stream
+would have nothing to target on the first rejection.
 
 The row's third action icon is a **link** to `import_matchers#new`, carrying the description, category and
 counterparty in the query string so a rule can be made without retyping them. A link and not a second
