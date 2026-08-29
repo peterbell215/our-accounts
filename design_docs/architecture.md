@@ -718,6 +718,15 @@ This is also why `.pure-button-error` is defined in `application.css`. Pure ship
 variant, so the delete buttons throughout the app — the transaction rows, the rules list, and now Destroy
 — had been asking for a class that did not exist and rendering as ordinary grey buttons.
 
+**A class that silently does nothing is the recurring trap with Pure, and forms have their own version of
+it.** `pure-control-group` and `pure-controls` are defined *only* under `pure-form-aligned`, so a form
+carrying the two class names without the modifier gets no spacing at all and its label, field and buttons
+abut. Both upload forms had exactly that. Which modifier to reach for depends on the room available: the
+statement import screen is full width and now matches every other form at `pure-form-aligned`, while the
+CSV analyser panel is a third of the width, where an aligned form's ten-em label and eleven-em button
+indent have nowhere to go — so it is `pure-form-stacked`. Pure spaces a stacked form's *fields* but not
+the buttons under them, which is the one line of `.pure-form-stacked .pure-controls` in `application.css`.
+
 The forecast's own pages deliberately do **not** use the strip. `show_actions` requires an edit path and
 a destroy path, and a forecast page is a report about a month rather than a record: there is nothing to
 edit as a record and nothing to delete. They open with a plain Back link instead, in the same position.

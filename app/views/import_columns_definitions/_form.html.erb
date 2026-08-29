@@ -87,9 +87,14 @@
   <div class="pure-u-1 pure-u-md-1-3">
     <%# Keep this controller instance separate for the analyzer itself %>
     <div class="csv-analyzer-container">
+      <%# Stacked rather than aligned, unlike the definition form beside it: this panel is a third of the
+          width, where an aligned form's ten-em label and eleven-em button indent have nowhere to go.  The
+          modifier is needed either way — Pure defines pure-control-group and pure-controls only under its
+          two form modifiers, so with neither of them both classes are inert and the label, the file input
+          and the Analyze button all abut. %>
       <%= form_with url: analyze_csv_import_columns_definitions_path,
                     multipart: true,
-                    class: "pure-form",
+                    class: "pure-form pure-form-stacked",
                     data: { turbo_frame: "csv_results" } do |form| %>
         <fieldset>
           <legend>Analyze Sample CSV</legend>

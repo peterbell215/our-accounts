@@ -116,3 +116,13 @@ td.positive {
 td.negative {
     color: #ee0000;
 }
+
+/* Pure spaces the fields of a stacked form but not the buttons beneath them: `.pure-controls` is given a
+   margin only under `.pure-form-aligned`, so in a stacked form the submit button sits hard against the last
+   field.  The same 1.5em the aligned forms get, so the two read alike.
+
+   A stacked form is what a narrow column wants — the CSV analyser panel is a third of the width, where an
+   aligned form's ten-em label and eleven-em button indent have nowhere to go. */
+.pure-form-stacked .pure-controls {
+    margin-top: 1.5em;
+}
