@@ -31,14 +31,18 @@
     loaded.
   </p>
 
+  <%# pure-form-aligned as on every other form in the app: without it `pure-control-group` and
+      `pure-controls` are inert — Pure only defines them under the aligned modifier — and the field, its
+      label and the buttons all abut. %>
   <%= form_with url: account_statement_imports_path(@account), method: :post, multipart: true,
-                class: "pure-form" do |form| %>
+                class: "pure-form pure-form-aligned" do |form| %>
     <fieldset>
       <legend>Statement CSV</legend>
 
       <div class="pure-control-group">
-        <%= label_tag :csv_file, "Downloaded statement" %>
-        <%= file_field_tag :csv_file, accept: ".csv", class: "pure-input-1" %>
+        <%= label_tag :csv_file, "Statement file" %>
+        <%= file_field_tag :csv_file, accept: ".csv" %>
+        <span class="pure-form-message-inline">As downloaded from the bank, in CSV format.</span>
       </div>
 
       <div class="pure-controls">
