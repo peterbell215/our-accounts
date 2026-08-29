@@ -109,6 +109,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_210647) do
     t.string "description"
     t.integer "import_matcher_id"
     t.string "trx_type"
+    t.index ["account_id", "date"], name: "index_transactions_on_account_id_and_date"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
     t.index ["counterparty_id"], name: "index_transactions_on_counterparty_id"

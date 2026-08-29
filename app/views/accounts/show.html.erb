@@ -6,6 +6,10 @@
 
 <%= show_actions back: accounts_path, edit: edit_account_path(@account), destroy: account_path(@account),
                  confirm: "Destroy #{@account.name}? Its transactions, rules and import columns definition go with it." do %>
+  <%# Importing comes first of the two: it is the errand that brings you to an account most months, where
+      the rules are looked at occasionally.  Both act on the account rather than on the list below it, which
+      is why they are up here and Add New Transaction is not. %>
+  <%= link_to "Import Statement", new_account_statement_import_path(@account), class: "pure-button" %>
   <%= link_to "Manage Import Rules", account_import_matchers_path(@account), class: "pure-button" %>
 <% end %>
 

@@ -161,6 +161,40 @@ RSpec.describe Transaction do
       it 'raises an ImportError exception' do
         expect { trx.sequence }.to raise_error ImportError
       end
+
+      # This is the message an import screen shows when a statement will not reconcile, so it has to say
+      # enough to act on: which row, what the statement claimed, and what the account works out.
+      it 'names the row and both balances' do
+        expect { trx.sequence }
+          .to raise_error(ImportError, /OCTOPUS ENERGY.*statement says the balance is £500\.00.*works out £950\.00/m)
+      end
+    end
+
+    # A transaction added by hand never runs #sequence, so it has neither a day_index nor a balance.  Until
+    # importing had a screen, a statement was only ever loaded into an empty account and neither could arise.
+    context 'when the preceding transaction was added by hand' do
+      let(:balance) { nil }
+
+      it 'treats a missing day_index as zero rather than raising' do
+        create(:transaction, account: lloyds_account, date: trx.date, description: 'CASH',
+                             amount: Money.from_amount(-10.00),
+                             balance: lloyds_account.opening_balance - Money.from_amount(10.00))
+                             .update_column(:day_index, nil)
+
+        trx.sequence
+
+        expect(trx.day_index).to eql 1
+      end
+
+      # The dangerous one: `previous&.balance || opening_balance` reads as a sensible default but restarts
+      # the running total from the opening balance as though the account were empty.
+      it 'refuses to continue a running balance from a transaction that has none' do
+        create(:transaction, account: lloyds_account, date: trx.date - 1, description: 'CASH',
+                             amount: Money.from_amount(-10.00), balance: nil)
+
+        expect { trx.sequence }
+          .to raise_error(ImportError, /has no balance of its own.*added by hand/m)
+      end
     end
 
     context 'when imported balance is not set' do

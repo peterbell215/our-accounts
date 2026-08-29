@@ -29,11 +29,24 @@ class ImportMatcher < ApplicationRecord
 
   # Provided with an `ImportedTransaction` object, try and find a match using the matchers held in the database.
   #
+  # `matchers` lets a caller with many transactions to categorise load the rules once instead of once per
+  # row.  FileImporter does: this used to issue a query per row that instantiated every rule the account has,
+  # which against a real statement is a few thousand queries and the better part of a million objects — far
+  # more than the balance lookup the (account_id, date) index was added for, and the reason an import could
+  # not be run inside a web request.
+  #
+  # Passing a preloaded list cannot leak a rule across accounts, because #match re-checks account_id itself.
+  # It does have to be `in_match_order`, since that is what makes a literal description beat a regex.
+  #
   # @param [ImportedTransaction] imported_transaction
+  # @param [Enumerable<ImportMatcher>, nil] matchers the rules to consider; loaded from the transaction's
+  #                                                  own account when not given
   # @return [nil|ImportMatcher] returns either nil if no match can be found or a reference to the first
   #                                successful match
-  def self.find_match(imported_transaction)
-    ImportMatcher.where(account_id: imported_transaction.account_id).in_match_order.each do |matcher|
+  def self.find_match(imported_transaction, matchers = nil)
+    matchers ||= ImportMatcher.where(account_id: imported_transaction.account_id).in_match_order
+
+    matchers.each do |matcher|
       return matcher if matcher.match(imported_transaction)
     end
 

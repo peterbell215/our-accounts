@@ -98,12 +98,28 @@ RSpec.describe AccountSeeder, type: :model do
       seeder.seed
     end
 
+    # The importer now recognises the rows it already holds one at a time, rather than this class refusing
+    # to import into an account holding anything — so a re-seed of a statement that has since grown loads
+    # the new rows and skips the rest.
     it 'does not import the transactions twice' do
       second = described_class.new(account_name: "Joint", raw_statement: raw, analysis: analysis,
                                    directory: directory)
 
       expect { second.seed }.not_to change(Transaction, :count)
-      expect(second.import_skipped).to be true
+      expect(second.transactions_imported).to eq(0)
+      expect(second.transactions_skipped).to eq(1)
+    end
+
+    it 'imports only what the statement has gained since the last seed' do
+      write_raw([ [ "03/01/2024", "TESCO STORES 2889", -12.50 ],
+                  [ "02/01/2024", "OCTOPUS ENERGY", -20.00 ] ])
+
+      second = described_class.new(account_name: "Joint", raw_statement: raw, analysis: analysis,
+                                   directory: directory)
+
+      expect { second.seed }.to change(Transaction, :count).by(1)
+      expect(second.transactions_imported).to eq(1)
+      expect(second.transactions_skipped).to eq(1)
     end
 
     it 'reuses the account rather than creating another' do

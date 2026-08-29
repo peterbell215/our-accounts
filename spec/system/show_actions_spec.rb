@@ -47,7 +47,10 @@ RSpec.describe 'The actions on a Show screen', type: :system do
     it 'offers the account-specific actions alongside the three' do
       visit path
 
-      within('.show-actions') { expect(page).to have_link('Manage Import Rules') }
+      within('.show-actions') do
+        expect(page).to have_link('Import Statement')
+        expect(page).to have_link('Manage Import Rules')
+      end
     end
   end
 
