@@ -48,6 +48,19 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true
 
+  # Encryption keys for the user's TOTP secret, spelled out here rather than read from the credentials.
+  #
+  # They are deliberately not secret: the test database holds nothing worth protecting, and CI has no
+  # config/master.key, so a spec writing an encrypted column would fail there and nowhere else.  Rails
+  # merges config.active_record.encryption last of all its sources, so these win over the credentials and
+  # the credentials are never consulted.  The keys are read lazily rather than at boot, which is what
+  # would make their absence a puzzle rather than an error: everything would pass until the first write.
+  #
+  # Development and production take theirs from `bin/rails credentials:edit`.
+  config.active_record.encryption.primary_key         = "test-primary-key-not-a-secret"
+  config.active_record.encryption.deterministic_key   = "test-deterministic-key-not-a-secret"
+  config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-not-a-secret"
+
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
 end

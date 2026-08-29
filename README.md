@@ -8,8 +8,9 @@ goes. It learns the categories from work you have already done: point it at a st
 categorised by hand in a spreadsheet, and it derives rules from that and applies them to everything you
 import afterwards.
 
-It is built for one household. There is no login, no user accounts, and the data lives in a SQLite file
-on your own machine.
+It is built for one household. Everyone in the house gets their own sign-in — a password, and an
+authenticator app on your phone if you want one — and you all see the same accounts and the same
+transactions. Nobody has a private corner of it. The data lives in a SQLite file on your own machine.
 
 > **Status: usable, but unfinished in one important way.** Loading a statement has no screen yet — it is
 > a command you type. Everything downstream of that works, including forecasting what a month will cost.
@@ -22,6 +23,7 @@ on your own machine.
 - [Before you start](#before-you-start)
 - [First-time setup](#first-time-setup)
 - [Running it](#running-it)
+- [Signing in](#signing-in)
 - [The screens](#the-screens)
 - [Setting up a new account](#setting-up-a-new-account)
 - [Teaching it your categories](#teaching-it-your-categories)
@@ -52,7 +54,14 @@ never leave your machine.
 bundle install
 yarn install
 bin/rails db:prepare
+bin/rails users:create
 ```
+
+The last one asks for an email address and a password, and makes the login you will use. Do it for each
+person in the house. There is **no sign-up page**, on purpose: this application is not on the internet
+for strangers to find, and a page that lets anyone make themselves an account would be the one thing on
+it worth attacking. Until you have run it, the sign-in screen has nothing to let you past — which is why
+the setup says so if you start a server with no users yet.
 
 Then start it (see below) and visit <http://localhost:3000>.
 
@@ -71,9 +80,43 @@ There is no `bin/dev` — `bin/rails server` is the only command you need.
 
 ---
 
+## Signing in
+
+Your email address and your password, and that is it — unless you have set up an authenticator app, in
+which case it asks for a six-digit code next. Get the password wrong and it says so without telling you
+which half was wrong, which is the polite version and also the safe one.
+
+Once you are in, your address is at the right-hand end of the menu bar. That is your own page: it says
+whether two-factor is on, and it is where you turn it on, turn it off, or change your password.
+
+**Setting up an authenticator app.** From your own page, choose *Set up an authenticator app*. Scan the
+square with 1Password, Google Authenticator, Authy — whichever you use — then type the code it shows you,
+to prove it worked. Nothing changes about how you sign in until you have done that last bit, so a scan
+that silently failed cannot lock you out. If your phone cannot scan, the same secret is printed
+underneath in words.
+
+To turn it off again, go back to your own page and type your password. Asking for the password is
+deliberate: without it, anybody walking past your unlocked screen could take it off in one click.
+
+**Changing your password** signs you out of every other device you were signed in on, and tells you how
+many. That is the point of changing it.
+
+**If you are locked out** — a lost phone, a forgotten password — nothing on any screen can help you,
+which is by design. The way back is a command, run on the machine this is installed on:
+
+```sh
+bin/rails "users:disable_totp[you@example.com]"      # lost your phone
+bin/rails "users:change_password[you@example.com]"   # forgotten your password
+```
+
+The first turns two-factor off so a password alone gets you in, and you can set the app up again
+afterwards. There are no printed backup codes to lose.
+
+---
+
 ## The screens
 
-Five items in the navigation bar:
+Five items in the navigation bar, plus your own address at the far end:
 
 | Screen | What it is for |
 | --- | --- |
@@ -638,6 +681,10 @@ Run these from the project directory.
 | `bin/rails db:seed` | Build an account and its full history from the statement files in `db/` — account, rules, transactions and hand categories, in one step. Safe to re-run. |
 | `bin/rails "import:analysis[file.csv,Account]"` | Learn categories and rules from a hand-categorised statement |
 | `bin/rails "import:categorise[file.csv,Account]"` | Apply hand-assigned categories to transactions already loaded |
+| `bin/rails users:create` | Make a login. Asks for the address and password rather than taking them on the command line, so they do not end up in your shell history |
+| `bin/rails users:list` | Who has a login, whether two-factor is on, and since when |
+| `bin/rails "users:change_password[you@example.com]"` | **A forgotten password.** |
+| `bin/rails "users:disable_totp[you@example.com]"` | **A lost phone.** Turns two-factor off so a password alone gets you in; set the app up again afterwards |
 | `bin/rails console` | An interactive prompt, for anything the screens do not cover |
 | `bundle exec rspec` | Run the test suite (needs Chrome) |
 | `bin/rubocop` | Check code style |
@@ -654,6 +701,25 @@ instead, follow the steps above in order.
 Your shell is on the wrong Ruby. Run `rvm use ruby-4.0.6`. If it keeps happening in new terminals,
 something long-running — your editor, or the desktop session — is passing an old environment down to
 them; restarting it, or logging out and back in, fixes it.
+
+**The sign-in screen will not accept anything, on a brand-new database**
+Nobody has a login yet. Run `bin/rails users:create`. A fresh database has no users in it and there is no
+sign-up page, so this is expected rather than broken — `bin/rails db:prepare` says so when it happens.
+
+**I have lost my phone and it is asking for a code**
+`bin/rails "users:disable_totp[you@example.com]"`, run on the machine this is installed on. Two-factor
+goes off, your password alone gets you in, and you can set a new phone up from your own page afterwards.
+There are deliberately no backup codes — the reasoning is that anyone running this has access to the
+machine it is on, and codes are one more secret to lose.
+
+**I have forgotten my password**
+`bin/rails "users:change_password[you@example.com]"`. There is no reset-by-email: nothing here is set up
+to send mail, and a *Forgot your password?* link that quietly did nothing would be worse than not having
+one.
+
+**The transaction list stopped loading more rows**
+If you were signed out somewhere else while the page sat open, the list will send you back to the sign-in
+screen the next time it reaches for more. Sign in again and carry on.
 
 **The import stops with `ImportError`**
 The running balance did not match the statement. Almost always the account's opening balance is wrong —
@@ -711,7 +777,12 @@ Being honest about the gaps, in the order they matter:
 4. **Nothing warns that a category is too young to average.** A category you created last month and never
    applied to older transactions is averaged over five months of zeroes, so it reads low. The workings
    page shows the zeroes, but you have to go and look.
-5. **A rule only ever claims more, never fewer.** Narrowing a rule, or deleting it, leaves the transactions
+5. **No way to reset your own password, and no backup codes.** Both are deliberate — see
+   [Signing in](#signing-in) — and both mean that being locked out needs someone with access to the
+   machine. If this ever runs somewhere you do not own, that is the thing to change first.
+6. **Nothing signs you out after a while.** Once you are in, you stay in until you sign out or change
+   your password. There is no idle timeout, and no list of where your account has been used from.
+7. **A rule only ever claims more, never fewer.** Narrowing a rule, or deleting it, leaves the transactions
    it already categorised exactly as they are. Nor is there any preview: you cannot see how many existing
    transactions a rule would catch until you save it.
 

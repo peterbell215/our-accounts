@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_23_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_28_210647) do
   create_table "accounts", force: :cascade do |t|
     t.string "account_number"
     t.datetime "created_at", null: false
@@ -87,6 +87,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_23_090000) do
     t.index ["category_id", "description"], name: "index_payment_schedules_on_category_and_description", unique: true, where: "description IS NOT NULL"
   end
 
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
   create_table "transactions", force: :cascade do |t|
     t.integer "account_id"
     t.string "amount_currency", default: "GBP", null: false
@@ -106,11 +115,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_23_090000) do
     t.index ["import_matcher_id"], name: "index_transactions_on_import_matcher_id"
   end
 
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email_address", null: false
+    t.datetime "otp_confirmed_at"
+    t.datetime "otp_last_used_at"
+    t.string "otp_secret"
+    t.string "password_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+  end
+
   add_foreign_key "import_matchers", "accounts"
   add_foreign_key "import_matchers", "accounts", column: "counterparty_id"
   add_foreign_key "import_matchers", "categories"
   add_foreign_key "manual_forecasts", "categories"
   add_foreign_key "payment_schedules", "accounts", column: "counterparty_id"
   add_foreign_key "payment_schedules", "categories"
+  add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts", column: "counterparty_id"
 end

@@ -40,8 +40,13 @@ need an explanation — but say so in the summary if it is not obvious.
 ## What this app is
 
 A personal finance tool ("our-accounts") for importing CSV statements from UK banks and credit-card
-providers, categorising the transactions, and analysing household expenditure. It is a single-user side
-project — there is no authentication, no multi-tenancy, and the database is SQLite on local disk.
+providers, categorising the transactions, and analysing household expenditure. It is a household side
+project, and the database is SQLite on local disk.
+
+Everyone in the household signs in with their own password and their own authenticator app, and they all
+see **the same** accounts, transactions and categories. That is authentication without multi-tenancy: no
+table carries an owner, no query carries a scope, and `users` and `sessions` are the only two tables that
+are not about money.
 
 Rails 8.1 / Ruby 4.0.6, Hotwire (Turbo + Stimulus) with importmap, Propshaft, Pure-CSS (installed via
 yarn into `node_modules`, which is added to the asset path in `config/initializers/assets.rb`). No JS
@@ -63,7 +68,15 @@ bin/importmap audit             # JS dependency audit
 bin/rails db:seed               # builds the account and its history from db/*.csv; no-op in test
 bin/rails "import:analysis[outgoings-analysis-apr-to-jun24.csv,Lloyds Account]"   # form A, see below
 bin/rails data:create_sample_data   # populate dev db with a Lloyds + Barclaycard account and transactions
+
+bin/rails users:create                          # make someone who can sign in; prompts, never an argument
+bin/rails users:list                            # who has a login, and whether two-factor is on
+bin/rails "users:change_password[a@b.com]"      # a forgotten password
+bin/rails "users:disable_totp[a@b.com]"         # a lost phone
 ```
+
+There is deliberately no sign-up screen and no reset-by-email, so those four are the whole of user
+administration — see **Authentication** below.
 
 `db:seed` builds a whole account from the statement files in `db/`, via `AccountSeeder`: the account, its
 `ImportColumnsDefinition`, the rules derived from the hand analysis (form A), the statement import
@@ -109,6 +122,13 @@ for f in "$MAIN"/db/*.csv; do ln -sfn "$f" "db/$(basename "$f")"; done
 Then `bin/rails db:prepare`, which creates `storage/development.sqlite3` **and runs the seed** — a
 freshly created database is seeded automatically, so there is no need to call `db:seed` separately. The
 worktree gets its own `storage/`, so none of this touches the main checkout's development database.
+
+That own `storage/` means its own empty `users` table, so **run `bin/rails users:create` before starting
+a server** or the sign-in screen is a dead end. The seed says so when it finds no users, rather than
+seeding a default login: `db:prepare` runs it unattended on every fresh database, and a known password
+created silently is not a thing to have in a household finance application. The symlinked
+`config/master.key` carries the Active Record encryption keys with it, so nothing else is needed per
+worktree.
 
 Run `yarn install` as well, before starting a server. `node_modules` is gitignored, so a new worktree
 does not have one, and `config/initializers/assets.rb` puts it on the asset path for the two Pure CSS
@@ -161,6 +181,51 @@ codes and opening balances. Counterparties have their own `CounterpartiesControl
 counterparty side is `Account#counterparty_transactions` and `#counterparty_matchers`, both
 `dependent: :nullify` — deleting a counterparty releases its transactions rather than deleting them, and a
 rule with no counterparty still assigns its category.
+
+### Authentication, in two steps
+
+Built on the Rails 8 generator (`bin/rails generate authentication`) rather than on Devise or by hand:
+its `Authentication` concern is the version-matched source of truth for the cookie details that are easy
+to get subtly wrong. Its password-reset half — `PasswordsController`, `PasswordsMailer`, their views and
+the `resources :passwords` route — was **deleted**, because no SMTP is configured in any environment and
+an endpoint that silently emails nothing reads as a working feature.
+
+**A `Session` row exists only for a fully authenticated sign-in.** This is the invariant the second
+factor rests on, and the reason to be careful with anything near `start_new_session_for`.
+`Authentication#resume_session` finds a user by `Session.find_by(id: cookies.signed[:session_id])` and by
+nothing else, so a row written before the code has been checked *is* a way past the code — anyone who
+abandons the redirect is already in. Between the two steps there is therefore nothing but
+`session[:pending_user_id]` and `session[:pending_at]` in the Rails cookie, good for
+`TotpChallengesController::WINDOW` and no longer. Exactly two places call `start_new_session_for`:
+`SessionsController#create`, for someone with no second factor, and `TotpChallengesController#create`.
+
+`User#totp_required?` is `otp_confirmed_at.present?`, and it is the only predicate the sign-in path
+consults. A secret generated but never confirmed does not count — someone who opened the enrolment screen
+and closed it again has no way to produce a code, and locking them out is the one failure this must not
+have.
+
+The TOTP secret is `encrypts`-ed. The keys come from the credentials, except in test, where
+`config/environments/test.rb` spells out three of its own **because CI has no `config/master.key`**.
+Encryption keys are read lazily rather than at boot, so without that the suite would pass everywhere
+except CI, and only on the first example that writes one.
+
+Three smaller things that look like they need attention and do not:
+
+- **`/up` needs no exemption.** `Rails::HealthController` descends from `ActionController::Base`, not
+  from `ApplicationController`, so `include Authentication` never reaches it. A request spec asserts it.
+- **`filter_parameter_logging.rb` already covers everything** — `:passw` catches the password fields,
+  `:otp` catches `otp_secret` and the `otp_code` parameter, `:email` catches `email_address`. It needs no
+  additions, which is worth knowing before someone adds them.
+- **`include Authentication` sits *below* `allow_browser`** in `ApplicationController`, not where the
+  generator puts it. Declared first, the authentication filter runs first, and a browser too old for the
+  application gets redirected to a sign-in screen it also cannot render.
+
+**A background fetch gets 401, not a redirect.** `Authentication#request_authentication` answers
+`head :unauthorized` with the sign-in URL in `WWW-Authenticate` for `request.xhr?` and Turbo Stream
+requests. Without it the transaction list's paging fetch follows the 302 transparently, receives the
+sign-in page as a 200, finds no rows in it and quietly decides it has reached the end of the history.
+`@rails/request.js` already acts on that header — its `FetchRequest#perform` sends the browser to the URL
+itself — so no JavaScript in this application had to learn about it.
 
 ### Money
 
@@ -354,9 +419,32 @@ this, because the row is the form — the controller renders Turbo Streams and t
   used by the `data:create_sample_data` rake task, so it is not test-only code.
 - `ImportTestHelpers` wraps generating/cleaning up those CSV fixtures under `tmp/`.
 - `.github/prompts/rspec-system-test.md` documents the house template for new system specs.
+- **Every request and system example is signed in before it runs**, by two `config.before` hooks in
+  `spec/rails_helper.rb`, so a spec about anything else does not have to say so. A spec that is *about*
+  signing in opts out with `signed_out: true` on its `describe`. `spec/support/authentication.rb` holds
+  the helpers and is a plain module with no `RSpec.configure` in it — `rails_helper` requires
+  `spec/support/**` *before* `rspec/rails`, so nothing there may touch `RSpec::Rails` at load time.
+- **`config.before(type: :system) { driven_by(:chrome_en_gb) }` has to come first.** rspec-rails
+  registers `driven_by(:selenium_chrome_headless) unless @driver` as an example-group hook of its own,
+  and config-level hooks run before those — so without naming the driver here, the sign-in hook would
+  establish a session and then have the browser swapped out from under it. Naming it also means the
+  registered `:chrome_en_gb` driver is used at all: it never was before, so the `--lang=en-GB` switch
+  never applied and `ENV["LANGUAGE"]` was doing the whole job of pinning the locale.
+- **`click_button` does not wait for the page it asks for.** Both sign-in helpers assert on the page
+  that follows before returning; without it the example's own first `visit` cancels the sign-in in
+  flight, and the failure lands somewhere else entirely, intermittently.
 
 ## Known gaps
 
+- **Recovery is a rake task, not printed recovery codes.** A locked-out household member cannot recover
+  themselves; they need whoever has a terminal on the machine the database is on. That is the right trade
+  while the machine is the user's own — codes cost a table, per-code hashing, a show-once screen, a
+  consumption path and specs for all of it, to buy recovery without shell access. It stops being the
+  right trade the moment this is deployed somewhere the household does not own, where the rake task needs
+  SSH and SSH is a strictly larger privilege than a printed code.
+- **Nothing expires a session.** The cookie is `permanent`, and only signing out, changing a password, or
+  deleting the row ends it. There is also no record of sign-ins beyond the `Session` rows themselves —
+  no history of where an account has been used from.
 - **There is no UI or route for running an import.** `FileImporter` is only ever invoked from
   `AccountSeeder` and from its own spec, so loading a new statement means dropping into
   `bin/rails runner`. Wiring it to a controller/upload form is the obvious next step.

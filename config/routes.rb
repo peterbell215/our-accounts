@@ -1,4 +1,23 @@
 Rails.application.routes.draw do
+  # Signing in, in two steps.  The password step is the generator's; the code step is its own resource
+  # because the operation is the noun, the same habit as counterparty_merges below — and singular
+  # throughout, there being exactly one of each of these per person signing in.
+  #
+  # The invariant the second step rests on: a Session row exists only for a *fully* authenticated
+  # sign-in.  Authentication#resume_session looks a user up by that row and by nothing else, so a row
+  # written before the code is checked would be a way past the code.  Between the two steps there is
+  # therefore nothing but two keys in the Rails session cookie.
+  resource :session,         only: [ :new, :create, :destroy ]
+  resource :totp_challenge,  only: [ :new, :create ]
+
+  # Your own account: the screen it is all reached from, turning the second factor on and off, and
+  # changing your password.  There is deliberately no reset-by-token route to go with them — no SMTP is
+  # configured in any environment, and an endpoint that silently emails nothing reads as a working
+  # feature.  A forgotten password is `bin/rails users:change_password`.
+  resource :profile,         only: [ :show ]
+  resource :totp_enrolment,  only: [ :new, :create, :destroy ]
+  resource :password_change, only: [ :new, :create ]
+
   resources :import_columns_definitions do
     collection do
       post :analyze_csv, to: "csv_analyses#create"

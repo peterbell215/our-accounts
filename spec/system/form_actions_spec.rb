@@ -134,6 +134,19 @@ RSpec.describe 'The actions on a form screen', type: :system do
     it_behaves_like 'an Edit screen', 'Editing rule for Lloyds Account', 'Rule for Lloyds Account'
   end
 
+  # Your own login has two form screens, and the convention reaches them as it reaches every other one.
+  describe 'setting up two-factor authentication' do
+    let(:path) { new_totp_enrolment_path }
+
+    it_behaves_like 'a New screen', 'Set up two-factor authentication'
+  end
+
+  describe 'changing your password' do
+    let(:path) { new_password_change_path }
+
+    it_behaves_like 'a New screen', 'Change your password'
+  end
+
   # The merge confirmation keeps its own Cancel beside Merge — that is its answer to the question it asks —
   # but the way out is where it is on every other screen.
   describe 'the merge confirmation' do

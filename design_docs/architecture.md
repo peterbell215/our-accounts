@@ -6,10 +6,14 @@
 and — eventually — analyses and predicts household expenditure. Analysis is the point of the exercise;
 importing and categorising are what make it possible.
 
-It is a single-user application. There is no authentication, no multi-tenancy, and no notion of an
-account owner: the database *is* the household's accounts. SQLite on local disk is the store, which is
+It is a household application, and the two words are doing different work. Several people sign in, each
+with their own password and their own authenticator app; all of them see the same thing, because there is
+no notion of an account owner and the database *is* the household's accounts. Authentication without
+multi-tenancy: no table carries an owner, no query carries a scope, and the two tables the sign-in added
+are the only ones in the schema that are not about money. SQLite on local disk is the store, which is
 adequate for a few thousand transactions a year and keeps the whole thing to a directory that can be
-copied.
+copied — and is exactly why the copying is worth thinking about, which the authentication section below
+does.
 
 Rails 8.1 on Ruby 4.0.6, Hotwire (Turbo and Stimulus) over importmap, Propshaft, and Pure-CSS installed
 through yarn. There is deliberately no JavaScript build step; assets are served as written.
@@ -947,6 +951,163 @@ Transaction rows are rendered as CSS div-tables (`div-tables.css`), not `<table>
 
 ---
 
+## Authentication
+
+For most of this application's life there was none, and that was written down here as a deliberate
+constraint rather than an oversight. What changed is not the threat but the honesty of the accounting:
+the file on disk is a complete record of a household's spending, and the only thing between it and
+whoever is at the keyboard was the keyboard.
+
+What went in is a gate, and nothing more. No existing table gained a column, no query gained a scope, and
+the seven tables the application is about are untouched. The alternative — real multi-tenancy, an owner
+on `Account`, scoping threaded through every controller — was rejected because nobody wants it: this is
+one household looking at one set of accounts, and per-user data would make the shared view, which is the
+whole point, into a feature that had to be built back.
+
+### Built on the generator, and then cut down
+
+`bin/rails generate authentication` rather than Devise or a hand-written concern. Devise is a large
+dependency for one sign-in screen. Hand-writing loses more subtly: the generated `Authentication` concern
+carries the cookie details that are easy to get quietly wrong — signed, permanent, `httponly`,
+`same_site: :lax` — and a hand-copied version of those drifts at the next Rails upgrade with nothing to
+say it has.
+
+Half of what it generates was then deleted. The password-reset flow — `PasswordsController`, the mailer,
+its two views, the `resources :passwords` route — needs mail, and no SMTP is configured in any
+environment; `action_mailer.default_url_options` is still `example.com`. A reset route that emails nothing
+is worse than no route: it is a live endpoint that silently does nothing, and it reads to everyone as a
+working feature. A forgotten password is `bin/rails users:change_password`, run on the machine the
+database is on. The generated Action Cable `Connection` went the same way, there being no channels here.
+
+### The invariant: a Session row means signed in
+
+The second factor is only unskippable because of one rule, and it is worth stating before the mechanism:
+**a `Session` row exists only for a fully authenticated sign-in.**
+
+`Authentication#resume_session` looks a user up by `Session.find_by(id: cookies.signed[:session_id])` and
+by nothing else. So a row written after the password but before the code is not a step towards being
+signed in — it *is* being signed in, and anyone who closed the code screen would already be past it. The
+half-authenticated state therefore lives in the Rails session cookie and nowhere in the database:
+`session[:pending_user_id]` and `session[:pending_at]`, good for five minutes, which is long enough to
+fetch a phone from another room and short enough that an abandoned cookie on a shared machine is worth
+nothing. Exactly two methods call `start_new_session_for`, and one of them is the code step.
+
+The alternative — a `Session` row with an `authenticated` boolean on it — was rejected for the same
+reason the counterparty confirmation is carried as a name rather than a flag: the safe reading has to be
+the default one. A boolean that defaults to false in the schema and true in somebody's later `create!` is
+a bypass nobody would notice, whereas a row that simply does not exist yet cannot be misread.
+
+`resource :session` and `resource :totp_challenge`, singular, and the challenge is its own noun for the
+reason `counterparty_merges` is: the operation is the noun. `new` and `create` rather than `edit` and
+`update`, so that the GET shows what is about to happen and changes nothing.
+
+### Three states, not two
+
+`otp_secret`, `otp_confirmed_at`, `otp_last_used_at` — and `totp_required?` is
+`otp_confirmed_at.present?`, which is the only thing the sign-in path asks.
+
+A boolean beside the secret would encode the same three states and say less. What matters is that the
+middle one is told apart: someone who opened the enrolment screen, never scanned the QR, and closed it
+again has a secret on their row and no way on earth to produce a code for it. Asking them for one at the
+next sign-in would lock them out of their own accounts over a step they never took, and it is the one
+failure this feature must not have. The timestamp also answers "since when", which is the question worth
+asking of a login several people share.
+
+`otp_last_used_at` is what stops a code being used twice. ROTP hands back the timestamp of the step that
+matched and takes an `after:` to exclude; without it, a code read over a shoulder or off a proxy log is
+good for the rest of its thirty seconds on somebody else's device. One column, one argument, one example.
+
+The pending secret lives on the user row rather than in the session, so that reloading the enrolment
+screen shows the *same* QR. A fresh secret each time would invalidate the one already open on the phone,
+and the reader could never finish. The cost is that a row can sit half-enrolled for ever; the profile
+screen names that state rather than hiding it.
+
+### The secret is encrypted, and the argument against is real
+
+`encrypts :otp_secret`, non-deterministic, nothing ever querying by it.
+
+The case against deserves stating properly, because it is not weak: the keys live in the encrypted
+credentials, unlocked by `config/master.key`, which sits on the same disk as the SQLite file and is
+symlinked into every worktree by the documented setup. Against somebody walking off with the laptop, this
+buys precisely nothing.
+
+It wins on a different threat, and one this repository has already written down. A password digest is
+bcrypt: copying the file does not give you the password. A TOTP secret in plain text *is* the second
+factor — whoever holds a copy can mint valid codes for ever, and nothing on anyone's screen would ever
+say so. And files here do get copied: `.dockerignore` does not exclude `db/*.csv`, Docker's build context
+is the filesystem rather than git, and that is already recorded below as something to settle before
+deploying. Backups, an `scp` of `storage/`, an image pushed to a registry — encryption is what makes a
+copy of the file not a copy of the factor.
+
+The price is paid in CI, which has no `config/master.key`. `config/environments/test.rb` spells out three
+keys of its own, marked as deliberately not secret, and Rails merges that config last so the credentials
+are never consulted there. This is worth knowing because the failure mode is nasty: encryption keys are
+read lazily rather than at boot, so their absence is not a boot error but a green suite locally and a red
+one on the first example that writes an encrypted column.
+
+### Recovery is a rake task, not printed codes
+
+`users:create`, `users:change_password`, `users:disable_totp`, `users:list` — prompting for passwords
+rather than taking them as rake arguments, which land in the shell history and in `ps`.
+
+Recovery codes were considered and dropped. They cost a table or a serialised column, per-code hashing, a
+show-once screen, a consumption path, a "three left" indicator, and specs for all of it. What they buy is
+recovery *without shell access* — and the person running this has shell on the machine the database is
+on. `bin/rails users:disable_totp` is the same recovery with none of the surface.
+
+What is given up should be recorded plainly, because it is the trigger to revisit: a locked-out household
+member cannot recover themselves, and must wait for whoever has the terminal. And if this is ever
+deployed somewhere the household does not own, the rake task needs SSH — a strictly larger privilege than
+a printed code, at which point codes become the right answer rather than the elaborate one.
+
+Two smaller decisions in the same family. Changing a password destroys the user's *other* sessions and
+says how many, because signing the other devices out is the point of changing a password and a change
+that leaves them signed in has not done what the reader thought. And turning the second factor off asks
+for the current password in the same form as the button: a confirmation stops a misclick, and what this
+needs to stop is somebody else at your desk.
+
+### The screens, and the two that are not screens
+
+`/profile` is the hub, and it deliberately does **not** open with `show_actions`. It is a report about
+you rather than a record — there is nothing on it to Edit as a record and nothing to Destroy — so it
+follows the forecast pages rather than the five Show screens. The two form screens under it, enrolment
+and password change, *do* carry `form_actions`, and `form_actions_spec.rb` grew from ten screens to
+twelve accordingly. That was the convention asserting itself rather than a concession to it.
+
+The enrolment QR is inline SVG built on the server by `TotpEnrolmentsHelper#qr_code_svg`. An `<img>` to
+a generated file would mean writing a provisioning URI — a secret — to disk and then having to clean it
+up; a client-side QR library would mean a JavaScript build step this application does not have. One
+trap for whoever touches it: rqrcode's `standalone: false` looks like the option for suppressing the XML
+declaration and is not, because it drops the enclosing `<svg>` as well and leaves a bare `<path>` that
+draws nothing. The declaration is cut off afterwards instead.
+
+The menu bar is hidden entirely while signed out — every item on it would bounce straight back to the
+sign-in screen — and gained the reader's own address and Sign out at its far end. That needed
+`display: flex` on the list, because Pure lays horizontal menu items out as `inline-block` and
+`margin-left: auto` does nothing to one of those.
+
+### A background fetch gets 401, not a redirect
+
+The one place the gate could have broken something silently. The transaction list pages itself with
+`get(url, { responseKind: "html" })`; a 302 is followed by `fetch` transparently, so the list would
+receive the sign-in page as a 200, find no rows in it, and simply stop advancing — a statement that ends
+early, with nothing said.
+
+`request_authentication` therefore answers `head :unauthorized` with the sign-in URL in
+`WWW-Authenticate` for `request.xhr?` and Turbo Stream requests, and redirects otherwise. That is not an
+invention: `@rails/request.js` already reads that header and sends the browser there itself, so the
+reader lands on the sign-in screen and no JavaScript in this application had to learn anything. The 401
+also writes no `return_to_after_authenticating`, which is right — a fragment of rows is not somewhere to
+come back to.
+
+Two things nearby that look like they need work and do not. `/up` needs no exemption, because
+`Rails::HealthController` descends from `ActionController::Base` rather than from `ApplicationController`
+and never sees the filter. And `filter_parameter_logging.rb` needed no additions: `:passw` catches the
+password fields, `:otp` catches both `otp_secret` and the `otp_code` parameter, `:email` catches
+`email_address`. Both are asserted or stated rather than left to be rediscovered.
+
+---
+
 ## Testing
 
 RSpec and FactoryBot, with a deliberate bias toward exercising the real pipeline rather than mocking it.
@@ -1002,6 +1163,9 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
   development ever gains a second process, such as `bin/jobs`.
 - **The Gemfile pins the Ruby version** by reading `.ruby-version`, so a shell on the wrong Ruby fails
   with an explicit message rather than reporting the bundle's gems as missing.
+- **No public sign-up, and no password reset by mail.** Users are made from a rake task. There is no
+  SMTP anywhere and no host worth putting in a reset link, and an endpoint that emails nothing is worse
+  than the absence of one.
 - **Statement data never enters the repository.** `db/*.csv` is gitignored and the identifying strings
   live in encrypted credentials. Note that `.dockerignore` does *not* exclude `db/*.csv`, and Docker's
   build context is the filesystem rather than git — so a production image built locally would bake the
@@ -1013,8 +1177,22 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
 
 Working: the account model, both import forms, the categorisation rules and their per-transaction
 corrections, the category and counterparty screens with their roll-ups, the rules screens, the CSV
-analysis screen, transaction CRUD over Turbo, the monthly forecast and its workings pages, and seeding
-that rebuilds a development database end to end.
+analysis screen, transaction CRUD over Turbo, the monthly forecast and its workings pages, seeding
+that rebuilds a development database end to end, and a sign-in — password, then a code from an
+authenticator app for anyone who has set one up.
+
+Gaps the sign-in opened, none of them urgent and all of them recorded rather than discovered later:
+
+- **No recovery codes**, so being locked out means finding whoever has a terminal. The argument is above;
+  the thing that would change it is deploying somewhere the household does not own.
+- **Nothing expires a session.** The cookie is permanent, and only signing out, changing a password or
+  deleting the row ends one. There is no idle timeout and no maximum age.
+- **No record of sign-ins** beyond the `Session` rows themselves. Nothing says where an account has been
+  used from, or when it last was, so a session nobody recognises would have to be noticed rather than
+  reported.
+- **Deploying is still blocked on what it was blocked on before**, and the sign-in does not unblock it:
+  the Kamal configuration is untouched scaffolding, and `.dockerignore` still does not exclude
+  `db/*.csv`.
 
 The gap that matters:
 

@@ -1,0 +1,59 @@
+<% content_for :title, "Your login" %>
+
+<h1>Signing in as <%= @user.email_address %></h1>
+
+<%= render "layouts/notice", notice: notice %>
+
+<%# No show_actions strip: this is a report about you, not a record.  There is nothing here to edit as a
+    record and nothing to destroy, which is the same reason the forecast screens do without it. %>
+
+<h2>Two-factor authentication</h2>
+
+<% if @user.totp_required? %>
+  <p>
+    On since <%= short_date(@user.otp_confirmed_at) %>.
+    Signing in asks for your password and then for a code from your authenticator app.
+  </p>
+
+  <%# The password is asked for in the same form as the button, rather than behind a confirmation only:
+      a confirmation stops a misclick, and what this needs to stop is somebody else at your desk. %>
+  <%= form_with url: totp_enrolment_path, method: :delete, class: "pure-form pure-form-aligned" do |form| %>
+    <fieldset>
+      <div class="pure-control-group">
+        <%= form.label :password, "Your password" %>
+        <%= form.password_field :password, required: true, autocomplete: "current-password",
+                                class: "pure-input-1-3" %>
+      </div>
+
+      <div class="pure-controls">
+        <%= form.submit "Turn off", class: "pure-button pure-button-error",
+                        data: { turbo_confirm: "Turn two-factor authentication off? Signing in will need only your password." } %>
+      </div>
+    </fieldset>
+  <% end %>
+<% elsif @user.enrolling? %>
+  <p>
+    Started, but never confirmed — so it is not being asked for.
+    <%= link_to "Finish setting it up", new_totp_enrolment_path %>, or ignore this and carry on with a
+    password alone.
+  </p>
+<% else %>
+  <p>
+    Not set up. Signing in needs only your password.
+    <%= link_to "Set up an authenticator app", new_totp_enrolment_path %>.
+  </p>
+<% end %>
+
+<h2>Password</h2>
+
+<p>
+  <%= link_to "Change password", new_password_change_path %>.
+  Changing it signs out every other device you are signed in on.
+</p>
+
+<p>
+  If you are ever locked out — a lost phone, a forgotten password — the way back is
+  <code>bin/rails users:disable_totp</code> or <code>bin/rails users:change_password</code>, run on the
+  machine this is installed on. There is deliberately nothing on this screen that could do it without
+  one of the two things you have lost.
+</p>
