@@ -316,6 +316,19 @@ One payee usually arrives under several names, because the bank cuts its descrip
 2228` and `TESCO STORES 2889` are one shop, and eleven separate `AMAZON*` entries are one Amazon. Tick them
 and press **Merge selected**.
 
+**Or press *Suggest merges* and be handed a shortlist.** Rather than reading a few hundred names yourself,
+you get sets that look like one payee, each with a sentence saying why and a **Review** button that opens
+the same confirmation described below. Nothing is merged for you — every group still has to be confirmed,
+and you can change the name it proposes.
+
+This is the one feature that sends anything off this machine. It asks the Claude API, and what it sends is
+your counterparty names and the names of the categories you file them under — **no amounts, no dates, no
+account numbers and nothing about individual transactions**. It needs an API key in the credentials
+(`bin/rails credentials:edit`, under `anthropic: api_key:`); without one the screen says so and everything
+else still works. It is worth knowing that the suggestions are a starting point and not an authority: it is
+told that `LNK`, `SQ *` and `PAYPAL` are payment rails rather than payees, and that a shared first word
+means nothing, but the last judgement is yours on the confirmation screen.
+
 You then get a confirmation listing each one with its transactions, its total, and the categories its rules
 assign, and a box for what to call the result. **The name can be anything** — it does not have to be one of
 the names listed. That is how five `LNK ...` cash-machine entries become a single counterparty called
@@ -831,17 +844,15 @@ Being honest about the gaps, in the order they matter:
 3. **Nothing notices a missing month on an account whose statements carry no balance.** See the note in
    [When something goes wrong](#when-something-goes-wrong). Accounts with a balance column are checked
    row by row and cannot drift.
-4. **Nothing suggests which counterparties to merge.** You find the duplicates yourself; alphabetical order
-   brings most of them together, but the tool does not propose groups.
-5. **Nothing warns that a category is too young to average.** A category you created last month and never
+4. **Nothing warns that a category is too young to average.** A category you created last month and never
    applied to older transactions is averaged over five months of zeroes, so it reads low. The workings
    page shows the zeroes, but you have to go and look.
-6. **No way to reset your own password, and no backup codes.** Both are deliberate — see
+5. **No way to reset your own password, and no backup codes.** Both are deliberate — see
    [Signing in](#signing-in) — and both mean that being locked out needs someone with access to the
    machine. If this ever runs somewhere you do not own, that is the thing to change first.
-7. **Nothing signs you out after a while.** Once you are in, you stay in until you sign out or change
+6. **Nothing signs you out after a while.** Once you are in, you stay in until you sign out or change
    your password. There is no idle timeout, and no list of where your account has been used from.
-8. **A rule only ever claims more, never fewer.** Narrowing a rule, or deleting it, leaves the transactions
+7. **A rule only ever claims more, never fewer.** Narrowing a rule, or deleting it, leaves the transactions
    it already categorised exactly as they are. Nor is there any preview: you cannot see how many existing
    transactions a rule would catch until you save it.
 

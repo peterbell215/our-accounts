@@ -45,6 +45,10 @@ Rails.application.routes.draw do
   # POST that actually moves anything.
   resources :counterparty_merges, only: [ :new, :create ]
 
+  # Proposing the sets to merge.  `index` only, and a GET: nothing is stored, the answer is recomputed on
+  # every visit, and asking again is the reasonable thing to do after merging one of the groups it found.
+  resources :merge_suggestions, only: [ :index ]
+
   # Forecasting.  There is no resource to create — the whole screen is recomputed from the transactions
   # every time it is asked for — so these are plain routes rather than `resource :forecast`, whose nested
   # member helpers would read worse than the four names spelled out.  The month travels as `?month=`.

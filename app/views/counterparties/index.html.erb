@@ -57,4 +57,7 @@
 
 <div style="margin-top: 1rem">
   <%= link_to "New counterparty", new_counterparty_path, class: "pure-button" %>
+  <%# Finding the duplicates by eye is the tedious part of this screen, so there is a way to be handed a
+      shortlist. It proposes only — every group opens the same confirmation the tick boxes above lead to. %>
+  <%= link_to "Suggest merges", merge_suggestions_path, class: "pure-button" %>
 </div>

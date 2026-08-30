@@ -1,0 +1,70 @@
+<%= render "layouts/notice", notice: notice %>
+
+<% content_for :title, "Suggested merges" %>
+
+<h1>Suggested merges</h1>
+
+<%= form_actions back: counterparties_path %>
+
+<p>
+  Sets of names that look like one payee, worked out from the names themselves and the categories you file
+  them under. <strong>These are proposals, not decisions</strong> — nothing has been merged. Open one to see
+  what would move, change the name if you want a different one, and confirm it there.
+</p>
+
+<p>
+  Only the payee names and their category names were sent away to work this out. No amounts, no dates, no
+  account numbers and nothing about individual transactions ever leave this machine.
+</p>
+
+<% if @error.present? %>
+  <p class="row-error"><%= @error %></p>
+<% end %>
+
+<% if @groups.any? %>
+  <table class="pure-table pure-table-bordered">
+    <thead>
+      <tr>
+        <th>Suggested name</th>
+        <th>Names it would fold together</th>
+        <th>Why</th>
+        <th>Categories</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @groups.each do |group| %>
+        <tr>
+          <td><%= group.name %></td>
+          <td>
+            <% group.counterparties.each do |counterparty| %>
+              <div><%= link_to counterparty.name, counterparty %></div>
+            <% end %>
+          </td>
+          <td><%= group.reason %></td>
+          <td>
+            <%# The one signal that a group is wrong which does not need a human to spot it, so it is said
+                here rather than left for the confirmation screen. Amber, not red: the merge is allowed and
+                may well be right — petrol and groceries from one shop legitimately span two categories. %>
+            <% if group.categories_clash? %>
+              <span class="row-question" title="These names are filed under more than one category, which often means they are not one payee">
+                <%= group.categories.join(", ") %>
+              </span>
+            <% else %>
+              <%= group.categories.join(", ").presence || "—" %>
+            <% end %>
+          </td>
+          <td>
+            <%= link_to "Review", new_counterparty_merge_path(ids: group.ids, name: group.name),
+                        class: "pure-button" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% elsif @error.blank? %>
+  <p>
+    Nothing to suggest — the names you have look like distinct payees. That is the expected answer on a
+    tidy list, and on a short one: there is nothing to compare until you have a few counterparties.
+  </p>
+<% end %>

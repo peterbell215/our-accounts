@@ -106,7 +106,28 @@ one survivor under a name the reader types, which may be a name nothing yet hold
 and `TESCO PAY AT PUMP` are the supermarket and the petrol station and must stay apart. Four grouping
 heuristics were measured against the real 281 names and only one — stripping digits and punctuation — avoided
 false groups; first-word grouping filed twelve unrelated pubs and charities under `THE` and treated `LNK`,
-`SQ *` and `PAYPAL` as payees. So suggestions were left out and the set is always chosen by hand.
+`SQ *` and `PAYPAL` as payees.
+
+**So the shortlist is asked for rather than computed.** `MergeSuggester` sends the names and the categories
+their rules assign to the Claude API and gets back proposed sets. What defeated the string heuristics is not
+a harder string problem — it is that `LNK` is a cash-machine network and `THE` is an article, which is a fact
+about the words rather than about their characters. The measured failures are what the prompt is written
+against, and a spec asserts the request carries names and category names only: no amounts, no dates, no
+account numbers, nothing per-transaction. This is the one place in the application where anything leaves the
+machine.
+
+**It proposes; it never merges.** Every group is a link into the existing confirmation screen carrying the
+ids and a suggested name, so `CounterpartyMerge` — where the load-bearing ordering lives — runs unchanged
+over a set a person has approved. Three answers are dropped rather than shown, because each would open a
+confirmation that cannot work: a name no counterparty holds, a group left with fewer than two members once
+those are removed, and a repeat of a set already proposed. A group whose members disagree about their
+category is marked rather than withheld — that disagreement is the best available signal a group is wrong,
+and it is also how one shop legitimately spans petrol and groceries, so the judgement stays with the reader.
+
+The suggestion is a convenience on a screen that works without it, so every failure — no key configured, the
+API unreachable, a refusal, an answer that will not parse — is reported above an otherwise unchanged list
+rather than raised. No key configured is the state every checkout starts in, and it has to read as something
+to set up rather than as something broken.
 
 **The wanted name is checked against `Counterparty`, not `Account`.** The ids are resolved through
 `Counterparty` too, so a `BankAccount` is filtered out of the set by design — and a check over `Account` gave

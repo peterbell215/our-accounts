@@ -42,6 +42,12 @@ gem "bcrypt", "~> 3.1.7"
 gem "rotp"
 gem "rqrcode"
 
+# Proposes which counterparties are the same payee, for MergeSuggester.  The names come from statement
+# descriptions the bank has truncated and numbered, so telling one payee's variants from a payment rail
+# ("LNK", "PAYPAL *") is a judgement about what the words mean rather than a string comparison — four
+# string heuristics were measured against the real names first and only one avoided false groups.
+gem "anthropic"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
