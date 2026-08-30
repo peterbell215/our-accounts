@@ -1259,6 +1259,120 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
 
 ---
 
+## Deployment
+
+The application is set up to run on **one DigitalOcean droplet, deployed with Kamal**. It is used a
+couple of times a week by a household, the database is a few megabytes, and the whole of the traffic
+would fit in the margin of error of anything larger. The shape of the deployment follows from the
+database being SQLite on local disk, which is a decision made long before there was anywhere to deploy
+to.
+
+**Nothing is deployed yet.** The configuration is complete and the image has been built and inspected,
+but the droplet and the domain do not exist, so `config/deploy.yml` and `config/litestream.yml` carry
+`TODO` markers for the three values that cannot be known until they do: the server's address, the
+hostname, and the backup bucket. What follows is therefore the design and the reasoning behind it rather
+than a report from a running system; the parts that have actually been verified are called out as such.
+
+### Why a plain VM, and not Azure's container hosting
+
+The cheap managed ways to run a container — Azure App Service for Containers, Azure Container Apps, and
+the equivalents elsewhere — give persistent storage as a network share. On Azure that is Azure Files,
+which is SMB. SQLite's locking is built on POSIX file locks and its `fsync` guarantees; over a network
+share those are not honoured faithfully, and the failure is a corrupted database rather than an error at
+the time. That rules out the entire class of service, and what remains on Azure is a VM — which is the
+droplet again, with a more elaborate console and roughly twice the bill.
+
+The same reasoning would be void the moment the database moved to Postgres, and that is the honest
+statement of the trade: SQLite buys a deployment with one moving part and no database server to run, and
+costs the ability to use hosting that assumes the data lives somewhere else.
+
+### Why Kamal, and not Dokku
+
+Dokku was the alternative considered. It would work, and it offers `git push` deploys, which Kamal does
+not. It lost on the same criterion the rest of this document keeps applying: it is a second system to
+own. Dokku has its own release cycle, its own Let's Encrypt plugin and its own persistent-storage plugin,
+and adopting it means discarding the Kamal scaffolding the Rails generator already produced — a
+`Dockerfile`, a `config/deploy.yml`, `.kamal/secrets`, and Thruster in front of Puma. Kamal installs
+Docker on the host itself and its proxy obtains certificates without being asked. There was more to
+maintain on the Dokku side and nothing on the end of it that this application wanted.
+
+### The storage volume is a host path, on purpose
+
+`config/deploy.yml` mounts `/var/lib/our-accounts/storage` rather than the named Docker volume the
+generator suggests. All four production SQLite databases live there, as does Active Storage's local
+service. A named volume would work for the application and be useless for everything around it: the
+database could not be replicated by a second container without going through Docker, and could not be
+copied onto the machine by hand at all. The container runs as uid 1000, so the host directory is owned to
+match — a detail that fails as a permission error on first boot if it is missed.
+
+### Backups are continuous, not nightly
+
+A single machine holds the only copy, so **Litestream runs as a Kamal accessory**, mounting the same host
+directory and streaming the write-ahead log to Cloudflare R2. It replicates `production.sqlite3` alone.
+The cache, queue and cable databases are derived state that Rails rebuilds from empty, and restoring a
+stale copy of them would be worse than not having one.
+
+Continuous replication rather than a nightly `sqlite3 .backup` to object storage, which was the
+alternative: the cron job is a thing living outside Kamal that nobody would notice had stopped, and its
+granularity is a day, against a database whose whole content is hand-entered judgement that would have to
+be re-entered. Streaming the WAL is the cheaper option in the only currency that matters here, which is
+attention.
+
+The restore path is deliberately ordinary — pull a copy out of the bucket into the same directory, look at
+it, and move it into place — because the day it is needed is not a day to be learning it.
+
+### Production gets its data by copy, not by seed
+
+`AccountSeeder` can rebuild an account from the statement CSVs, and that is how a development database is
+made. Production is not to be built that way. The seed reproduces the account, the derived rules and the
+imported transactions; it cannot reproduce the hand-assigned categories and the merged counterparties,
+which exist only in the database and are the accumulated work the application is for. So the plan is to
+copy the development database up with `sqlite3 .backup` and put it in place as `production.sqlite3`.
+`db:prepare`, which `bin/docker-entrypoint` runs on every boot, then finds a populated database, applies
+any pending migrations and skips the seed — which is also why excluding the CSVs from the image costs
+nothing.
+
+This works only because there is one `config/master.key` for every environment: the `encrypts`-ed
+`otp_secret` column decrypts unchanged, so the household's existing authenticator enrolments continue to
+work rather than everyone being locked out on the first sign-in. It is the reason the copy is preferred
+to starting empty, and the thing to check first if a sign-in fails after the move.
+
+### Three things the image build had wrong
+
+The generated `Dockerfile` had never been built. Two of its three faults were silent, which is why they
+are recorded here rather than fixed and forgotten — and all three were found by building the image and
+looking inside it, which is the part of this section that has actually been exercised.
+
+**It could not get as far as installing the gems.** The `Gemfile` pins the Ruby version by reading
+`.ruby-version` — a deliberate constraint, listed below — but the Dockerfile copied only `Gemfile` and
+`Gemfile.lock` before running `bundle install`, so bundler refused to parse the Gemfile at all. This one
+failed loudly and immediately, and is the reason the other two had gone unnoticed: nothing had ever got
+past it to observe them.
+
+**Pure CSS was missing from the built image.** `config/initializers/assets.rb` puts `node_modules` on
+Propshaft's asset path for the two `@import`s at the top of `application.css`, `.dockerignore` excludes
+`node_modules`, and the generated `Dockerfile` had no Node, no Yarn and no `yarn install`. So
+`assets:precompile` ran with nothing to resolve those imports against, and Propshaft does not complain
+about an import it cannot find. The deployed site would have rendered with the fallback vertical menu and
+unstyled tables, and read as a stylesheet someone had broken rather than a missing dependency. The build
+stage now installs Node and runs `yarn install` before precompiling. Debian's packaged Node is old and
+that is fine — nothing executes JavaScript at build time, and Yarn is only being asked to unpack one CSS
+package.
+
+**The statements would have been pushed to a registry.** `.dockerignore` now excludes `db/*.csv` and
+`db/*.xlsx`. This was noted as a thing to settle before deploying, and settling it means the production
+seed finds no source files and reports that it is not seeding — which is correct, given the paragraph
+above.
+
+### What the deployment does not have
+
+No staging environment, no deploy from CI, and no `WEB_CONCURRENCY`: one Puma process with three threads,
+with Solid Queue's supervisor inside it via `SOLID_QUEUE_IN_PUMA`. Deploys are run by hand from a
+developer's machine, which also builds the image, so the droplet never compiles anything. All of that is
+appropriate to a household application used twice a week and would be wrong for almost anything else.
+
+---
+
 ## Deliberate constraints
 
 - **No JavaScript build step.** Importmap and Propshaft serve assets directly. Adding a bundler would
@@ -1268,14 +1382,16 @@ CI runs Brakeman, importmap audit, RuboCop and the full suite, with the system s
   stdout would no longer be a TTY. `bin/rails server` is the whole story. Worth revisiting if
   development ever gains a second process, such as `bin/jobs`.
 - **The Gemfile pins the Ruby version** by reading `.ruby-version`, so a shell on the wrong Ruby fails
-  with an explicit message rather than reporting the bundle's gems as missing.
+  with an explicit message rather than reporting the bundle's gems as missing. The cost is that anything
+  running `bundle install` against a partial copy of the repository has to bring `.ruby-version` with it;
+  the `Dockerfile` copies it alongside the `Gemfile` for that reason.
 - **No public sign-up, and no password reset by mail.** Users are made from a rake task. There is no
   SMTP anywhere and no host worth putting in a reset link, and an endpoint that emails nothing is worse
   than the absence of one.
-- **Statement data never enters the repository.** `db/*.csv` is gitignored and the identifying strings
-  live in encrypted credentials. Note that `.dockerignore` does *not* exclude `db/*.csv`, and Docker's
-  build context is the filesystem rather than git — so a production image built locally would bake the
-  statements in and push them to whatever registry Kamal targets. That needs settling before deploying.
+- **Statement data never enters the repository, and no longer enters the image.** `db/*.csv` is
+  gitignored and the identifying strings live in encrypted credentials. `.dockerignore` excludes them
+  too, which is a separate exclusion and has to be: Docker's build context is the filesystem rather than
+  git, so without it a locally built image would bake the statements in and push them to the registry.
 
 ---
 
@@ -1290,16 +1406,24 @@ authenticator app for anyone who has set one up.
 
 Gaps the sign-in opened, none of them urgent and all of them recorded rather than discovered later:
 
-- **No recovery codes**, so being locked out means finding whoever has a terminal. The argument is above;
-  the thing that would change it is deploying somewhere the household does not own.
+- **No recovery codes**, so being locked out means finding whoever has a terminal. The argument for the
+  rake task is above, and it rests on the machine being the user's own. The deployment now configured
+  removes that premise: the terminal becomes `kamal app exec` against a rented droplet, which needs
+  deploy credentials, and those are a strictly larger privilege than a printed code. This is the gap on
+  this list most likely to need closing next, and the trigger is the first real deploy rather than
+  anything in the code.
 - **Nothing expires a session.** The cookie is permanent, and only signing out, changing a password or
   deleting the row ends one. There is no idle timeout and no maximum age.
 - **No record of sign-ins** beyond the `Session` rows themselves. Nothing says where an account has been
   used from, or when it last was, so a session nobody recognises would have to be noticed rather than
   reported.
-- **Deploying is still blocked on what it was blocked on before**, and the sign-in does not unblock it:
-  the Kamal configuration is untouched scaffolding, and `.dockerignore` still does not exclude
-  `db/*.csv`.
+- **Deploying is no longer blocked, but has not happened.** Both of the things it was blocked on are
+  settled — the Kamal configuration is filled in and the image no longer carries the statements — and a
+  third, which nobody had found because the image had never once been built: it could not install its
+  gems. It builds now, with the stylesheets in it. What remains is buying a domain and creating the
+  droplet, at which point three `TODO` markers get real values. See **Deployment** above. Note that
+  deploying will sharpen the recovery-code question two bullets up, which was argued on the assumption
+  that the machine was the household's own.
 
 The application no longer has a step that has to be done from a terminal. Loading a statement was the last
 one, and closing it was worth doing because the categorisation behind it is real: against a year's actual

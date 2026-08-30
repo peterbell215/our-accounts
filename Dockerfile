@@ -28,16 +28,25 @@ ENV RAILS_ENV="production" \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems
+# Install packages needed to build gems and to fetch the stylesheets
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git pkg-config && \
+    apt-get install --no-install-recommends -y build-essential git pkg-config nodejs npm && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install application gems
-COPY Gemfile Gemfile.lock ./
+# Install application gems.  .ruby-version comes too, because the Gemfile pins the Ruby version by
+# reading it — without it bundler refuses to parse the Gemfile at all.
+COPY Gemfile Gemfile.lock .ruby-version ./
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
+
+# Install Pure CSS into node_modules, which config/initializers/assets.rb puts on the asset path for the
+# two @imports at the top of application.css.  Without this, assets:precompile below cannot resolve them
+# and says nothing about it, and the deployed pages render with none of Pure underneath.
+COPY package.json yarn.lock ./
+RUN npm install --global yarn && \
+    yarn install --frozen-lockfile && \
+    yarn cache clean
 
 # Copy application code
 COPY . .

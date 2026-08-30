@@ -1,10 +1,11 @@
 # Name of your application. Used to uniquely configure containers.
 service: our_accounts
 
-# Name of the container image.
-image: your-user/our_accounts
+# Name of the container image.  Combined with registry.server below this is ghcr.io/peterbell215/our_accounts.
+image: peterbell215/our_accounts
 
 # Deploy to these servers.
+# TODO: the droplet's IPv4 address, once it exists.
 servers:
   web:
     - 192.168.0.1
@@ -17,15 +18,19 @@ servers:
 # Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
 #
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
+# TODO: the real hostname, once the domain is registered.  kamal-proxy obtains the certificate over
+# HTTP-01, so if the domain sits behind Cloudflare the record must be DNS-only (grey cloud) at least
+# until the first certificate is issued.
 proxy:
   ssl: true
   host: app.example.com
 
-# Credentials for your image host.
+# Credentials for your image host.  ghcr.io rather than Docker Hub: private images are unlimited and
+# free, and the repository is already on GitHub.  The password is a classic personal access token with
+# the write:packages scope, exported as KAMAL_REGISTRY_PASSWORD in the shell you deploy from.
 registry:
-  # Specify the registry server, if you're not using Docker Hub
-  # server: registry.digitalocean.com / ghcr.io / ...
-  username: your-user
+  server: ghcr.io
+  username: peterbell215
 
   # Always use an access token rather than real password when possible.
   password:
@@ -36,6 +41,11 @@ env:
   secret:
     - RAILS_MASTER_KEY
   clear:
+    # The hostname the application answers to.  config/environments/production.rb refuses any other Host
+    # header, so that a scanner arriving at the bare IP address gets nothing.  Keep this in step with
+    # proxy.host above.
+    APP_HOST: app.example.com
+
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
     SOLID_QUEUE_IN_PUMA: true
@@ -63,9 +73,14 @@ aliases:
 
 
 # Use a persistent storage volume for sqlite database files and local Active Storage files.
-# Recommended to change this to a mounted volume path that is backed up off server.
+#
+# A host path rather than a named Docker volume, so that the database is an ordinary file the litestream
+# accessory below can replicate and a human can scp a copy into.  The container runs as uid 1000, so the
+# directory has to be owned to match:
+#
+#   mkdir -p /var/lib/our-accounts/storage && chown -R 1000:1000 /var/lib/our-accounts
 volumes:
-  - "our_accounts_storage:/rails/storage"
+  - "/var/lib/our-accounts/storage:/rails/storage"
 
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
@@ -92,25 +107,24 @@ builder:
 #   user: app
 
 # Use accessory services (secrets come from .kamal/secrets).
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: redis:7.0
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+#
+# Litestream replicates the primary database's write-ahead log to object storage continuously, which is
+# what makes the single droplet survivable: the machine holds the only copy otherwise.  It mounts the same
+# host directory as the app above.  Only the primary database is replicated — the cache, queue and cable
+# databases are derived state, and restoring a stale copy of them would be worse than starting them empty.
+#
+# Kamal gives accessories --restart unless-stopped, so this comes back with the droplet.
+# TODO: the same droplet IPv4 as servers.web above.
+accessories:
+  litestream:
+    image: litestream/litestream:0.5
+    host: 192.168.0.1
+    cmd: replicate -config /etc/litestream.yml
+    volumes:
+      - /var/lib/our-accounts/storage:/data
+    files:
+      - config/litestream.yml:/etc/litestream.yml
+    env:
+      secret:
+        - LITESTREAM_ACCESS_KEY_ID
+        - LITESTREAM_SECRET_ACCESS_KEY

@@ -30,6 +30,11 @@
 /tmp/storage/*
 !/tmp/storage/.keep
 
+# Ignore the real statement data.  These are gitignored, but Docker's build context is the filesystem
+# rather than git, so without this they are baked into the image and pushed to the registry.
+/db/*.csv
+/db/*.xlsx
+
 # Ignore assets.
 /node_modules/
 /app/assets/builds/*
