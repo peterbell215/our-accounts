@@ -32,6 +32,9 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+# Ignore the deploy credentials read by .kamal/secrets: the registry token and the R2 keys.
+/.kamal/local/
 /node_modules/
 
 /app/assets/builds/*

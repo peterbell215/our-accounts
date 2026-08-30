@@ -14,6 +14,10 @@
 /config/master.key
 /config/credentials/*.key
 
+# Ignore the deploy credentials read by .kamal/secrets.  Gitignoring them is not enough: Docker's build
+# context is the filesystem, so without this COPY . . bakes them into the image and pushes them.
+/.kamal/local/
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
