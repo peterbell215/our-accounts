@@ -125,8 +125,8 @@ RSpec.describe 'Import rules', type: :system do
       expect(rows.map { |row| row.reload.category }).to all eq subscriptions
       expect(rows.map { |row| row.reload.import_matcher_id }).to all eq matcher.id
 
-      # The Matched column is the sixth, and it is the count the reader has to be able to trust.
-      within("#import_matcher_#{matcher.id}") { expect(all('.div-table-col')[5]).to have_content('4') }
+      # The Matched column is the seventh, and it is the count the reader has to be able to trust.
+      within("#import_matcher_#{matcher.id}") { expect(all('.div-table-col')[6]).to have_content('4') }
     end
 
     # Hand judgement wins, so the row somebody categorised themselves keeps its category, stays unclaimed by
@@ -152,6 +152,41 @@ RSpec.describe 'Import rules', type: :system do
 
       expect(page).to have_content('Rule was successfully created.')
       expect(page).to have_no_content('already imported')
+    end
+  end
+
+  # The motivating case: most APPLE.COM/BILL charges are the fixed subscription, a few are one-off
+  # purchases that belong under a different category entirely.
+  describe 'an amount-conditioned rule alongside a default' do
+    let!(:subscriptions) { FactoryBot.create(:subscriptions_category) }
+
+    def apple_row(amount, date: Date.new(2024, 9, 12))
+      FactoryBot.create(:transaction, account: account, date: date, description: 'APPLE.COM/BILL',
+                                      amount: Money.from_amount(amount))
+    end
+
+    it 'sends the fixed amount one way and everything else another' do
+      subscription_row = apple_row(-7.99)
+      purchase_row = apple_row(-3.99, date: Date.new(2024, 9, 20))
+
+      visit new_account_import_matcher_path(account)
+      fill_in 'Description', with: 'APPLE.COM/BILL'
+      fill_in 'Amount', with: '-7.99'
+      select 'equal to', from: 'Comparison'
+      select 'Subscriptions', from: 'Category'
+      click_button 'Create Import matcher'
+
+      expect(page).to have_content('It also categorised 1 transaction already imported.')
+
+      visit new_account_import_matcher_path(account)
+      fill_in 'Description', with: 'APPLE.COM/BILL'
+      select 'Travel', from: 'Category'
+      click_button 'Create Import matcher'
+
+      expect(page).to have_content('It also categorised 1 transaction already imported.')
+
+      expect(subscription_row.reload.category.name).to eq 'Subscriptions'
+      expect(purchase_row.reload.category.name).to eq 'Travel'
     end
   end
 

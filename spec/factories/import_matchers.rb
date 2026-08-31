@@ -30,5 +30,30 @@ FactoryBot.define do
       description          { 'AMAZON' }
       description_is_regex { true }
     end
+
+    # An amount-conditioned rule: the usual APPLE.COM/BILL charge is a fixed subscription, so this catches
+    # exactly that amount and leaves any other amount against the same description to a default rule
+    # written alongside it (see import_matcher_apple_purchases_default).
+    factory :import_matcher_apple_subscription do
+      category             { Category.find_by(name: 'Shopping') }
+      counterparty          { nil }
+
+      trx_type             { nil }
+      description          { 'APPLE.COM/BILL' }
+      description_is_regex { false }
+      amount_comparison    { 'equal_to' }
+      amount               { Money.from_amount(-7.99) }
+    end
+
+    # The default for the same description: no amount condition, so it only ever gets to run on the amounts
+    # import_matcher_apple_subscription does not claim, per in_match_order.
+    factory :import_matcher_apple_purchases_default do
+      category             { Category.find_by(name: 'Travel') }
+      counterparty          { nil }
+
+      trx_type             { nil }
+      description          { 'APPLE.COM/BILL' }
+      description_is_regex { false }
+    end
   end
 end

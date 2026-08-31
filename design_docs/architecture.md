@@ -359,16 +359,22 @@ download is a few hundred rows, and re-loading a file already imported is a tent
 nothing is written.
 
 `ImportMatcher.find_match` walks the matchers for that account and returns the first whose description
-(literal or regex, per `description_is_regex`) and optional `trx_type` match. A hit fills in
-`category_id`, `counterparty` and `import_matcher_id`.
+(literal or regex, per `description_is_regex`), optional `trx_type` and optional amount condition match. A
+hit fills in `category_id`, `counterparty` and `import_matcher_id`.
 
-**Rule precedence is explicit.** `find_match` orders by `in_match_order` — `(description_is_regex, id)` —
-so a literal description beats a regex, and the outcome does not depend on what order the database happens
-to return rows in. That went unnoticed for as long as every rule was a literal derived from the analysis
-file; it became load-bearing the moment the UI let someone write a pattern by hand. `trx_type` is normalised
-so blank becomes `nil`, because `nil` means "any type" and a rule demanding an empty string would silently
-never fire — which is exactly what a form leaving the field empty would otherwise store. The regex is also
-validated on save rather than being left to raise `RegexpError` part-way through a 2,600-row import.
+**Rule precedence is explicit.** `find_match` orders by `in_match_order` —
+`(description_is_regex, amount_comparison IS NULL, id)` — so a literal description beats a regex, and a
+rule naming an amount beats one that does not, for the same description; the outcome does not depend on
+what order the database happens to return rows in. That went unnoticed for as long as every rule was a
+literal derived from the analysis file; it became load-bearing the moment the UI let someone write a
+pattern by hand. `trx_type` is normalised so blank becomes `nil`, because `nil` means "any type" and a rule
+demanding an empty string would silently never fire — which is exactly what a form leaving the field empty
+would otherwise store. `amount_comparison` is normalised the same way, and `#match` reads a `nil` one as
+"any amount": a description can therefore carry one rule for a specific amount (`equal_to`, `less_than`,
+and the other four `Money` comparisons) and a second, amount-agnostic rule as the default for whatever the
+first does not catch — APPLE.COM/BILL is mostly a fixed subscription with the occasional one-off purchase
+against the same description, which needs exactly this to land in two different categories. The regex is
+also validated on save rather than being left to raise `RegexpError` part-way through a 2,600-row import.
 
 Four quirks live in this pipeline, all of them driven by what the banks actually emit:
 
@@ -416,12 +422,14 @@ Four decisions in it are load-bearing:
   silently reverse a decision somebody made deliberately. The visible consequence is that a rule's
   **Matched** count can read one lower than the number of transactions sharing its description — the row
   categorised by hand before the rule was written keeps its category and stays unclaimed.
-- **`ImportMatcher#match` is the single authority.** It is duck-typed on `account_id`, `trx_type` and
-  `description`, which a saved `Transaction` satisfies exactly, so it is reused unchanged rather than
-  reimplemented in SQL. The literal case *is* narrowed by a `where(description: …)` first, which is a pure
-  narrowing because the column collates `BINARY` — the same comparison Ruby's `==` makes — but `#match` is
-  still asked, so the two paths cannot come to disagree about what a rule means. A pattern has to be
-  compared in Ruby regardless: SQLite has no `REGEXP`.
+- **`ImportMatcher#match` is the single authority.** It is duck-typed on `account_id`, `trx_type`,
+  `description` and `amount`, which a saved `Transaction` satisfies exactly, so it is reused unchanged
+  rather than reimplemented in SQL. The literal case *is* narrowed by a `where(description: …)` first, which
+  is a pure narrowing because the column collates `BINARY` — the same comparison Ruby's `==` makes — but
+  `#match` is still asked, so the two paths cannot come to disagree about what a rule means. A pattern has
+  to be compared in Ruby regardless: SQLite has no `REGEXP`; an amount condition is likewise left to `#match`
+  rather than pushed into `candidates` as a further `where`, since the six `Money` comparisons buy little
+  over a query that already narrows on description.
 - **`update_all`, for the reason `CounterpartyMerge#repoint` gives.** No callback on `Transaction` needs to
   run to re-point three foreign keys, and `#sequence` must emphatically *not* run — the balances are already
   correct, and re-deriving one against itself would raise `ImportError`. `updated_at` is left alone: a rule
@@ -1083,9 +1091,12 @@ controller lets the user drag detected header names or column indexes into the m
 `import_matchers#new` with the description, category and counterparty in the query string, and `#new` reads
 them through a `prefill_params` that permits those three and nothing else. `trx_type` is deliberately not
 among them — `nil` means "any type", which is what a rule generalised from one example nearly always wants —
-and neither is `description_is_regex`, an exact description being the more specific claim. The reader still
-sees the form, because a rule is a generalisation: it claims rows they are not looking at, and now reaches
-backwards as well.
+and neither is `description_is_regex`, an exact description being the more specific claim. `amount` is left
+out for the same reason as `trx_type`, and for an additional one: `ImportMatcher` validates
+`amount_comparison` and `amount` as a pair, so prefilling the amount alone would hand back a rule that fails
+to save unless the reader also chose a comparison or cleared the field — worse than not prefilling it at
+all for the common case, which wants any amount. The reader still sees the form, because a rule is a
+generalisation: it claims rows they are not looking at, and now reaches backwards as well.
 
 Four details shape it:
 
@@ -1563,6 +1574,12 @@ Two the rule-by-example work opened, both of them "only ever more, never fewer":
   anything already claimed. And there is no preview: the rules index cannot say how many existing
   transactions a rule would catch before it is saved, which would be one candidate query per rule with the
   regex ones unable to go into SQL.
+- **The same is true of an amount-conditioned rule and the default sharing its description.** If the
+  default is created (or edited) first, it claims every row against that description — the exception the
+  amount-specific rule was meant to catch included — and there is nothing left uncategorised for the later
+  rule to take. Writing the amount-specific rule before the default is what makes retroactive application
+  land correctly; the ordering matters for exactly the same reason it does for a literal created after a
+  matching regex.
 
 One the two changes make together: **applying a rule can re-key a payee out from under a hand-set
 frequency.** `PaymentSchedule#payee_key` is `counterparty_id || description`, matching how

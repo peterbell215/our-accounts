@@ -430,19 +430,26 @@ learned from your current account should not be applied to a credit card whose s
 So they live under the account: open an account and press **Manage Import Rules**, with the account's
 own buttons at the top of the screen.
 
-Each rule says: when a transaction's description looks like *this*, give it *this* category and *this*
-counterparty.
+Each rule says: when a transaction's description looks like *this* — and, if you choose, its amount
+compares to *this* — give it *this* category and *this* counterparty.
 
 | Field | Meaning |
 | --- | --- |
 | **Description** | Required. The text to look for, exactly as the statement writes it |
 | **Treat as a pattern** | Match a regular expression anywhere in the description instead of the whole thing, so `AMAZON` catches `AMAZON* 204-813115` |
 | **Transaction type** | Restrict the rule to one type — `DD`, `DEB`. Leave blank to match any, which is usually what you want |
+| **Amount** and **Comparison** | Optional. Restrict the rule to one comparison against the amount — equal to, not equal to, less than, or the others. A purchase is entered as a negative number, e.g. `-7.99`, matching how amounts appear everywhere else. Leave the comparison as *any amount* to match every amount, which is usually what you want |
 | **Category** | Required. This is what the rule is for |
 | **Counterparty** | Optional. Leave it as *none* for a vendor you cannot identify |
 
-When more than one rule matches, **an exact description always beats a pattern**. So you can have a broad
-`AMAZON` pattern and still write an exact rule for one particular Amazon charge that belongs elsewhere.
+When more than one rule matches, **an exact description always beats a pattern**, and **a rule naming an
+amount always beats one that does not**, for the same description. So you can have a broad `AMAZON` pattern
+and still write an exact rule for one particular Amazon charge that belongs elsewhere — and you can write
+two rules for the same description, one for a specific amount and one with no amount condition as the
+default for everything else. That is how to split `APPLE.COM/BILL`, where most charges are a fixed £7.99
+subscription and the rest are one-off film or music purchases: one rule for "amount equal to -£7.99" filed
+under Subscriptions, and a second rule for the same description with no amount condition, filed under
+Entertainment, catching whatever the first one does not.
 
 The list shows a **Matched** count against each rule: how many transactions it has actually caught. A rule
 matching nothing usually has a typo, or trailing spaces in its description — the list marks those with ⚠,
@@ -464,9 +471,10 @@ filled in from that transaction, exactly as the statement writes it, along with 
 counterparty if it has them. Hovering over the icon shows the description it would use, which is also the
 one place a stray leading or trailing space is visible before you save.
 
-Two fields are deliberately left alone rather than copied from the transaction. **Transaction type** stays
-blank, so the rule matches any type — the same payee can arrive as a `DD` one month and a `DEB` the next.
-And **Treat as a pattern** stays unticked, an exact description being the more specific claim.
+Three fields are deliberately left alone rather than copied from the transaction. **Transaction type** and
+**Amount** stay blank, so the rule matches any type and any amount — the same payee can arrive as a `DD` one
+month and a `DEB` the next, and most rules are not meant to care what the amount was. And **Treat as a
+pattern** stays unticked, an exact description being the more specific claim.
 
 You still see the form before anything is saved, because a rule is a generalisation: it will claim rows you
 are not looking at, and it will reach backwards.
@@ -935,7 +943,9 @@ Being honest about the gaps, in the order they matter:
    your password. There is no idle timeout, and no list of where your account has been used from.
 7. **A rule only ever claims more, never fewer.** Narrowing a rule, or deleting it, leaves the transactions
    it already categorised exactly as they are. Nor is there any preview: you cannot see how many existing
-   transactions a rule would catch until you save it.
+   transactions a rule would catch until you save it. The same applies across a description shared between
+   an amount-specific rule and its default: write the amount-specific one first, or the default will already
+   have claimed the rows it should have caught.
 
 How well the automatic categorisation does depends on how much hand analysis you feed it. Against a
 year of real statements with one quarter analysed by hand, roughly two thirds of transactions were

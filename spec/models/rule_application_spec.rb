@@ -129,4 +129,62 @@ RSpec.describe RuleApplication, type: :model do
       expect(row.category_id).to eq subscriptions.id
     end
   end
+
+  # Two rules can share a description: one naming an amount, catching the exception (the Apple.com/BILL
+  # £7.99 subscription among the film and music purchases against the same description), and one with no
+  # amount condition, catching whatever the first one leaves.  #match is the only thing either rule's
+  # RuleApplication run consults, so this only needs #apply exercised twice.
+  describe 'an amount condition, shared with a default rule on the same description' do
+    let(:travel) { Category.find_by!(name: "Travel") }
+
+    let(:subscription_rule) do
+      create(:import_matcher, account: lloyds, description: 'APPLE.COM/BILL', trx_type: nil,
+                              amount_comparison: 'equal_to', amount: Money.from_amount(-7.99),
+                              category: subscriptions)
+    end
+
+    let(:default_rule) do
+      create(:import_matcher, account: lloyds, description: 'APPLE.COM/BILL', trx_type: nil,
+                              category: travel)
+    end
+
+    def apple_row(amount)
+      create(:transaction, account: lloyds, date: Date.new(2024, 9, 12), description: 'APPLE.COM/BILL',
+                           amount: Money.from_amount(amount))
+    end
+
+    it 'takes only the amount it names, leaving other amounts against the same description uncategorised' do
+      subscription_row = apple_row(-7.99)
+      purchase_row = apple_row(-12.99)
+
+      expect(described_class.new(matcher: subscription_rule).apply).to eq 1
+      expect(subscription_row.reload.category_id).to eq subscriptions.id
+      expect(purchase_row.reload.category_id).to be_nil
+    end
+
+    # Creating the specific rule before the default is what makes retroactive application split existing
+    # rows correctly — the same order-dependence RuleApplication already has for a literal rule created
+    # after a matching regex one.
+    it 'splits existing rows correctly when the amount-specific rule is applied before the default' do
+      subscription_row = apple_row(-7.99)
+      purchase_row = apple_row(-12.99)
+
+      described_class.new(matcher: subscription_rule).apply
+      described_class.new(matcher: default_rule).apply
+
+      expect(subscription_row.reload.category_id).to eq subscriptions.id
+      expect(purchase_row.reload.category_id).to eq travel.id
+    end
+
+    it 'leaves the amount-specific rule nothing to claim when the default is applied first' do
+      subscription_row = apple_row(-7.99)
+      purchase_row = apple_row(-12.99)
+
+      described_class.new(matcher: default_rule).apply
+      described_class.new(matcher: subscription_rule).apply
+
+      expect(subscription_row.reload.category_id).to eq travel.id
+      expect(purchase_row.reload.category_id).to eq travel.id
+    end
+  end
 end

@@ -10,8 +10,10 @@
 
 <p>
   When a statement is imported, each transaction is checked against these rules.  The first rule whose
-  description matches — and whose transaction type matches, if it names one — decides the transaction's
-  category and counterparty.  An exact description is tried before a pattern.
+  description matches — and whose transaction type and amount match, if it names them — decides the
+  transaction's category and counterparty.  An exact description is tried before a pattern, and a rule
+  naming an amount is tried before one that does not, so a description can carry both a rule for one
+  particular amount and a default for everything else.
 </p>
 
 <%= form_with url: account_import_matchers_path(@account), method: :get, local: true,
@@ -32,6 +34,7 @@
         <div class="div-table-col header-col">Description</div>
         <div class="div-table-col header-col">Match</div>
         <div class="div-table-col header-col">Type</div>
+        <div class="div-table-col header-col">Amount</div>
         <div class="div-table-col header-col">Category</div>
         <div class="div-table-col header-col">Counterparty</div>
         <div class="div-table-col header-col">Matched</div>

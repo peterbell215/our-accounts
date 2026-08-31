@@ -101,13 +101,17 @@ class ImportMatchersController < ApplicationController
     # account_id is deliberately absent: it comes from the route.
     def import_matcher_params
       params.expect(import_matcher: [ :description, :description_is_regex, :trx_type,
-                                      :category_id, :counterparty_id ])
+                                      :category_id, :counterparty_id, :amount_comparison, :amount ])
     end
 
-    # What a transaction row can hand to the new-rule form.  Three attributes rather than the five #create
+    # What a transaction row can hand to the new-rule form.  Three attributes rather than the seven #create
     # permits: trx_type is left blank because nil means "any type", which is what a rule generalised from one
     # example nearly always wants, and description_is_regex unticked because an exact description is the more
     # specific claim and beats a pattern anyway.  account_id is absent for the same reason as above.
+    #
+    # amount is left out for the same reason as trx_type: prefilling it without also choosing a comparison
+    # would hand back an invalid rule (amount present, comparison blank) unless the reader noticed and
+    # cleared it, for the common case of a rule meant to match any amount.
     #
     # #permit rather than #expect, and a class check rather than #blank?: expect raises when the key is
     # absent, which is the ordinary case of arriving from "New rule", and a hand-written
