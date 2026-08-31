@@ -1267,11 +1267,9 @@ would fit in the margin of error of anything larger. The shape of the deployment
 database being SQLite on local disk, which is a decision made long before there was anywhere to deploy
 to.
 
-**Nothing is deployed yet.** The configuration is complete and the image has been built and inspected,
-but the droplet and the domain do not exist, so `config/deploy.yml` and `config/litestream.yml` carry
-`TODO` markers for the three values that cannot be known until they do: the server's address, the
-hostname, and the backup bucket. What follows is therefore the design and the reasoning behind it rather
-than a report from a running system; the parts that have actually been verified are called out as such.
+It is deployed and running at **accounts.peterbell.org.uk**, on a 1GB droplet in London, behind a
+Let's Encrypt certificate that kamal-proxy obtained and renews by itself. The database carries the real
+history — 233 accounts, 2,626 transactions, 236 rules — and is replicated to Cloudflare R2 continuously.
 
 ### Why a plain VM, and not Azure's container hosting
 
@@ -1319,23 +1317,41 @@ be re-entered. Streaming the WAL is the cheaper option in the only currency that
 attention.
 
 The restore path is deliberately ordinary — pull a copy out of the bucket into the same directory, look at
-it, and move it into place — because the day it is needed is not a day to be learning it.
+it, and move it into place — because the day it is needed is not a day to be learning it. It has been
+walked once, deliberately: `litestream restore` into a scratch file inside the running accessory, which
+already holds the credentials, then counting rows in the result. It returned the same 233 accounts, 2,626
+transactions and one user as the live database, and passed `pragma integrity_check`. An untested backup is
+a belief rather than a backup, and this one has been tested exactly once, which is the minimum.
 
-### Production gets its data by copy, not by seed
+Replacing the database underneath a running replica is worth knowing about, because it happened during
+the first deploy and could easily have been fumbled. The app was booted with an empty database before the
+real one was copied in, so the R2 replica held a lineage belonging to a database that no longer existed.
+Litestream handled it: on restart it logged `detected database behind replica`, fetched the latest file,
+and uploaded the whole new database as a fresh transaction. Nothing had to be cleared out of the bucket.
+The local `.production.sqlite3-litestream` metadata directory *did* have to be removed along with the old
+database, though — it belongs to the file it sits beside, not to the replica.
+
+### Production got its data by copy, not by seed
 
 `AccountSeeder` can rebuild an account from the statement CSVs, and that is how a development database is
-made. Production is not to be built that way. The seed reproduces the account, the derived rules and the
+made. Production was not built that way. The seed reproduces the account, the derived rules and the
 imported transactions; it cannot reproduce the hand-assigned categories and the merged counterparties,
-which exist only in the database and are the accumulated work the application is for. So the plan is to
-copy the development database up with `sqlite3 .backup` and put it in place as `production.sqlite3`.
-`db:prepare`, which `bin/docker-entrypoint` runs on every boot, then finds a populated database, applies
-any pending migrations and skips the seed — which is also why excluding the CSVs from the image costs
-nothing.
+which exist only in the database and are the accumulated work the application is for. So the development
+database was copied up with `sqlite3 .backup` and put in place as `production.sqlite3`. `db:prepare`,
+which `bin/docker-entrypoint` runs on every boot, then found a populated database, applied the pending
+migrations and skipped the seed — which is also why excluding the CSVs from the image costs nothing.
 
 This works only because there is one `config/master.key` for every environment: the `encrypts`-ed
 `otp_secret` column decrypts unchanged, so the household's existing authenticator enrolments continue to
-work rather than everyone being locked out on the first sign-in. It is the reason the copy is preferred
-to starting empty, and the thing to check first if a sign-in fails after the move.
+work rather than everyone being locked out on the first sign-in. It is the reason the copy was preferred
+to starting empty, and the thing to check first if a sign-in fails after a move.
+
+**One step is not optional and is easy to miss.** A database copied from development records
+`development` in `ar_internal_metadata`, and `db:prepare` refuses to migrate a database last used in
+another environment — `ActiveRecord::EnvironmentMismatchError`, raised in the entrypoint, before Puma
+starts. The row has to be updated to `production` on the copy before it is uploaded. The refusal is
+correct behaviour and worth keeping; it exists to stop someone migrating their development database by
+accident, and the failure it produces here is loud and immediate rather than subtle.
 
 ### Three things the image build had wrong
 
@@ -1363,6 +1379,14 @@ package.
 `db/*.xlsx`. This was noted as a thing to settle before deploying, and settling it means the production
 seed finds no source files and reports that it is not seeding — which is correct, given the paragraph
 above.
+
+### The droplet has 2GB of swap it was not born with
+
+A $6 droplet is 1GB of RAM and no swap at all. A deploy peaks three things at once — Docker unpacking an
+image, `db:prepare` running migrations, and Puma booting — and with no swap the kernel's answer to a
+momentary overshoot is to kill something rather than page it out. A 2GB swapfile costs 2GB of a 22GB disk
+and converts a hard failure into a slow moment. `vm.swappiness` is set to 10, so it stays emergency
+headroom rather than somewhere the application gets paged out to routinely.
 
 ### What the deployment does not have
 
@@ -1407,23 +1431,23 @@ authenticator app for anyone who has set one up.
 Gaps the sign-in opened, none of them urgent and all of them recorded rather than discovered later:
 
 - **No recovery codes**, so being locked out means finding whoever has a terminal. The argument for the
-  rake task is above, and it rests on the machine being the user's own. The deployment now configured
-  removes that premise: the terminal becomes `kamal app exec` against a rented droplet, which needs
-  deploy credentials, and those are a strictly larger privilege than a printed code. This is the gap on
-  this list most likely to need closing next, and the trigger is the first real deploy rather than
-  anything in the code.
+  rake task is above, and it rested on the machine being the user's own. **The deployment has removed
+  that premise.** The terminal is now `kamal app exec` against a rented droplet, which needs the deploy
+  credentials, and those are a strictly larger privilege than a printed code would be. Worse, it is held
+  by one person: whoever can deploy is the only person who can rescue anyone, including themselves. This
+  is the gap on this list most likely to need closing next, and nothing in the code will prompt it.
 - **Nothing expires a session.** The cookie is permanent, and only signing out, changing a password or
   deleting the row ends one. There is no idle timeout and no maximum age.
 - **No record of sign-ins** beyond the `Session` rows themselves. Nothing says where an account has been
   used from, or when it last was, so a session nobody recognises would have to be noticed rather than
   reported.
-- **Deploying is no longer blocked, but has not happened.** Both of the things it was blocked on are
-  settled — the Kamal configuration is filled in and the image no longer carries the statements — and a
-  third, which nobody had found because the image had never once been built: it could not install its
-  gems. It builds now, with the stylesheets in it. What remains is buying a domain and creating the
-  droplet, at which point three `TODO` markers get real values. See **Deployment** above. Note that
-  deploying will sharpen the recovery-code question two bullets up, which was argued on the assumption
-  that the machine was the household's own.
+- **It is deployed.** Both of the things deploying was blocked on are settled — the Kamal configuration
+  is filled in and the image no longer carries the statements — along with a third that nobody had found
+  because the image had never once been built: it could not install its gems. The application now runs at
+  `accounts.peterbell.org.uk` with the real history in it, and the restore path out of R2 has been walked
+  once and produced a matching database. See **Deployment** above. This sharpens the recovery-code
+  question two bullets up, which was argued on the assumption that the machine was the household's own,
+  and that assumption no longer holds.
 
 The application no longer has a step that has to be done from a terminal. Loading a statement was the last
 one, and closing it was worth doing because the categorisation behind it is real: against a year's actual

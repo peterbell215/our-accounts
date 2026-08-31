@@ -69,8 +69,9 @@ bin/rails db:seed               # builds the account and its history from db/*.c
 bin/rails "import:analysis[outgoings-analysis-apr-to-jun24.csv,Lloyds Account]"   # form A, see below
 bin/rails data:create_sample_data   # populate dev db with a Lloyds + Barclaycard account and transactions
 
-bin/kamal setup                 # first deploy: DigitalOcean droplet + Kamal; see architecture.md
-bin/kamal deploy                # every deploy after that
+bin/kamal deploy                # deploy to accounts.peterbell.org.uk; see Deployment in architecture.md
+bin/kamal logs                  # tail the running application
+bin/kamal console               # rails console on the droplet
 docker build -t our_accounts .  # build the production image locally, which CI does not do
 
 bin/rails users:create                          # make someone who can sign in; prompts, never an argument
@@ -496,11 +497,10 @@ this, because the row is the form — the controller renders Turbo Streams and t
 - **Recovery is a rake task, not printed recovery codes.** A locked-out household member cannot recover
   themselves; they need whoever has a terminal on the machine the database is on. That is the right trade
   while the machine is the user's own — codes cost a table, per-code hashing, a show-once screen, a
-  consumption path and specs for all of it, to buy recovery without shell access. **The deployment now
-  configured removes that premise** — on a rented droplet the rake task is reached with `kamal app exec`,
-  which needs deploy credentials, a strictly larger privilege than a printed code — so this is the gap
-  most likely to be worth closing next, triggered by the first real deploy rather than by any change to
-  the code.
+  consumption path and specs for all of it, to buy recovery without shell access. **The deploy has
+  removed that premise** — the rake task is now reached with `kamal app exec` against a rented droplet,
+  which needs the deploy credentials, a strictly larger privilege than a printed code, and held by one
+  person — so this is the gap most likely to be worth closing next.
 - **Nothing expires a session.** The cookie is `permanent`, and only signing out, changing a password, or
   deleting the row ends it. There is also no record of sign-ins beyond the `Session` rows themselves —
   no history of where an account has been used from.

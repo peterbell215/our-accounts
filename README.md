@@ -10,8 +10,8 @@ import afterwards.
 
 It is built for one household. Everyone in the house gets their own sign-in — a password, and an
 authenticator app on your phone if you want one — and you all see the same accounts and the same
-transactions. Nobody has a private corner of it. The data lives in a single database file, either on your
-own machine or on one small server you rent — see [Putting it on a server](#putting-it-on-a-server).
+transactions. Nobody has a private corner of it. The data lives in a single database file on one small
+rented machine, backed up continuously — see [Putting it on a server](#putting-it-on-a-server).
 
 > **Status: usable.** Everything you need for the monthly routine has a screen — setting up an account,
 > loading a statement, correcting how things are filed, and forecasting what the month will cost. What it
@@ -85,37 +85,31 @@ There is no `bin/dev` — `bin/rails server` is the only command you need.
 
 ## Putting it on a server
 
-Running it on your laptop means it is only there when the laptop is. If you would rather reach it from a
-phone on the bus, it is set up to run on one small rented machine — a £5-a-month DigitalOcean droplet is
-ample — behind your own web address, with a certificate it obtains by itself. Everybody in the house then
-signs in the same way they always did, from anywhere.
+It is on one: **<https://accounts.peterbell.org.uk>**. Everybody in the house signs in there the same way
+they would have at home, from any phone or laptop, and the certificate renews itself.
 
-You will need a domain name (about £10 a year), a DigitalOcean account, and a Cloudflare account for the
-free storage the backups go to.
-
-The deployment is driven by Kamal, and the settings live in `config/deploy.yml`. Three of them are marked
-`TODO` because they cannot be filled in until the machine and the address exist:
-
-- the server's address, in two places — `servers` and the `litestream` accessory
-- the web address, in two places — `proxy.host` and `APP_HOST`, which must agree
-- the backup bucket, in `config/litestream.yml`
-
-With those filled in, and a GitHub access token and your Cloudflare storage keys in your shell:
+It runs on a small rented machine — a £5-a-month DigitalOcean droplet — with the database on that
+machine's own disk. Deploying a change is one command from a checkout of this repository:
 
 ```sh
-bin/kamal setup      # the first time: installs everything and starts it
-bin/kamal deploy     # every time after that
+bin/kamal deploy
 ```
+
+That builds the application, sends it up, and switches over to it without dropping anybody mid-request.
+`bin/kamal logs` shows what the server is doing, and `bin/kamal console` gives you the same interactive
+prompt you would get at home.
 
 **Your statements do not go to the server.** The CSV files you download from your bank stay on your own
 machine; the server only ever sees the transactions after you have imported them through the screen.
 
 **The database is copied off the machine continuously.** Every change is streamed to Cloudflare storage
-within seconds, so losing the server loses nothing. It is worth practising the way back once, while
-nothing is wrong, rather than reading about it for the first time on the day it matters.
+within seconds, so losing the machine loses nothing. That path has been walked once on purpose — a copy
+was pulled back out of storage and checked against the live one, and they matched. It is worth repeating
+occasionally, because a backup nobody has ever restored is a belief rather than a backup.
 
-**One thing to know before you start.** Once it is on a server, the way back in for somebody locked out
-runs on that server rather than on a laptop in the house — see below.
+**One thing to know.** Now that it is on a server, the way back in for somebody locked out runs against
+that server rather than a laptop in the house — see [Signing in](#signing-in). In practice that means the
+person who can deploy is the only person who can rescue anybody.
 
 ---
 
