@@ -328,19 +328,19 @@ everything else still works. It is worth knowing that the suggestions are a star
 authority: it is told that `LNK`, `SQ *` and `PAYPAL` are payment rails rather than payees, and that a shared
 first word means nothing, but the last judgement is yours on the confirmation screen.
 
-Run `bin/rails credentials:edit` and add a key from [console.anthropic.com](https://console.anthropic.com):
+**On your own machine, sign in with the Claude Code CLI.** Run `claude setup-token`, and export what it
+gives you:
 
-```yaml
-anthropic:
-  api_key: sk-ant-...
+```sh
+export CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
 ```
 
-*"Claude API key" and "Anthropic API key" are two names for the same thing* — the Anthropic API was
-rebranded the Claude API, and there is only one kind of key to get.
+That is all development needs — nothing goes in the credentials file. The token does eventually expire; when
+it does the screen reports that the sign-in was refused, and a fresh `claude setup-token` fixes it.
 
-**You can point it at another provider instead.** Some hosts sell access to the same models, which is worth
-having if you already pay them for something else and would rather keep one bill. DigitalOcean is one; give
-it a token, its address and its own name for the model:
+**For a deployed copy, name a provider in the credentials instead.** Some hosts sell access to the same
+models, which is worth having if you already pay them for hosting and would rather keep one bill.
+DigitalOcean is one; give it a token, its address, and its own name for the model:
 
 ```yaml
 anthropic:
@@ -349,10 +349,17 @@ anthropic:
   model: anthropic-claude-opus-5
 ```
 
-The model name differs by provider — the same model is `claude-opus-5` from Anthropic and
-`anthropic-claude-opus-5` from DigitalOcean — and giving one provider the other's name fails with an
-unhelpful *not found*. If a provider turns out not to support everything this needs, the screen reports what
-it said rather than breaking, so trying one costs nothing but the request.
+Put that in the **production** credentials — `bin/rails credentials:edit --environment production` — rather
+than the shared file. The shared one is readable on every machine, so a token left there would have everyone
+developing against the deployed copy's account.
+
+The model name differs by provider: the same model is `claude-opus-5` from Anthropic and
+`anthropic-claude-opus-5` from DigitalOcean, and giving one provider the other's name fails with an unhelpful
+*not found*. If a provider turns out not to support everything this needs, the screen reports what it said
+rather than breaking, so trying one costs nothing but the request.
+
+*If you do have an ordinary API key, `anthropic: api_key:` in the credentials still works and takes
+precedence — and "Claude API key" and "Anthropic API key" are two names for the same thing.*
 
 You then get a confirmation listing each one with its transactions, its total, and the categories its rules
 assign, and a box for what to call the result. **The name can be anything** — it does not have to be one of

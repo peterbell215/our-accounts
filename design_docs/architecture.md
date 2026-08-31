@@ -129,17 +129,30 @@ API unreachable, a refusal, an answer that will not parse — is reported above 
 rather than raised. No key configured is the state every checkout starts in, and it has to read as something
 to set up rather than as something broken.
 
-**Which provider serves the model is configuration, not code.** One gem reaches both the first-party Claude
-API and any gateway speaking the Messages API — DigitalOcean's `inference.do-ai.run` among them — and the
-whole difference between them is an auth header, a base URL and a model id. So all three are read from the
-credentials rather than compiled in: `api_key` sends `x-api-key`, `auth_token` sends `Authorization: Bearer`,
-`base_url` is omitted entirely when unset so the gem's own default stands, and `model` defaults to the
-first-party id. A key beats a token where both are present, so a token left behind from trying a gateway
-cannot quietly outrank a real one.
+**Which provider serves the model is configuration, not code**, and the reason is a constraint rather than a
+preference: no API keys are issued here. Development signs in with the Claude Code CLI, production goes
+through a third-party service. Both have to work, so the credential is resolved in three steps —
+`anthropic.api_key`, then `anthropic.auth_token` with its `base_url` and `model`, then
+`CLAUDE_CODE_OAUTH_TOKEN` from the environment. Configured credentials beat the ambient environment: the
+first two are deliberate per-environment configuration, the third is whatever the developer happened to
+export.
 
-The motive is consolidation rather than capability: running the application on a host that also sells
-inference puts the model on the same bill. It is worth being clear that this buys nothing technically — the
-call works from anywhere, and hosting somewhere does not require the model to come from there.
+**The OAuth token cannot be passed as a bearer token, which is the trap here.** An OAuth token is only
+accepted alongside `anthropic-beta: oauth-2025-04-20`, and the SDK attaches that header on exactly one of
+its three auth paths: not `api_key` (which sends `x-api-key`), not `auth_token` (a bare bearer), but the
+token-cache path, taken when the credential is an access-token *provider*. So the CLI's token is wrapped in
+`Anthropic::Credentials::StaticToken`, whose whole job is to satisfy that protocol with a fixed value.
+Handed to `auth_token:` instead it would go out as a bearer with no beta header and come back 401 — a
+failure that looks like a bad token rather than a missing header.
+
+The production settings belong in `config/credentials/production.yml.enc` rather than the shared
+`credentials.yml.enc`, which is committed and readable everywhere: a gateway token left in the shared file
+would have every development machine spending the production budget.
+
+The motive for the gateway is consolidation rather than capability: running the application on a host that
+also sells inference puts the model on the same bill. It is worth being clear that this buys nothing
+technically — the call works from anywhere, and hosting somewhere does not require the model to come from
+there.
 
 Nothing was built for the gateway case beyond those settings. **Structured outputs is undocumented on
 DigitalOcean**, and this depends on it; if a gateway rejects `output_config` the portable shape is a single

@@ -561,13 +561,33 @@ this, because the row is the form — the controller renders Turbo Streams and t
   category names and nothing else — no amounts, no dates, no account numbers — and a spec asserts that, so
   widening it is a deliberate act.
 
-  **Which provider it talks to is configuration, not code.** Four optional settings under `anthropic:` in
-  the encrypted credentials, beside `seed_data`: `api_key` (sent as `x-api-key`, the first-party API),
-  `auth_token` (sent as `Authorization: Bearer`, what DigitalOcean and other Messages-API gateways want),
-  `base_url`, and `model`. A key wins over a token where both are set. Nothing configured at all is the
-  state every checkout starts in, and the screen says so rather than failing. **Model ids are
-  provider-specific** — the same model is `claude-opus-5` first-party and `anthropic-claude-opus-5` on
-  DigitalOcean (`https://inference.do-ai.run`), and sending one provider's id to the other is a bare 404.
+  **Which provider it talks to is configuration, not code**, because no API keys are issued here: development
+  signs in with the Claude Code CLI and production goes through a third-party service. Three ways in, tried
+  in that order, with configured credentials beating the ambient environment:
+
+  1. `anthropic.api_key` in the credentials — sent as `x-api-key`. Unused under the current policy.
+  2. `anthropic.auth_token`, with `base_url` and `model` — a bare `Authorization: Bearer`, which is what
+     DigitalOcean and other Messages-API gateways want. This is the production path.
+  3. `CLAUDE_CODE_OAUTH_TOKEN` in the environment, written by `claude setup-token` — the development path.
+
+  **The OAuth token is not passed as `auth_token:`, and that is not a detail.** An OAuth token is only
+  accepted alongside `anthropic-beta: oauth-2025-04-20`, and the SDK attaches that header on exactly one
+  path: where the credential is an access-token *provider* rather than a bare token (`client.rb#auth_headers`
+  — `@api_key`, then `@auth_token`, then `@token_cache`). So it is wrapped in
+  `Anthropic::Credentials::StaticToken`, which routes through the token cache. Passed as `auth_token:` it
+  would go out as a bearer with no beta header and come back 401.
+
+  Put the production settings in `config/credentials/production.yml.enc`, not the shared credentials file:
+  `credentials.yml.enc` is committed and readable in every environment, so a gateway token left there would
+  have development spending the production budget. **Model ids are provider-specific** — the same model is
+  `claude-opus-5` first-party and `anthropic-claude-opus-5` on DigitalOcean (`https://inference.do-ai.run`),
+  and sending one provider's id to the other is a bare 404. Nothing configured at all is the state a fresh
+  checkout is in, and the screen says so rather than failing.
+
+  Specs that touch this **must pin `CLAUDE_CODE_OAUTH_TOKEN`**, including to `nil`. It is exported on the
+  machines this is developed on, so an unpinned example reads a real token, builds a real client and makes a
+  real network call from the suite — confirmed by removing the pin and watching a 401 come back from
+  `api.anthropic.com`.
 
   Note `output_config: { format_: ... }` — the Ruby SDK spells that attribute with a trailing underscore
   (`api_name: :format`, as with `system_`), and passing `format:` sends no schema at all and returns prose.
