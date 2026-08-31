@@ -133,6 +133,85 @@ describe MergeSuggester, type: :model do
     end
   end
 
+  # Which provider is talked to is configuration rather than code, so these assert on how the client is
+  # built rather than reaching inside it. Nothing here reaches the network either: Anthropic::Client.new
+  # is stubbed, so no client is ever constructed.
+  describe 'choosing a provider from the credentials' do
+    let(:reply) { reply_with([]) }
+
+    def with_credentials(settings)
+      allow(Rails.application.credentials).to receive(:dig).with(:anthropic).and_return(settings)
+    end
+
+    def stub_client
+      messages = double("messages")
+      allow(messages).to receive(:create) { |**kwargs| @sent = kwargs; reply }
+      client = double("client", messages: messages)
+      allow(Anthropic::Client).to receive(:new).and_return(client)
+      client
+    end
+
+    # The first-party API wants x-api-key, which is what `api_key:` sends, and its own default host.
+    it 'sends a key as api_key, with no base_url of its own' do
+      with_credentials(api_key: "sk-ant-test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new).with(api_key: "sk-ant-test")
+    end
+
+    # DigitalOcean and other gateways want Authorization: Bearer, which is what `auth_token:` sends.
+    it 'sends a token as auth_token, with the base_url it was given' do
+      with_credentials(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new)
+        .with(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
+    end
+
+    # A token left behind from trying a gateway should not quietly outrank a real key.
+    it 'prefers a key over a token where both are set' do
+      with_credentials(api_key: "sk-ant-test", auth_token: "dop_v1_test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new).with(api_key: "sk-ant-test")
+    end
+
+    # Model ids are provider-specific — the same model is claude-opus-5 first-party and
+    # anthropic-claude-opus-5 on DigitalOcean — so it has to travel with the rest of the settings.
+    it 'sends the configured model' do
+      with_credentials(api_key: "sk-ant-test", model: "anthropic-claude-opus-5")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq "anthropic-claude-opus-5"
+    end
+
+    it 'falls back to the default model where none is configured' do
+      with_credentials(api_key: "sk-ant-test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq described_class::MODEL
+    end
+
+    # The state every fresh checkout is in, so it has to read as setup rather than as breakage.
+    it 'reports having no credential at all, rather than raising' do
+      with_credentials(nil)
+      suggester = described_class.new
+
+      expect(suggester.groups).to be_empty
+      expect(suggester.error).to include("No anthropic.api_key or anthropic.auth_token")
+    end
+  end
+
   describe 'when there is nothing to ask about' do
     it 'asks nothing at all on a list too short to hold a duplicate' do
       client = client_returning(reply_with([]))

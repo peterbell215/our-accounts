@@ -129,6 +129,25 @@ API unreachable, a refusal, an answer that will not parse — is reported above 
 rather than raised. No key configured is the state every checkout starts in, and it has to read as something
 to set up rather than as something broken.
 
+**Which provider serves the model is configuration, not code.** One gem reaches both the first-party Claude
+API and any gateway speaking the Messages API — DigitalOcean's `inference.do-ai.run` among them — and the
+whole difference between them is an auth header, a base URL and a model id. So all three are read from the
+credentials rather than compiled in: `api_key` sends `x-api-key`, `auth_token` sends `Authorization: Bearer`,
+`base_url` is omitted entirely when unset so the gem's own default stands, and `model` defaults to the
+first-party id. A key beats a token where both are present, so a token left behind from trying a gateway
+cannot quietly outrank a real one.
+
+The motive is consolidation rather than capability: running the application on a host that also sells
+inference puts the model on the same bill. It is worth being clear that this buys nothing technically — the
+call works from anywhere, and hosting somewhere does not require the model to come from there.
+
+Nothing was built for the gateway case beyond those settings. **Structured outputs is undocumented on
+DigitalOcean**, and this depends on it; if a gateway rejects `output_config` the portable shape is a single
+forced tool call, with `SCHEMA` as the tool's `input_schema` and the groups read from `tool_use.input`, which
+that provider does document. That refactor is deliberately deferred: it trades a documented first-party
+mechanism for a less direct one, a rejection surfaces through the ordinary error path as a message on the
+screen, and one real request settles whether it is needed at all.
+
 **The wanted name is checked against `Counterparty`, not `Account`.** The ids are resolved through
 `Counterparty` too, so a `BankAccount` is filtered out of the set by design — and a check over `Account` gave
 advice that could not be followed, telling the reader to include an account in a merge that would discard it.

@@ -559,10 +559,20 @@ this, because the row is the form — the controller renders Turbo Streams and t
   instead. It **proposes only**: each group is a link into the existing confirmation, and `CounterpartyMerge`
   runs unchanged over a set a person approved. The request carries counterparty names and their rules'
   category names and nothing else — no amounts, no dates, no account numbers — and a spec asserts that, so
-  widening it is a deliberate act. The key is `anthropic.api_key` in the encrypted credentials, beside
-  `seed_data`; without one the screen says so rather than failing, which is the state every checkout starts
-  in. Note `output_config: { format_: ... }` — the Ruby SDK spells that attribute with a trailing underscore
+  widening it is a deliberate act.
+
+  **Which provider it talks to is configuration, not code.** Four optional settings under `anthropic:` in
+  the encrypted credentials, beside `seed_data`: `api_key` (sent as `x-api-key`, the first-party API),
+  `auth_token` (sent as `Authorization: Bearer`, what DigitalOcean and other Messages-API gateways want),
+  `base_url`, and `model`. A key wins over a token where both are set. Nothing configured at all is the
+  state every checkout starts in, and the screen says so rather than failing. **Model ids are
+  provider-specific** — the same model is `claude-opus-5` first-party and `anthropic-claude-opus-5` on
+  DigitalOcean (`https://inference.do-ai.run`), and sending one provider's id to the other is a bare 404.
+
+  Note `output_config: { format_: ... }` — the Ruby SDK spells that attribute with a trailing underscore
   (`api_name: :format`, as with `system_`), and passing `format:` sends no schema at all and returns prose.
+  Structured outputs is undocumented on DigitalOcean, though tool calling is; if a gateway rejects
+  `output_config`, the portable shape is one forced tool call with `SCHEMA` as its `input_schema`.
 - **A merged-away counterparty can be resurrected.** `AnalysisImporter#counterparty_for` looks one up by
   name and creates it when absent, so re-running the analysis import recreates a name that was merged away,
   for any description that does not already have a rule; the guard skipping descriptions the account already

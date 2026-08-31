@@ -11,6 +11,10 @@
 # which is where the load-bearing ordering lives — does the work unchanged, on a set the reader has
 # approved.  Nothing here merges anything.
 class MergeSuggester
+  # The default, used unless the credentials name another.  Model ids are provider-specific: the
+  # first-party API calls this `claude-opus-5`, DigitalOcean calls the same model
+  # `anthropic-claude-opus-5`, and sending one provider's id to the other is a 404 rather than a
+  # helpful message.
   MODEL = :"claude-opus-5"
 
   # Groups of a few names each, out of a few hundred in: the reply is short, and a cap this size only
@@ -110,18 +114,46 @@ class MergeSuggester
 
   private
 
-  def client = @client ||= Anthropic::Client.new(api_key: api_key)
+  # Which provider to talk to is configuration, not code.  One gem reaches both the first-party API and
+  # any gateway speaking the Messages API — DigitalOcean's among them — and the whole difference is an
+  # auth header, a base URL and a model id, so all three are read rather than compiled in.
+  def client
+    @client ||= Anthropic::Client.new(**credential, **base_url)
+  end
 
-  # The key lives in the encrypted credentials beside seed_data rather than in the environment, so that a
-  # checkout with config/master.key needs nothing else set to work.
-  def api_key
-    Rails.application.credentials.dig(:anthropic, :api_key) ||
-      raise(KeyError, "No anthropic.api_key in the credentials. Add one with bin/rails credentials:edit.")
+  # `api_key:` sends `x-api-key`, which the first-party API wants; `auth_token:` sends
+  # `Authorization: Bearer`, which is what DigitalOcean and other gateways want.  A key wins over a token
+  # where both are set: a token left behind from trying a gateway should not quietly outrank a real one.
+  def credential
+    settings = provider_settings
+
+    if settings[:api_key].present?
+      { api_key: settings[:api_key] }
+    elsif settings[:auth_token].present?
+      { auth_token: settings[:auth_token] }
+    else
+      raise KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials. " \
+                      "Add one with bin/rails credentials:edit."
+    end
+  end
+
+  # Omitted entirely when unset, so the gem's own default stands rather than being overwritten with nil.
+  def base_url
+    url = provider_settings[:base_url]
+    url.present? ? { base_url: url } : {}
+  end
+
+  def model = provider_settings[:model].presence || MODEL
+
+  # Beside seed_data rather than in the environment, so that a checkout with config/master.key needs
+  # nothing else set to work.
+  def provider_settings
+    @provider_settings ||= Rails.application.credentials.dig(:anthropic) || {}
   end
 
   def request_groups
     message = client.messages.create(
-      model: MODEL,
+      model: model,
       max_tokens: MAX_TOKENS,
       system_: SYSTEM,
       messages: [ { role: "user", content: payload } ],
