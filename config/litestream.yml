@@ -1,0 +1,20 @@
+# Continuous off-host replication of the production database, mounted into the litestream accessory
+# declared in config/deploy.yml.  Rails 8's SQLite adapter puts the database in WAL mode by default,
+# which is what Litestream reads.
+#
+# Only the primary database is here.  storage/production_cache.sqlite3, _queue and _cable are derived
+# state that Rails rebuilds, and restoring a stale copy of them would be worse than starting them empty.
+#
+# Cloudflare R2 is the destination: S3-compatible, free below 10GB, and no charge for reading a backup
+# back out again — which matters, because the day you need this is the day you pull the whole thing down.
+#
+# Credentials arrive in the environment as LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY,
+# declared under the litestream accessory in config/deploy.yml and read from .kamal/secrets.
+dbs:
+  - path: /data/production.sqlite3
+    replicas:
+      - type: s3
+        endpoint: https://e83d6f4c6e200700f717f5140f0ffdac.r2.cloudflarestorage.com
+        bucket: accounts-backup-1
+        path: production
+        region: auto

@@ -10,7 +10,8 @@ import afterwards.
 
 It is built for one household. Everyone in the house gets their own sign-in — a password, and an
 authenticator app on your phone if you want one — and you all see the same accounts and the same
-transactions. Nobody has a private corner of it. The data lives in a SQLite file on your own machine.
+transactions. Nobody has a private corner of it. The data lives in a single database file on one small
+rented machine, backed up continuously — see [Putting it on a server](#putting-it-on-a-server).
 
 > **Status: usable.** Everything you need for the monthly routine has a screen — setting up an account,
 > loading a statement, correcting how things are filed, and forecasting what the month will cost. What it
@@ -24,6 +25,7 @@ transactions. Nobody has a private corner of it. The data lives in a SQLite file
 - [Before you start](#before-you-start)
 - [First-time setup](#first-time-setup)
 - [Running it](#running-it)
+- [Putting it on a server](#putting-it-on-a-server)
 - [Signing in](#signing-in)
 - [The screens](#the-screens)
 - [Setting up a new account](#setting-up-a-new-account)
@@ -81,6 +83,36 @@ There is no `bin/dev` — `bin/rails server` is the only command you need.
 
 ---
 
+## Putting it on a server
+
+It is on one: **<https://accounts.peterbell.org.uk>**. Everybody in the house signs in there the same way
+they would have at home, from any phone or laptop, and the certificate renews itself.
+
+It runs on a small rented machine — a £5-a-month DigitalOcean droplet — with the database on that
+machine's own disk. Deploying a change is one command from a checkout of this repository:
+
+```sh
+bin/kamal deploy
+```
+
+That builds the application, sends it up, and switches over to it without dropping anybody mid-request.
+`bin/kamal logs` shows what the server is doing, and `bin/kamal console` gives you the same interactive
+prompt you would get at home.
+
+**Your statements do not go to the server.** The CSV files you download from your bank stay on your own
+machine; the server only ever sees the transactions after you have imported them through the screen.
+
+**The database is copied off the machine continuously.** Every change is streamed to Cloudflare storage
+within seconds, so losing the machine loses nothing. That path has been walked once on purpose — a copy
+was pulled back out of storage and checked against the live one, and they matched. It is worth repeating
+occasionally, because a backup nobody has ever restored is a belief rather than a backup.
+
+**One thing to know.** Now that it is on a server, the way back in for somebody locked out runs against
+that server rather than a laptop in the house — see [Signing in](#signing-in). In practice that means the
+person who can deploy is the only person who can rescue anybody.
+
+---
+
 ## Signing in
 
 Your email address and your password, and that is it — unless you have set up an authenticator app, in
@@ -112,6 +144,17 @@ bin/rails "users:change_password[you@example.com]"   # forgotten your password
 
 The first turns two-factor off so a password alone gets you in, and you can set the app up again
 afterwards. There are no printed backup codes to lose.
+
+If it is running on a server, the same two commands are run through Kamal from a machine set up to deploy
+it, rather than on the server itself:
+
+```sh
+bin/kamal app exec --interactive --reuse 'bin/rails "users:disable_totp[you@example.com]"'
+```
+
+Which is worth being clear-eyed about: it means whoever can rescue you is whoever can deploy the
+application, and nobody else. In a house where one person set it up, that is one person — so if you are
+that person, do not lose your own phone.
 
 ---
 
@@ -723,6 +766,10 @@ Run these from the project directory.
 | `bin/rails console` | An interactive prompt, for anything the screens do not cover |
 | `bundle exec rspec` | Run the test suite (needs Chrome) |
 | `bin/rubocop` | Check code style |
+| `bin/kamal setup` | Put it on a server for the first time — see [Putting it on a server](#putting-it-on-a-server) |
+| `bin/kamal deploy` | Send your latest changes to that server |
+| `bin/kamal logs` | Watch what the server is doing |
+| `bin/kamal console` | The interactive prompt above, but on the server |
 
 `db:seed` is the quickest route from an empty database to a working one, but it needs the statement
 filenames and account name configured in the encrypted credentials. If you are setting up by hand
@@ -742,10 +789,12 @@ Nobody has a login yet. Run `bin/rails users:create`. A fresh database has no us
 sign-up page, so this is expected rather than broken — `bin/rails db:prepare` says so when it happens.
 
 **I have lost my phone and it is asking for a code**
-`bin/rails "users:disable_totp[you@example.com]"`, run on the machine this is installed on. Two-factor
-goes off, your password alone gets you in, and you can set a new phone up from your own page afterwards.
-There are deliberately no backup codes — the reasoning is that anyone running this has access to the
-machine it is on, and codes are one more secret to lose.
+`bin/rails "users:disable_totp[you@example.com]"`, run on the machine this is installed on — or, if it is
+on a server, `bin/kamal app exec --interactive --reuse 'bin/rails "users:disable_totp[you@example.com]"'`
+from a machine set up to deploy it. Two-factor goes off, your password alone gets you in, and you can set
+a new phone up from your own page afterwards. There are deliberately no backup codes; the reasoning was
+that anyone running this has access to the machine it is on, which was a better argument when that machine
+was in the house than it is now that it is rented.
 
 **I have forgotten my password**
 `bin/rails "users:change_password[you@example.com]"`. There is no reset-by-email: nothing here is set up

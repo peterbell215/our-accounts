@@ -69,6 +69,11 @@ bin/rails db:seed               # builds the account and its history from db/*.c
 bin/rails "import:analysis[outgoings-analysis-apr-to-jun24.csv,Lloyds Account]"   # form A, see below
 bin/rails data:create_sample_data   # populate dev db with a Lloyds + Barclaycard account and transactions
 
+bin/kamal deploy                # deploy to accounts.peterbell.org.uk; see Deployment in architecture.md
+bin/kamal logs                  # tail the running application
+bin/kamal console               # rails console on the droplet
+docker build -t our_accounts .  # build the production image locally, which CI does not do
+
 bin/rails users:create                          # make someone who can sign in; prompts, never an argument
 bin/rails users:list                            # who has a login, and whether two-factor is on
 bin/rails "users:change_password[a@b.com]"      # a forgotten password
@@ -139,10 +144,11 @@ plain links. It reads like a stylesheet someone broke rather than a missing depe
 caches its load path at boot, so installing into a worktree whose server is already running needs a
 restart before the assets appear.
 
-**Before deploying, note that `.dockerignore` does not exclude `db/*.csv`.** Docker's build context is
-the filesystem rather than git, so those files are baked into the image and pushed to whatever registry
-Kamal is configured with. Either exclude them and put the statements on the host, or satisfy yourself
-that the registry is private.
+**`.dockerignore` excludes `db/*.csv` and `db/*.xlsx`, and must keep doing so.** Docker's build context
+is the filesystem rather than git, so gitignoring them is not enough on its own — without the
+`.dockerignore` entries the statements are baked into the image and pushed to the registry. Production
+therefore has no source files to seed from, which is intended: it got its data by having a database
+copied into place, not by seeding. See **Deployment** in `design_docs/architecture.md`.
 
 Ruby is managed by rvm; `.ruby-version` selects `ruby-4.0.6`. Note that on Ruby 4.0 the `rack` gem must be
 >= 3.2 — 3.1.x requires `cgi/cookie`, which Ruby 4 removed — and RuboCop must be >= ~1.89 to recognise
@@ -491,9 +497,10 @@ this, because the row is the form — the controller renders Turbo Streams and t
 - **Recovery is a rake task, not printed recovery codes.** A locked-out household member cannot recover
   themselves; they need whoever has a terminal on the machine the database is on. That is the right trade
   while the machine is the user's own — codes cost a table, per-code hashing, a show-once screen, a
-  consumption path and specs for all of it, to buy recovery without shell access. It stops being the
-  right trade the moment this is deployed somewhere the household does not own, where the rake task needs
-  SSH and SSH is a strictly larger privilege than a printed code.
+  consumption path and specs for all of it, to buy recovery without shell access. **The deploy has
+  removed that premise** — the rake task is now reached with `kamal app exec` against a rented droplet,
+  which needs the deploy credentials, a strictly larger privilege than a printed code, and held by one
+  person — so this is the gap most likely to be worth closing next.
 - **Nothing expires a session.** The cookie is `permanent`, and only signing out, changing a password, or
   deleting the row ends it. There is also no record of sign-ins beyond the `Session` rows themselves —
   no history of where an account has been used from.
