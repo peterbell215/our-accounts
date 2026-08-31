@@ -240,6 +240,8 @@ statement — it offers its save button straight away.
 The **Counterparty** column names the supplier, where one is known. Start typing in it and your
 existing counterparties are offered as completions; pick one and save, and the transaction is linked to
 it. The small icon beside the name opens that counterparty's own page. Clearing the field unlinks it.
+Where none is set yet, a copy icon sits in its place instead; clicking it copies the description into the
+field as a starting point, which you can then adjust before saving, same as typing one in by hand.
 
 A name that is not already a counterparty is **not created on the first save**. The field turns amber, and
 a message above the list says which name it is offering to create and that the rest of your edits to the
