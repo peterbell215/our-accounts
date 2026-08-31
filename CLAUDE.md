@@ -52,6 +52,11 @@ Rails 8.1 / Ruby 4.0.6, Hotwire (Turbo + Stimulus) with importmap, Propshaft, Pu
 yarn into `node_modules`, which is added to the asset path in `config/initializers/assets.rb`). No JS
 build step — do not introduce one.
 
+**One feature calls out to the internet and the rest of the application does not.** `MergeSuggester` asks
+the Claude API which counterparties are the same payee, through the `anthropic` gem; everything else reads
+and writes the local database and nothing else. Keep it that way by default — a second outbound call is a
+decision about where the household's data goes, not an implementation detail.
+
 ## Commands
 
 Gems may not be installed in a fresh checkout — run `bundle install` (and `yarn install`) first.
@@ -554,10 +559,27 @@ this, because the row is the form — the controller renders Turbo Streams and t
   `(category_id, counterparty_id)` collides where the survivor is already ruled on in that category, so
   those are deleted first and the survivor's own ruling wins. Specs cover all three, confirmed to fail when
   the order is inverted.
-- **Nothing suggests which counterparties to merge.** Of four grouping heuristics measured against the real
-  names, only stripping digits and punctuation is safe (9 groups, no category conflicts); first-word and
-  short-prefix grouping mix categories in roughly half their groups, file unrelated pubs under `THE`, and
-  treat `LNK`, `SQ *` and `PAYPAL` as payees when they are payment rails. Deliberately left manual.
+- **Suggesting which counterparties to merge is `MergeSuggester`**, the one place anything leaves the
+  machine. Four string heuristics were measured against the real names first and only stripping digits and
+  punctuation was safe; the rest filed unrelated pubs under `THE` and treated `LNK`, `SQ *` and `PAYPAL` as
+  payees when they are payment rails — which is a fact about what the words mean, so it asks the Claude API
+  instead. It **proposes only**: each group is a link into the existing confirmation, and `CounterpartyMerge`
+  runs unchanged over a set a person approved. The request carries counterparty names and their rules'
+  category names and nothing else — no amounts, no dates, no account numbers — and a spec asserts that, so
+  widening it is a deliberate act.
+
+  **Which provider it talks to is configuration, not code.** Four optional settings under `anthropic:` in
+  the encrypted credentials, beside `seed_data`: `api_key` (sent as `x-api-key`, the first-party API),
+  `auth_token` (sent as `Authorization: Bearer`, what DigitalOcean and other Messages-API gateways want),
+  `base_url`, and `model`. A key wins over a token where both are set. Nothing configured at all is the
+  state every checkout starts in, and the screen says so rather than failing. **Model ids are
+  provider-specific** — the same model is `claude-opus-5` first-party and `anthropic-claude-opus-5` on
+  DigitalOcean (`https://inference.do-ai.run`), and sending one provider's id to the other is a bare 404.
+
+  Note `output_config: { format_: ... }` — the Ruby SDK spells that attribute with a trailing underscore
+  (`api_name: :format`, as with `system_`), and passing `format:` sends no schema at all and returns prose.
+  Structured outputs is undocumented on DigitalOcean, though tool calling is; if a gateway rejects
+  `output_config`, the portable shape is one forced tool call with `SCHEMA` as its `input_schema`.
 - **A merged-away counterparty can be resurrected.** `AnalysisImporter#counterparty_for` looks one up by
   name and creates it when absent, so re-running the analysis import recreates a name that was merged away,
   for any description that does not already have a rule; the guard skipping descriptions the account already
