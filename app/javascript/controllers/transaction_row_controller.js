@@ -14,7 +14,7 @@ const UNCHANGED_CLASS = "is-unchanged"
 // reconnects this controller over an edit the reader has not saved yet; recomputing from the fields
 // survives that, where a flag on the instance would not.
 export default class extends Controller {
-    static targets = [ "save" ]
+    static targets = [ "save", "description", "counterparty" ]
     static values = {
         // A row that has never been saved always has something to save.
         unsaved: { type: Boolean, default: false },
@@ -27,6 +27,17 @@ export default class extends Controller {
 
     connect() {
         this.refresh()
+    }
+
+    // Offered only where no counterparty is set yet (see the row partial), so this never overwrites one.
+    // Dispatching "input" rather than calling #refresh directly is what marks the row changed: it bubbles
+    // to the form's own input listener the same way a reader's keystroke would.
+    copyDescriptionToCounterparty() {
+        const description = this.descriptionTarget.value ?? this.descriptionTarget.textContent
+
+        this.counterpartyTarget.value = description.trim()
+        this.counterpartyTarget.dispatchEvent(new Event("input", { bubbles: true }))
+        this.counterpartyTarget.focus()
     }
 
     refresh() {
