@@ -24,6 +24,10 @@ class MergeSuggester
   # Below this there is nothing to look for, and asking would cost a request to be told so.
   MINIMUM_COUNTERPARTIES = 3
 
+  # The Claude Code CLI's own credential, which `claude setup-token` writes.  Used in development, where
+  # the household's policy is to sign in with the CLI rather than to issue API keys.
+  OAUTH_TOKEN_VARIABLE = "CLAUDE_CODE_OAUTH_TOKEN"
+
   SYSTEM = <<~PROMPT.freeze
     You are given the payee names from one household's bank and credit-card statements, each with the
     spending categories that household files it under. The names are raw statement text: the bank
@@ -121,9 +125,17 @@ class MergeSuggester
     @client ||= Anthropic::Client.new(**credential, **base_url)
   end
 
-  # `api_key:` sends `x-api-key`, which the first-party API wants; `auth_token:` sends
-  # `Authorization: Bearer`, which is what DigitalOcean and other gateways want.  A key wins over a token
-  # where both are set: a token left behind from trying a gateway should not quietly outrank a real one.
+  # Three ways in, in the order they are looked for.  Configured credentials beat the ambient environment,
+  # because credentials are deliberate per-environment configuration and an exported variable is whatever
+  # the developer happened to have in their shell.
+  #
+  # 1. `api_key:` sends `x-api-key` — the first-party API's own scheme.
+  # 2. `auth_token:` sends a bare `Authorization: Bearer` — what DigitalOcean and other gateways want.
+  # 3. `CLAUDE_CODE_OAUTH_TOKEN` is the Claude Code CLI's credential, and needs more than a bearer header:
+  #    an OAuth token is only accepted alongside `anthropic-beta: oauth-2025-04-20`.  The SDK attaches that
+  #    header on exactly one path — where the credential is an access-token *provider* rather than a bare
+  #    token (`client.rb#auth_headers`) — so it is wrapped in a StaticToken rather than passed as
+  #    `auth_token:`, which would send the bearer without the header and be refused.
   def credential
     settings = provider_settings
 
@@ -131,11 +143,18 @@ class MergeSuggester
       { api_key: settings[:api_key] }
     elsif settings[:auth_token].present?
       { auth_token: settings[:auth_token] }
+    elsif oauth_token.present?
+      { credentials: Anthropic::Credentials::StaticToken.new(oauth_token) }
     else
-      raise KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials. " \
-                      "Add one with bin/rails credentials:edit."
+      raise KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials, and no " \
+                      "#{OAUTH_TOKEN_VARIABLE} in the environment. Add one with bin/rails credentials:edit, " \
+                      "or sign in with the Claude Code CLI."
     end
   end
+
+  # Read at call time rather than at boot: a token that has expired is replaced by exporting a new one, and
+  # a server that cached the old one at boot would go on failing after it had been.
+  def oauth_token = ENV[OAUTH_TOKEN_VARIABLE]
 
   # Omitted entirely when unset, so the gem's own default stands rather than being overwritten with nil.
   def base_url
@@ -227,7 +246,7 @@ class MergeSuggester
   def failure_message(error)
     case error
     when KeyError
-      "No API key is configured, so there is nothing to ask. #{error.message}"
+      "No credential is configured, so there is nothing to ask. #{error.message}"
     when Anthropic::Errors::APIConnectionError
       "Could not reach the API. Nothing has changed."
     else

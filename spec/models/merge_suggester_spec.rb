@@ -143,6 +143,13 @@ describe MergeSuggester, type: :model do
       allow(Rails.application.credentials).to receive(:dig).with(:anthropic).and_return(settings)
     end
 
+    # The environment is controlled rather than read: CLAUDE_CODE_OAUTH_TOKEN is exported on the machines
+    # this is developed on, so a spec that left it alone would pass or fail depending on whose shell ran it.
+    def with_oauth_token(token)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with(described_class::OAUTH_TOKEN_VARIABLE).and_return(token)
+    end
+
     def stub_client
       messages = double("messages")
       allow(messages).to receive(:create) { |**kwargs| @sent = kwargs; reply }
@@ -153,6 +160,7 @@ describe MergeSuggester, type: :model do
 
     # The first-party API wants x-api-key, which is what `api_key:` sends, and its own default host.
     it 'sends a key as api_key, with no base_url of its own' do
+      with_oauth_token(nil)
       with_credentials(api_key: "sk-ant-test")
       stub_client
 
@@ -163,6 +171,7 @@ describe MergeSuggester, type: :model do
 
     # DigitalOcean and other gateways want Authorization: Bearer, which is what `auth_token:` sends.
     it 'sends a token as auth_token, with the base_url it was given' do
+      with_oauth_token(nil)
       with_credentials(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
       stub_client
 
@@ -202,13 +211,44 @@ describe MergeSuggester, type: :model do
       expect(@sent[:model]).to eq described_class::MODEL
     end
 
-    # The state every fresh checkout is in, so it has to read as setup rather than as breakage.
+    # The Claude Code CLI's credential, used in development where no API key is issued. An OAuth token is
+    # only accepted alongside anthropic-beta: oauth-2025-04-20, and the SDK attaches that header on exactly
+    # one path — a credential *provider* — so a bare auth_token: would be sent without it and refused.
+    it 'wraps the Claude Code token in a provider, so the OAuth beta header travels with it' do
+      with_credentials(nil)
+      with_oauth_token("sk-ant-oat01-test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new) do |**kwargs|
+        expect(kwargs.keys).to eq [ :credentials ]
+        expect(kwargs[:credentials]).to be_a Anthropic::Credentials::StaticToken
+      end
+    end
+
+    # Configured credentials are deliberate per-environment configuration; an exported variable is whatever
+    # happened to be in the shell. Production settings must not be overridden by a developer's own token.
+    it 'prefers a configured credential over the environment' do
+      with_credentials(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
+      with_oauth_token("sk-ant-oat01-test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new)
+        .with(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
+    end
+
+    # The state a checkout with neither is in, so it has to read as setup rather than as breakage.
     it 'reports having no credential at all, rather than raising' do
       with_credentials(nil)
+      with_oauth_token(nil)
       suggester = described_class.new
 
       expect(suggester.groups).to be_empty
-      expect(suggester.error).to include("No anthropic.api_key or anthropic.auth_token")
+      expect(suggester.error).to include("No anthropic.api_key or anthropic.auth_token",
+                                         described_class::OAUTH_TOKEN_VARIABLE)
     end
   end
 
