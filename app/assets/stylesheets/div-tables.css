@@ -40,6 +40,21 @@
     color: red;
 }
 
+/* The counterparty cell holds a name field plus, once the row has a counterparty, a link out to it.
+   pure-input-1 is width: 100%, which would otherwise push that link onto a line of its own below the
+   field; flex keeps them level, and min-width: 0 lets the field shrink for the link rather than
+   overflowing the column. */
+.counterparty-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+}
+.counterparty-cell input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+}
+
 /* A field whose value was rejected.  Marked on the input rather than with a message beneath it, so the row
    keeps its height — transactions_list_controller measures one row and applies it to all of them. */
 .div-table-col input.field-error {
