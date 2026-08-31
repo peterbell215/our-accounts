@@ -19,6 +19,9 @@
   <dt>Transaction type</dt>
   <dd><%= @import_matcher.trx_type.presence || "any" %></dd>
 
+  <dt>Amount</dt>
+  <dd><%= amount_condition_description(@import_matcher) %></dd>
+
   <dt>Category</dt>
   <dd><%= @import_matcher.category.name %></dd>
 

@@ -12,6 +12,8 @@
 
   <div class="div-table-col"><%= import_matcher.trx_type.presence || "any" %></div>
 
+  <div class="div-table-col"><%= amount_condition_description(import_matcher) %></div>
+
   <div class="div-table-col"><%= import_matcher.category.name %></div>
 
   <div class="div-table-col">

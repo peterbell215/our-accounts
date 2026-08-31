@@ -75,6 +75,16 @@ RSpec.describe "ImportMatchers", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    # Prefilling it without also choosing a comparison would hand back an invalid rule (amount present,
+    # comparison blank) for the common case, where the reader wants any amount — the same reason trx_type
+    # is left out.
+    it "leaves the amount blank even where one is handed to it" do
+      get new_account_import_matcher_path(account, import_matcher: { description: "APPLE.COM/BILL",
+                                                                     amount: "-7.99" })
+
+      expect(response.body).not_to include('value="-7.99"')
+    end
   end
 
   describe "POST /accounts/:account_id/import_matchers" do
@@ -154,6 +164,15 @@ RSpec.describe "ImportMatchers", type: :request do
       expect(by_hand.reload.category_id).to eq travel.id
     end
 
+    it "creates a rule with an amount condition" do
+      post account_import_matchers_path(account),
+           params: { import_matcher: { description: "APPLE.COM/BILL", category_id: utilities.id,
+                                       amount_comparison: "equal_to", amount: "-7.99" } }
+
+      expect(ImportMatcher.last.amount_comparison).to eq "equal_to"
+      expect(ImportMatcher.last.amount).to eq Money.from_amount(-7.99)
+    end
+
     it "re-renders the form when the regex will not compile" do
       expect {
         post account_import_matchers_path(account),
@@ -207,6 +226,16 @@ RSpec.describe "ImportMatchers", type: :request do
 
       expect(response).to have_http_status(:not_found)
       expect(matcher.reload.trx_type).to eq "DD"
+    end
+
+    it "clears the amount condition when both fields are left blank" do
+      matcher = create(:import_matcher_apple_subscription, account: account)
+
+      patch account_import_matcher_path(account, matcher),
+            params: { import_matcher: { amount_comparison: "", amount: "" } }
+
+      expect(matcher.reload.amount_comparison).to be_nil
+      expect(matcher.amount_pence).to be_nil
     end
   end
 
