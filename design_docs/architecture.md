@@ -145,6 +145,24 @@ token-cache path, taken when the credential is an access-token *provider*. So th
 Handed to `auth_token:` instead it would go out as a bearer with no beta header and come back 401 — a
 failure that looks like a bad token rather than a missing header.
 
+**What a sign-in can reach is narrower than what a key can, and the model travels with the credential
+because of it.** Measured against a real Claude Code token: Opus 5, Opus 4.8 and Sonnet 5 all answer
+`429 rate_limit_error` with the message `"Error"` and no `anthropic-ratelimit-*` headers whatever, while
+Haiku 4.5 answers normally. Three refusals in a row at three different tiers is a boundary rather than a
+queue, and the absence of rate-limit headers is the tell: nothing is being counted, so nothing is being
+replenished. The 429's `x-should-retry: true` is therefore misleading, which is why the failure message
+names the boundary instead of inviting the reader to wait.
+
+So `#resolution` returns a credential *and* a default model together. Picking the credential first and
+defaulting the model separately is the arrangement that fails: development would inherit the first-party
+default, ask for a model its token cannot have, and 429 on every press with a message about rate limits.
+`ANTHROPIC_MODEL` overrides either default, the environment being where development configures everything.
+
+The cost is that development and production run different models against the same prompt — Haiku locally,
+Opus 5 through the gateway — so a suggestion seen locally is not the one the deployed copy would make. That
+is worth knowing when judging the suggestions rather than the plumbing: the local screen proves the feature
+works, not that it works well.
+
 The production settings belong in `config/credentials/production.yml.enc` rather than the shared
 `credentials.yml.enc`, which is committed and readable everywhere: a gateway token left in the shared file
 would have every development machine spending the production budget.

@@ -383,6 +383,12 @@ export CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
 That is all development needs — nothing goes in the credentials file. The token does eventually expire; when
 it does the screen reports that the sign-in was refused, and a fresh `claude setup-token` fixes it.
 
+**A CLI sign-in reaches Haiku rather than the larger models**, so that is what it uses. Asking it for Opus
+comes back as a rate limit that never clears, however long you leave it — so if the suggestions look worse
+than you expected on your own machine, that is why, and the deployed copy using a provider of its own will
+do better on the same names. `ANTHROPIC_MODEL=claude-sonnet-5` in your shell overrides the choice if your
+sign-in ever reaches further.
+
 **For a deployed copy, name a provider in the credentials instead.** Some hosts sell access to the same
 models, which is worth having if you already pay them for hosting and would rather keep one bill.
 DigitalOcean is one; give it a token, its address, and its own name for the model:

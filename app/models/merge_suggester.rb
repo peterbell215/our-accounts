@@ -28,6 +28,18 @@ class MergeSuggester
   # the household's policy is to sign in with the CLI rather than to issue API keys.
   OAUTH_TOKEN_VARIABLE = "CLAUDE_CODE_OAUTH_TOKEN"
 
+  # What a Claude Code sign-in can actually reach, which is not the same as what an API key can.  Measured
+  # rather than assumed: against a real token, Opus 5, Opus 4.8 and Sonnet 5 all answer 429
+  # `rate_limit_error` with no `anthropic-ratelimit-*` headers at all, while Haiku 4.5 answers normally.
+  # That is a tier boundary and not throttling — the 429 carries `x-should-retry: true`, but waiting does
+  # not help, because nothing is being replenished.  So the default model travels with the credential.
+  OAUTH_MODEL = :"claude-haiku-4-5"
+
+  # Overrides the default for whichever credential is in use.  An environment variable as well as a
+  # credentials setting, because development configures everything through the environment — there is
+  # deliberately nothing in the credentials file there.
+  MODEL_VARIABLE = "ANTHROPIC_MODEL"
+
   SYSTEM = <<~PROMPT.freeze
     You are given the payee names from one household's bank and credit-card statements, each with the
     spending categories that household files it under. The names are raw statement text: the bank
@@ -136,20 +148,31 @@ class MergeSuggester
   #    header on exactly one path — where the credential is an access-token *provider* rather than a bare
   #    token (`client.rb#auth_headers`) — so it is wrapped in a StaticToken rather than passed as
   #    `auth_token:`, which would send the bearer without the header and be refused.
-  def credential
-    settings = provider_settings
+  # Resolved together, because which models a credential can reach is a property of that credential: an
+  # API key reaches the lot, a Claude Code sign-in reaches only OAUTH_MODEL.  Picking the credential and
+  # then defaulting the model separately is how development ends up asking for a model it cannot have.
+  def resolution
+    @resolution ||=
+      if provider_settings[:api_key].present?
+        { credential: { api_key: provider_settings[:api_key] }, model: MODEL }
+      elsif provider_settings[:auth_token].present?
+        { credential: { auth_token: provider_settings[:auth_token] }, model: MODEL }
+      elsif oauth_token.present?
+        { credential: { credentials: Anthropic::Credentials::StaticToken.new(oauth_token) },
+          model: OAUTH_MODEL }
+      else
+        # No credential is not resolved as an error here, because asking which model to use must not
+        # depend on having one: the specs inject a client and never need a credential at all.  It is
+        # #credential that cannot proceed without one, and #credential that says so.
+        { credential: nil, model: MODEL }
+      end
+  end
 
-    if settings[:api_key].present?
-      { api_key: settings[:api_key] }
-    elsif settings[:auth_token].present?
-      { auth_token: settings[:auth_token] }
-    elsif oauth_token.present?
-      { credentials: Anthropic::Credentials::StaticToken.new(oauth_token) }
-    else
-      raise KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials, and no " \
-                      "#{OAUTH_TOKEN_VARIABLE} in the environment. Add one with bin/rails credentials:edit, " \
-                      "or sign in with the Claude Code CLI."
-    end
+  def credential
+    resolution[:credential] ||
+      raise(KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials, and no " \
+                      "#{OAUTH_TOKEN_VARIABLE} in the environment. Add one with " \
+                      "bin/rails credentials:edit, or sign in with the Claude Code CLI.")
   end
 
   # Read at call time rather than at boot: a token that has expired is replaced by exporting a new one, and
@@ -162,7 +185,9 @@ class MergeSuggester
     url.present? ? { base_url: url } : {}
   end
 
-  def model = provider_settings[:model].presence || MODEL
+  def model
+    provider_settings[:model].presence || ENV[MODEL_VARIABLE].presence || resolution[:model]
+  end
 
   # Beside seed_data rather than in the environment, so that a checkout with config/master.key needs
   # nothing else set to work.
@@ -247,6 +272,12 @@ class MergeSuggester
     case error
     when KeyError
       "No credential is configured, so there is nothing to ask. #{error.message}"
+    when Anthropic::Errors::RateLimitError
+      # Worth naming the tier boundary here: on a Claude Code sign-in this is what asking for a model
+      # above Haiku looks like, and it reads as something that will pass on its own when it will not.
+      "The request was rate limited asking for #{model}. A Claude Code sign-in only reaches " \
+      "#{OAUTH_MODEL}; the larger models answer this however long you wait. Set #{MODEL_VARIABLE} to " \
+      "choose another."
     when Anthropic::Errors::APIConnectionError
       "Could not reach the API. Nothing has changed."
     else
