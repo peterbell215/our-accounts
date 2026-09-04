@@ -23,9 +23,9 @@
   <%# Description Column - Conditional display %>
   <div class="div-table-col">
     <% if transaction.persisted? %>
-      <span><%= transaction.description %></span>
+      <span data-transaction-row-target="description"><%= transaction.description %></span>
     <% else %>
-      <%= f.text_field :description, class: "pure-input-1" %>
+      <%= f.text_field :description, class: "pure-input-1", data: { transaction_row_target: "description" } %>
     <% end %>
   </div>
 
@@ -49,7 +49,7 @@
       A name no counterparty has comes back marked, with the name it would create carried in a hidden field.
       Saving again hands that name back and creates it; editing the field first makes the two disagree, so
       the new name is asked about in its turn rather than the old one being created behind the reader. %>
-  <div class="div-table-col">
+  <div class="div-table-col counterparty-cell">
     <% if transaction.counterparty_to_confirm %>
       <%= f.hidden_field :confirmed_counterparty_name, value: transaction.counterparty_to_confirm %>
     <% end %>
@@ -57,12 +57,23 @@
                      value: transaction.counterparty_name || transaction.counterparty&.name,
                      list: "counterparty-names",
                      class: "pure-input-1 #{counterparty_field_class(transaction)}",
-                     title: transaction.errors[:counterparty_name].first %>
+                     title: transaction.errors[:counterparty_name].first,
+                     data: { transaction_row_target: "counterparty" } %>
     <% if transaction.counterparty %>
       <%= link_to counterparty_path(transaction.counterparty),
+                  class: "pure-button pure-button-small",
                   title: "Show #{transaction.counterparty.name}" do %>
         <span class="material-symbols-outlined">open_in_new</span>
       <% end %>
+    <% elsif transaction.counterparty_to_confirm.nil? && transaction.description.present? %>
+      <%# Copies the description across as a starting point for a counterparty name the reader can still
+          adjust before saving — most descriptions ("TESCO STORES 2889") are close enough to be worth
+          typing over rather than typing from scratch. %>
+      <button type="button" class="pure-button pure-button-small"
+              title="Copy description to counterparty"
+              data-action="click->transaction-row#copyDescriptionToCounterparty">
+        <span class="material-symbols-outlined">content_copy</span>
+      </button>
     <% end %>
   </div>
 

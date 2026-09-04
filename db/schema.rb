@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_28_210647) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_31_120000) do
   create_table "accounts", force: :cascade do |t|
     t.string "account_number"
     t.datetime "created_at", null: false
@@ -54,6 +54,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_210647) do
 
   create_table "import_matchers", force: :cascade do |t|
     t.integer "account_id", null: false
+    t.string "amount_comparison"
+    t.string "amount_currency"
+    t.integer "amount_pence"
     t.integer "category_id", null: false
     t.integer "counterparty_id"
     t.datetime "created_at", null: false

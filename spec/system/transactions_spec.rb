@@ -84,6 +84,34 @@ RSpec.describe "Transactions", type: :system do
       end
     end
 
+    it "copies the description into the counterparty field, still editable before saving" do
+      transaction = account.transactions.newest_first.first
+
+      visit account_path(account)
+
+      within(first_row) do
+        find("button[title='Copy description to counterparty']").click
+
+        expect(page).to have_field('transaction[counterparty_name]', with: transaction.description)
+
+        fill_in 'transaction[counterparty_name]', with: 'Octopus Energy'
+        click_button 'save'
+      end
+
+      expect(page).to have_link(href: counterparty_path(octopus))
+    end
+
+    it "offers no copy button once a counterparty is set" do
+      transaction = account.transactions.newest_first.first
+      transaction.update!(counterparty: octopus)
+
+      visit account_path(account)
+
+      within(first_row) do
+        expect(page).to have_no_selector("button[title='Copy description to counterparty']")
+      end
+    end
+
     it "links a counterparty typed into the row" do
       visit account_path(account)
 

@@ -47,6 +47,49 @@ RSpec.describe ImportMatcher, type: :model do
 
       expect(build(:import_matcher_octopus_energy, account: create(:barclay_card_account))).to be_valid
     end
+
+    it 'rejects an amount_comparison outside the known set' do
+      matcher = build(:import_matcher_apple_subscription, amount_comparison: 'about_this_much')
+
+      expect(matcher).not_to be_valid
+      expect(matcher.errors[:amount_comparison]).to include('is not included in the list')
+    end
+
+    it 'rejects an amount with no comparison to apply it' do
+      matcher = build(:import_matcher_apple_subscription, amount_comparison: nil)
+
+      expect(matcher).not_to be_valid
+      expect(matcher.errors[:amount_comparison]).to include('and amount must both be given, or both left blank')
+    end
+
+    it 'rejects a comparison with no amount to compare against' do
+      matcher = build(:import_matcher_apple_subscription, amount: nil)
+
+      expect(matcher).not_to be_valid
+      expect(matcher.errors[:amount_comparison]).to include('and amount must both be given, or both left blank')
+    end
+
+    it 'allows neither amount_comparison nor amount, matching any amount' do
+      expect(build(:import_matcher_apple_purchases_default)).to be_valid
+    end
+
+    it 'allows a description shared between an amount-conditioned rule and its default' do
+      create(:import_matcher_apple_subscription)
+
+      expect(build(:import_matcher_apple_purchases_default)).to be_valid
+    end
+
+    it 'rejects a second rule for the same account, description, transaction type and amount condition' do
+      create(:import_matcher_apple_subscription)
+
+      expect(build(:import_matcher_apple_subscription)).not_to be_valid
+    end
+
+    it 'allows the same description and amount against a different comparison' do
+      create(:import_matcher_apple_subscription)
+
+      expect(build(:import_matcher_apple_subscription, amount_comparison: 'not_equal_to')).to be_valid
+    end
   end
 
   # A form sends "" for a field left empty.  Stored as typed, that would be a rule demanding an empty
@@ -109,6 +152,49 @@ RSpec.describe ImportMatcher, type: :model do
         specify { expect(import_matcher.match(octopus_energy_imported_trx)).to be true }
       end
     end
+
+    context 'with an amount condition' do
+      let(:lloyds_account) { Account.find_by_name('Lloyds Account') }
+
+      {
+        'equal_to' => { matching: -7.99, not_matching: -8.99 },
+        'not_equal_to' => { matching: -8.99, not_matching: -7.99 },
+        'less_than' => { matching: -8.99, not_matching: -7.99 },
+        'less_than_or_equal_to' => { matching: -7.99, not_matching: -7.98 },
+        'greater_than' => { matching: -7.98, not_matching: -7.99 },
+        'greater_than_or_equal_to' => { matching: -7.99, not_matching: -8.99 }
+      }.each do |comparison, amounts|
+        context "when the comparison is #{comparison}" do
+          # Bang, so the account the factory creates for the rule exists before the transaction below looks
+          # it up by name — otherwise the two would silently end up on two different accounts.
+          subject!(:import_matcher) do
+            create(:import_matcher_apple_subscription, amount_comparison: comparison)
+          end
+
+          it 'matches a transaction the comparison is true for' do
+            transaction = build(:imported_transaction, account: lloyds_account, description: 'APPLE.COM/BILL',
+                                                        amount: Money.from_amount(amounts[:matching]))
+
+            expect(import_matcher.match(transaction)).to be true
+          end
+
+          it 'does not match a transaction the comparison is false for' do
+            transaction = build(:imported_transaction, account: lloyds_account, description: 'APPLE.COM/BILL',
+                                                        amount: Money.from_amount(amounts[:not_matching]))
+
+            expect(import_matcher.match(transaction)).to be false
+          end
+        end
+      end
+
+      it 'matches any amount when the condition is absent' do
+        import_matcher = create(:import_matcher_apple_purchases_default)
+        transaction = build(:imported_transaction, account: lloyds_account, description: 'APPLE.COM/BILL',
+                                                    amount: Money.from_amount(-1.99))
+
+        expect(import_matcher.match(transaction)).to be true
+      end
+    end
   end
 
   describe '#find_match' do
@@ -165,6 +251,30 @@ RSpec.describe ImportMatcher, type: :model do
         expect(later_regex.match(amazon_imported_trx)).to be true
 
         expect(ImportMatcher.find_match(amazon_imported_trx)).to eq literal_rule
+      end
+    end
+
+    # Two rules can share one description: one naming an amount, catching the exception, and one with no
+    # amount condition, catching everything else. The amount-conditioned one has to win when both match,
+    # whichever order the two were created in.
+    context 'when an amount-conditioned rule and its default share a description' do
+      let(:lloyds_account) { Account.find_by_name('Lloyds Account') }
+
+      let!(:default_rule) { create(:import_matcher_apple_purchases_default) }
+      let!(:subscription_rule) { create(:import_matcher_apple_subscription) }
+
+      it 'prefers the amount-conditioned rule for the amount it names' do
+        transaction = build(:imported_transaction, account: lloyds_account, description: 'APPLE.COM/BILL',
+                                                    amount: Money.from_amount(-7.99))
+
+        expect(ImportMatcher.find_match(transaction)).to eq subscription_rule
+      end
+
+      it 'falls back to the default for any other amount' do
+        transaction = build(:imported_transaction, account: lloyds_account, description: 'APPLE.COM/BILL',
+                                                    amount: Money.from_amount(-2.99))
+
+        expect(ImportMatcher.find_match(transaction)).to eq default_rule
       end
     end
   end
