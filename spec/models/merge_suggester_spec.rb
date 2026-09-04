@@ -240,6 +240,61 @@ describe MergeSuggester, type: :model do
         .with(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
     end
 
+    # Measured against a real Claude Code token: Opus 5, Opus 4.8 and Sonnet 5 all answer 429 with no
+    # rate-limit headers, and only Haiku 4.5 answers. So the default model has to travel with the
+    # credential, or development asks for a model it cannot have and 429s on every press.
+    it 'defaults a Claude Code sign-in to the only model it can reach' do
+      with_credentials(nil)
+      with_oauth_token("sk-ant-oat01-test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq described_class::OAUTH_MODEL
+    end
+
+    it 'defaults a configured credential to the first-party model' do
+      with_oauth_token(nil)
+      with_credentials(auth_token: "dop_v1_test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq described_class::MODEL
+    end
+
+    # Development configures everything through the environment, so the model has to be settable there
+    # too — there is deliberately nothing in the credentials file to put it in.
+    it 'lets the environment override the model' do
+      with_credentials(nil)
+      with_oauth_token("sk-ant-oat01-test")
+      allow(ENV).to receive(:[]).with(described_class::MODEL_VARIABLE).and_return("claude-sonnet-5")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq "claude-sonnet-5"
+    end
+
+    # A rate limit on a sign-in that can only reach one model is permanent, whatever x-should-retry says,
+    # so the message must not invite the reader to wait it out.
+    it 'says what a rate limit means on a Claude Code sign-in' do
+      with_credentials(nil)
+      with_oauth_token("sk-ant-oat01-test")
+      messages = double("messages")
+      allow(messages).to receive(:create).and_raise(
+        Anthropic::Errors::RateLimitError.new(url: URI("https://api.anthropic.com/v1/messages"),
+                                              status: 429, headers: {}, body: nil,
+                                              request: nil, response: nil)
+      )
+      allow(Anthropic::Client).to receive(:new).and_return(double("client", messages: messages))
+
+      suggester = described_class.new
+      expect(suggester.groups).to be_empty
+      expect(suggester.error).to include("rate limited", described_class::OAUTH_MODEL.to_s,
+                                         described_class::MODEL_VARIABLE)
+    end
+
     # The state a checkout with neither is in, so it has to read as setup rather than as breakage.
     it 'reports having no credential at all, rather than raising' do
       with_credentials(nil)
