@@ -55,9 +55,13 @@ class MergeSuggester
 
     What does not, however similar the text looks:
 
-    - A payment rail is not a payee. LNK is a cash machine network, SQ * is Square, PAYPAL * is PayPal.
-      LNK TESCO is a cash withdrawal at a machine that happens to stand in a Tesco, and it is not the
-      supermarket. Never group by the rail.
+    - A payment rail is not a payee. LNK is a cash machine network, SQ * is Square, PAYPAL * is PayPal,
+      SumUp * and Zettle * are card readers. Never group by the rail. Do look past it: SQ *STIR BAKERY
+      and STIR BAKERY are the same payee, and so are PAYPAL *GBCHOCOLAT and Zettle *GB Chocola.
+    - Where a payment happened is not who was paid. LNK TESCO is a withdrawal from a machine standing in
+      a Tesco, not the supermarket. A purchase at CAMBRIDGE NORTH is at a railway station, not from the
+      train operator that runs it. A venue, a building or a station is a place, and a place is not a payee
+      however strongly it suggests one.
     - A shared first word is not a payee. THE ROYAL OAK and THE RED LION are two different pubs.
     - The same brand doing different things is not one payee where the household files it differently.
       TESCO STORES under Food and TESCO PAY AT PUMP under Car are the supermarket and the petrol station.
@@ -69,6 +73,9 @@ class MergeSuggester
 
     For each group give the name the merged payee should take — the clearest form of the real name, not
     necessarily one of the strings given — and one short sentence saying why they are the same payee.
+
+    Never put a payment rail in that name. PAYPAL *GBCHOCOLAT and Zettle *GB Chocola are "GB Chocolates",
+    not "Zettle GB Chocolates": how the money travelled is not part of who was paid.
   PROMPT
 
   SCHEMA = {

@@ -116,6 +116,25 @@ against, and a spec asserts the request carries names and category names only: n
 account numbers, nothing per-transaction. This is the one place in the application where anything leaves the
 machine.
 
+**Run against the real 232 names, on the weakest model it will ever use** (Haiku 4.5, which is all a Claude
+Code sign-in reaches), it proposed six groups: five sound, one wrong, and one miss. The five include three
+the string heuristics could not have found — `SQ *STIR BAKERY CH`/`GR` grouped on the bakery rather than on
+`SQ *`, `SumUp *Two Magpie` matched to `Two Magpies Bakery`, and `PAYPAL *GBCHOCOLAT` matched to
+`Zettle *GB Chocola` across two different rails. It grouped nothing by a rail, which is the failure that
+disqualified all four heuristics.
+
+The wrong one is worth recording because it named a gap in the prompt rather than a failure to follow it:
+`CAMBRIDGE NORTH SS` was folded into `GREATER ANGLIA` on the reasoning that Cambridge North is a station on
+that network. That is the `LNK TESCO` error wearing different clothes — a *place* mistaken for a payee — and
+the prompt had only ever said it about cash machines. It now says it about venues generally. The prompt also
+now forbids a payment rail in the suggested name, after "Zettle GB Chocolates" came back for what is simply
+GB Chocolates.
+
+The miss — `PAYPAL *SPOTIFY` against `SPOTIFY`, found by a local digit-and-rail-stripping sweep — was left
+alone deliberately. It is the same rail-stripping the model got right three times in the same answer, so it
+is inconsistency rather than incapability, and the production model is a tier above. Tuning the prompt
+against the weakest model's lapses would be fitting to the wrong target.
+
 **It proposes; it never merges.** Every group is a link into the existing confirmation screen carrying the
 ids and a suggested name, so `CounterpartyMerge` — where the load-bearing ordering lives — runs unchanged
 over a set a person has approved. Three answers are dropped rather than shown, because each would open a
