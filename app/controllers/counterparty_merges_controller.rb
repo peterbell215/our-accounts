@@ -22,6 +22,7 @@ class CounterpartyMergesController < ApplicationController
     # params[:name] is what #create redirected back with — the name that was refused, so it can be corrected
     # rather than retyped.  Only a first visit has no name to keep.
     @merge = CounterpartyMerge.new(ids: ids, name: params[:name].presence || suggested_name)
+    @from = from
   end
 
   # POST /counterparty_merges
@@ -29,19 +30,31 @@ class CounterpartyMergesController < ApplicationController
     @merge = CounterpartyMerge.new(ids: ids, name: params[:name])
 
     if @merge.merge
-      redirect_to @merge.survivor, notice: merged_notice
+      # Back where the reader came from.  Arriving from the suggestions means working through a list of
+      # them, and being dropped on the survivor's page after each one costs a journey back — and, before
+      # the answer was kept, another API call. Arriving from the counterparties list means the survivor is
+      # the interesting thing, which is what it always was.
+      redirect_to after_merge_path, notice: merged_notice
     else
       # Straight back to the confirmation with everything still ticked *and the name still as typed*, so a
       # rejected name can be corrected rather than re-selected from scratch.  Carrying the ids without the
       # name would be worse than starting over: the box would silently revert to the suggested name, and
       # submitting again would merge under a name nobody chose.
-      redirect_to new_counterparty_merge_path(ids: ids, name: params[:name]), alert: @merge.error
+      redirect_to new_counterparty_merge_path(ids: ids, name: params[:name], from: from),
+                  alert: @merge.error
     end
   end
 
   private
 
   def ids = Array(params[:ids]).map(&:to_s)
+
+  # Where the reader came in from, as a name rather than a path: a path from the query string is somewhere
+  # anyone could send this screen's Cancel button, and an open redirect is not worth the flexibility. Only
+  # one name means anything, and anything else reads as the ordinary way in.
+  def from = params[:from] == "suggestions" ? "suggestions" : nil
+
+  def after_merge_path = from == "suggestions" ? merge_suggestions_path : url_for(@merge.survivor)
 
   # Frequencies are named only when any moved, because on most merges none exist and a "0 payment
   # frequencies" clause would be noise on every one.  When some did move it is worth saying: a merge can

@@ -120,4 +120,62 @@ RSpec.describe 'Merging counterparties', type: :system do
     expect(page).to have_content('WAITROSE 108')
     expect(Counterparty.exists?(second.id)).to be true
   end
+  # Working through a list of suggestions one group at a time. Each way into the confirmation should lead
+  # out the way it came: from the suggestions back to the suggestions, from the counterparties list to the
+  # survivor, which is what it always did.
+  describe 'arriving from the suggestions' do
+    around do |example|
+      was = Rails.cache
+      Rails.cache = ActiveSupport::Cache::MemoryStore.new
+      example.run
+    ensure
+      Rails.cache = was
+    end
+
+    let!(:one) { counterparty("TESCO STORES 2228") }
+    let!(:two) { counterparty("TESCO STORES 2889") }
+
+    before do
+      group = MergeSuggester::Group.new(name: "Tesco", counterparties: [ one, two ],
+                                        reason: "Same shop.", categories: [ "Utilities" ])
+      allow(MergeSuggester).to receive(:new)
+        .and_return(instance_double(MergeSuggester, groups: [ group ], error: nil))
+    end
+
+    it 'comes back to the suggestions after merging, with that group gone' do
+      visit merge_suggestions_path
+      click_link 'Review'
+
+      fill_in 'name', with: 'Tesco'
+      click_button 'Merge'
+
+      expect(page).to have_css('h1', text: 'Suggested merges')
+      expect(page).to have_content('Nothing to suggest')
+      expect(Counterparty.find_by(name: 'Tesco')).to be_present
+    end
+
+    it 'comes back to the suggestions on Cancel, having merged nothing' do
+      visit merge_suggestions_path
+      click_link 'Review'
+
+      click_link 'Cancel'
+
+      expect(page).to have_css('h1', text: 'Suggested merges')
+      expect(Counterparty.where(id: [ one.id, two.id ]).count).to eq 2
+    end
+
+    # The other way in is unchanged: the survivor is the interesting thing when you ticked the boxes
+    # yourself, and there is no suggestion list to go back to.
+    it 'still lands on the survivor when the boxes were ticked on the list' do
+      visit counterparties_path
+      tick one
+      tick two
+      click_button 'Merge selected'
+
+      fill_in 'name', with: 'Tesco'
+      click_button 'Merge'
+
+      expect(page).to have_css('h1', text: 'Tesco')
+    end
+  end
 end

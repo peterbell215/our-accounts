@@ -6,7 +6,7 @@
 
 <%# The Cancel beside Merge below is this screen's answer to the question it asks, and stays there.  This is
     the way back out, in the same place as on every other screen, without reading the whole page first. %>
-<%= form_actions back: counterparties_path %>
+<%= form_actions back: @from == "suggestions" ? merge_suggestions_path : counterparties_path %>
 
 <p>
   Everything below is folded into one, keeping all its transactions and rules.  Nothing is deleted except the
@@ -52,6 +52,8 @@
   <% @counterparties.each do |counterparty| %>
     <%= hidden_field_tag "ids[]", counterparty.id, id: nil %>
   <% end %>
+  <%# Carries the way in through the POST, so a merge lands back where the reader started. %>
+  <%= hidden_field_tag :from, @from if @from %>
 
   <fieldset>
     <div class="pure-control-group">
@@ -62,7 +64,9 @@
 
     <div class="pure-controls">
       <%= form.submit "Merge", class: "pure-button pure-button-primary" %>
-      <%= link_to "Cancel", counterparties_path, class: "pure-button" %>
+      <%= link_to "Cancel",
+                  @from == "suggestions" ? merge_suggestions_path : counterparties_path,
+                  class: "pure-button" %>
     </div>
   </fieldset>
 <% end %>

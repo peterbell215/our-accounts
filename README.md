@@ -366,6 +366,11 @@ you get sets that look like one payee, each with a sentence saying why and a **R
 the same confirmation described below. Nothing is merged for you — every group still has to be confirmed,
 and you can change the name it proposes.
 
+**Work down the list one group at a time.** Merging a suggestion — or cancelling it — brings you straight
+back to the list, with the group you just dealt with gone from it. The list is the one it worked out when
+you asked, kept for an hour rather than worked out afresh each time you return, so going back and forth
+costs nothing. **Suggest again** is the only thing that asks for a new one.
+
 This is the one feature that sends anything off this machine. It asks the Claude API, and what it sends is
 your counterparty names and the names of the categories you file them under — **no amounts, no dates, no
 account numbers and nothing about individual transactions**. Without a key configured the screen says so and

@@ -34,8 +34,10 @@ RSpec.describe "Merge suggestions", type: :request do
 
       get merge_suggestions_path
 
+      # `from` is what sends the confirmation back here rather than to the counterparties list.
       expect(response.body).to include(
-        CGI.escapeHTML(new_counterparty_merge_path(ids: [ tesco_stores.id, tesco_2228.id ], name: "Tesco"))
+        CGI.escapeHTML(new_counterparty_merge_path(ids: [ tesco_stores.id, tesco_2228.id ], name: "Tesco",
+                                                   from: "suggestions"))
       )
     end
 
@@ -65,6 +67,71 @@ RSpec.describe "Merge suggestions", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("No API key is configured")
+    end
+
+    # The answer is kept so that merging a group and coming back does not spend another request. The test
+    # environment's cache is a null store — writes vanish — so these swap in a real one, which is also why
+    # they say so rather than leaving a reader to wonder why the cache "works" here and nowhere else.
+    describe "keeping the answer" do
+      around do |example|
+        was = Rails.cache
+        Rails.cache = ActiveSupport::Cache::MemoryStore.new
+        example.run
+      ensure
+        Rails.cache = was
+      end
+
+      def one_group = [ group(name: "Tesco", counterparties: [ tesco_stores, tesco_2228 ]) ]
+
+      it "asks once and shows the same answer on the way back" do
+        suggester = instance_double(MergeSuggester, groups: one_group, error: nil)
+        expect(MergeSuggester).to receive(:new).once.and_return(suggester)
+
+        get merge_suggestions_path
+        get merge_suggestions_path
+
+        expect(response.body).to include("TESCO STORES 2889")
+      end
+
+      it "asks again when asked to" do
+        suggester = instance_double(MergeSuggester, groups: one_group, error: nil)
+        expect(MergeSuggester).to receive(:new).twice.and_return(suggester)
+
+        get merge_suggestions_path
+        get merge_suggestions_path(refresh: 1)
+      end
+
+      it "offers the way to ask again" do
+        stub_suggester(groups: one_group)
+
+        get merge_suggestions_path
+
+        expect(response.body).to include(CGI.escapeHTML(merge_suggestions_path(refresh: 1)))
+      end
+
+      # The reason keeping the answer works at all: a merged group loses its losers, so it fails the
+      # they-all-still-exist test and drops out without anyone asking again.
+      it "drops a group whose counterparties have since been merged away" do
+        suggester = instance_double(MergeSuggester, groups: one_group, error: nil)
+        expect(MergeSuggester).to receive(:new).once.and_return(suggester)
+
+        get merge_suggestions_path
+        expect(response.body).to include("TESCO STORES 2889")
+
+        CounterpartyMerge.new(ids: [ tesco_stores.id, tesco_2228.id ], name: "Tesco").merge
+        get merge_suggestions_path
+
+        expect(response.body).to include("Nothing to suggest")
+      end
+
+      # A failure is not worth keeping: the next visit should try again rather than re-show the excuse.
+      it "does not keep a failure" do
+        suggester = instance_double(MergeSuggester, groups: [], error: "Could not reach the API.")
+        expect(MergeSuggester).to receive(:new).twice.and_return(suggester)
+
+        get merge_suggestions_path
+        get merge_suggestions_path
+      end
     end
 
     it "is reachable from the counterparties list" do
