@@ -54,9 +54,29 @@ module ApplicationHelper
                                   model_actions: (capture(&block) if block)
   end
 
-  # The same strip, for the screens that carry a form rather than a record: every New and Edit screen, and
-  # the one list reached from somewhere other than the menu bar.  Back goes to the list, Show to the record
-  # as it currently stands — omitted on a New screen, where there is not one yet.
+  # The same strip again, for a list.  Every index screen opens with one, holding whatever that list can do
+  # as a whole — New, and anything acting on a selection.  Per-row actions stay in their row, and an action
+  # belonging to a *different* list further down a Show screen stays with that list.
+  #
+  # These used to sit under the table in an ad-hoc `<div style="margin-top: 1rem">`, on the reasoning that
+  # a list's actions belong with the list.  That reads badly once a list is long enough to scroll: on the
+  # counterparties screen, at 232 rows, everything you can do was two screens below the heading and out of
+  # sight from the moment you arrived.  Predictable beats adjacent, and the other two strips had already
+  # made the top of the screen the place to look.
+  #
+  # `back` is for the one list not reached from the menu bar, and omitted everywhere else — a menu-bar
+  # destination has nowhere to go back *to*.
+  #
+  # @param [String, nil] back path of the screen this list hangs off, where there is one
+  # @yield the list's own actions, in the order they should read
+  # @return [String]
+  def index_actions(back: nil, &block)
+    render "layouts/index_actions", back: back, actions: (capture(&block) if block)
+  end
+
+  # The same strip, for the screens that carry a form rather than a record: every New and Edit screen.
+  # Back goes to the list, Show to the record as it currently stands — omitted on a New screen, where
+  # there is not one yet.
   #
   # There is deliberately no Destroy here.  A form screen offers nothing to delete that its own Show screen
   # does not, and the one irreversible button in the application should not sit within reach of Save.

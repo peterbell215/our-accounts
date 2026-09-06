@@ -946,11 +946,36 @@ are not the same thing: `Cancel` is that screen's answer to the question it asks
 button that says yes, while `Back` is where the way out lives on every other screen — reachable without
 reading the whole page first, which on a merge of a dozen names is the point.
 
-The rule reaches one list, too. `import_matchers/index` is the only index in the application reached from
-somewhere other than the sticky menu bar — the other four *are* menu-bar destinations, so "back" from them
-would mean nothing — and it had the same plain text link, below its explanatory paragraph. It now draws
-`form_actions` with a back path and no show path. `New rule` stays at the foot of the list, following the
-same rule as `Add New Transaction`: the strip does not swallow list actions.
+**The rule now reaches every list as well, which reversed a decision recorded here.** The earlier position
+was that a list's actions belong with the list — `New rule` at the foot, following `Add New Transaction`,
+because the strip should not swallow list actions. That was reasoned from short lists. The counterparties
+screen at 232 real rows is the counter-example: every action it offered, including the merge submit the
+tick boxes exist for, sat two screens below the heading and out of sight from the moment the page loaded.
+The reader who wants **Suggest merges** has no reason to scroll a list they are not reading. Predictable
+beats adjacent, and the other two strips had already taught the top of the screen as the place to look.
+
+So `ApplicationHelper#index_actions` and `layouts/_index_actions` draw a third strip, in the same position,
+carrying whatever the list can do as a whole. All six indexes use it. `back:` is passed only by the two
+reached from somewhere other than the sticky menu bar — `import_matchers/index` and
+`merge_suggestions/index` — because a menu-bar destination has nowhere to go back to; the other four omit
+it and the partial renders no Back at all.
+
+The carve-out that survives is narrower than the old one, and worth stating precisely: an action belonging
+to a *different* list further down a **Show** screen stays with that list. `Add New Transaction` is still
+above the transaction list on the account screen, beside the rows it inserts, and did not move into the
+account's strip. What changed is that a list's *own* actions, on its *own* index, come to the top.
+
+One of them is not a link. **Merge selected** is a submit, and the tick boxes it collects belong to a form
+wrapped around the table — so putting it in the strip meant putting it outside that form. It reaches the
+form by id through HTML's `form` attribute rather than by moving `form_with` up to enclose the strip, which
+would have worked but would have put the explanatory prose and two unrelated links inside a form that
+exists only for the ticks. `click_button` drives it exactly as if it were inside, which the five merge
+specs and one assertion on the attribute itself confirm.
+
+Each strip keeps **its own class** — `.show-actions`, `.form-actions`, `.index-actions` — though all three
+render identically. The three specs each select on their own to assert what that kind of screen holds, and
+a shared class would let one screen satisfy another's expectations; the looks are unified in
+`application.css`, as three selectors on one rule, which is where looking alike belongs.
 
 Transaction rows are the deliberate exception, because the row *is* the form. That is now true rather than
 nearly true: `transactions/new.html.erb` and `transactions/edit.html.erb` have been deleted and `:edit`

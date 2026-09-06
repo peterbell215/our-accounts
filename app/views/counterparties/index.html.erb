@@ -4,6 +4,19 @@
 
 <h1>Counterparties</h1>
 
+<%# Merge selected submits the form further down, through HTML's `form` attribute rather than by sitting
+    inside it: the tick boxes belong to the table, so the form stays wrapped tightly around the table and
+    the button reaches it by id. Moving the form up to enclose the strip would have worked too, at the
+    cost of putting the intro prose and two unrelated links inside a form that exists for the ticks. %>
+<%= index_actions do %>
+  <%= submit_tag "Merge selected", form: "counterparty-merge", class: "pure-button",
+                 data: { disable_with: nil } %>
+  <%= link_to "New counterparty", new_counterparty_path, class: "pure-button" %>
+  <%# Finding the duplicates by eye is the tedious part of this screen, so there is a way to be handed a
+      shortlist. It proposes only — every group opens the same confirmation the tick boxes lead to. %>
+  <%= link_to "Suggest merges", merge_suggestions_path, class: "pure-button" %>
+<% end %>
+
 <p>
   The suppliers and vendors behind your transactions.  Names taken from a statement import are raw statement
   text — rename them here to something you would recognise.  Click a column heading to reorder the list;
@@ -12,12 +25,12 @@
 
 <p>
   One payee often arrives under several names, because the bank truncates its description: `TESCO STORES 2228`
-  and `TESCO STORES 2889` are one shop.  Tick them and press <strong>Merge selected</strong> to fold them
-  into one.
+  and `TESCO STORES 2889` are one shop.  Tick them and press <strong>Merge selected</strong> at the top of
+  the screen to fold them into one.
 </p>
 
 <%# A GET form: it navigates to the confirmation carrying the ticked ids, and changes nothing on the way. %>
-<%= form_with url: new_counterparty_merge_path, method: :get, local: true do %>
+<%= form_with url: new_counterparty_merge_path, method: :get, local: true, id: "counterparty-merge" do %>
 <table id="counterparties" class="pure-table pure-table-striped">
   <thead>
     <tr>
@@ -45,19 +58,8 @@
     <% end %>
   </tbody>
 </table>
-
-<div style="margin-top: 1rem">
-  <%= submit_tag "Merge selected", class: "pure-button", data: { disable_with: nil } %>
-</div>
 <% end %>
 
 <% if @counterparties.empty? %>
   <p>No counterparties yet.</p>
 <% end %>
-
-<div style="margin-top: 1rem">
-  <%= link_to "New counterparty", new_counterparty_path, class: "pure-button" %>
-  <%# Finding the duplicates by eye is the tedious part of this screen, so there is a way to be handed a
-      shortlist. It proposes only — every group opens the same confirmation the tick boxes above lead to. %>
-  <%= link_to "Suggest merges", merge_suggestions_path, class: "pure-button" %>
-</div>

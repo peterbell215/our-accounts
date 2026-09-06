@@ -4,9 +4,11 @@
 
 <h1>Import rules for <%= @account.name %></h1>
 
-<%# The only list in the application reached from somewhere other than the menu bar, so the only one with
-    anywhere to go back to. %>
-<%= form_actions back: account_path(@account) %>
+<%# The only list in the application reached from somewhere other than the menu bar, so the only one whose
+    strip carries a Back as well as its own actions. %>
+<%= index_actions back: account_path(@account) do %>
+  <%= link_to "New rule", new_account_import_matcher_path(@account), class: "pure-button" %>
+<% end %>
 
 <p>
   When a statement is imported, each transaction is checked against these rules.  The first rule whose
@@ -50,7 +52,3 @@
     </div>
   </div>
 <% end %>
-
-<div style="margin-top: 1rem">
-  <%= link_to "New rule", new_account_import_matcher_path(@account), class: "pure-button" %>
-</div>

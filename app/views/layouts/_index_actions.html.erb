@@ -1,0 +1,10 @@
+<%# The strip of actions every index screen opens with, rendered through the index_actions helper.
+
+    Its own class rather than a third selector shared with .form-actions, even though the three strips
+    look identical: index_actions_spec, form_actions_spec and show_actions_spec each select on their own
+    to assert what that kind of screen holds, and a shared class would let one screen satisfy another's
+    expectations. The looks are unified in the stylesheet instead, where looking alike belongs. %>
+<div class="index-actions">
+  <%= link_to "Back", back, class: "pure-button" if back %>
+  <%= actions %>
+</div>
