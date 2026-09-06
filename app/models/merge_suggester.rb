@@ -35,6 +35,15 @@ class MergeSuggester
   # not help, because nothing is being replenished.  So the default model travels with the credential.
   OAUTH_MODEL = :"claude-haiku-4-5"
 
+  # The payment rails seen in the real statement descriptions, as they appear at the *start* of a name:
+  # "PAYPAL *GBCHOCOLAT", "SQ *STIR BAKERY CH", "SumUp *Two Magpie", "Zettle_*GB Chocola".
+  #
+  # Stripped from the suggested name in code rather than asked for in the prompt.  The prompt does ask —
+  # and was ignored, twice in one answer, coming back with "Zettle GB Chocolates" and "PAYPAL *Spotify"
+  # for payees plainly called GB Chocolates and Spotify.  Removing a known prefix from a string is not a
+  # judgement, so it does not belong in a request to a model that may or may not honour it.
+  RAIL_PREFIX = /\A(?:paypal|sq|sumup|zettle|izettle|iz)[\s_]*\*[\s_]*/i
+
   # Overrides the default for whichever credential is in use.  An environment variable as well as a
   # credentials setting, because development configures everything through the environment — there is
   # deliberately nothing in the credentials file there.
@@ -261,10 +270,24 @@ class MergeSuggester
       next if members.size < CounterpartyMerge::MINIMUM
       next unless seen.add?(members.map(&:id).sort)
 
-      Group.new(name: group["name"].to_s.squish, counterparties: members.sort_by(&:name),
+      Group.new(name: suggested_name(group["name"]), counterparties: members.sort_by(&:name),
                 reason: group["reason"].to_s.squish,
                 categories: members.flat_map { |m| categories_by_id[m.id].to_a }.uniq.sort)
     end.sort_by { |group| -group.counterparties.size }
+  end
+
+  # The name to offer for the merged payee, with any payment rail taken off the front: how the money
+  # travelled is not part of who was paid.  A name that is *only* a rail is left alone rather than
+  # emptied, since an empty box on the confirmation screen is worse than a poor suggestion — and the
+  # reader is expected to type over whatever is offered in any case.
+  #
+  # @param [String, nil] name
+  # @return [String]
+  def suggested_name(name)
+    squished = name.to_s.squish
+    stripped = squished.sub(RAIL_PREFIX, "")
+
+    stripped.presence || squished
   end
 
   # One query for every counterparty's categories rather than one per counterparty: this runs over a few

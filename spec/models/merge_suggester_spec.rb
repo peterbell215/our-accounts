@@ -75,6 +75,37 @@ describe MergeSuggester, type: :model do
     end
   end
 
+  # The prompt asks for a name without a payment rail in it and was ignored, twice in one answer:
+  # "Zettle GB Chocolates" and "PAYPAL *Spotify" came back for payees called GB Chocolates and Spotify.
+  # Removing a known prefix is not a judgement, so it is done here instead of asked for.
+  describe 'the name it offers for the merged payee' do
+    def name_for(suggested)
+      answer = [ { name: suggested, members: [ "TESCO STORES 2889", "TESCO STORES 2228" ], reason: "." } ]
+      suggester_for(reply_with(answer)).groups.sole.name
+    end
+
+    it 'takes a rail off the front, whichever rail it is' do
+      expect(name_for("PAYPAL *Spotify")).to eq "Spotify"
+      expect(name_for("Zettle_*GB Chocolates")).to eq "GB Chocolates"
+      expect(name_for("SQ *Stir Bakery")).to eq "Stir Bakery"
+      expect(name_for("SumUp * Two Magpies")).to eq "Two Magpies"
+    end
+
+    it 'leaves a name with no rail in it alone' do
+      expect(name_for("Two Magpies Bakery")).to eq "Two Magpies Bakery"
+    end
+
+    # Only the front: a payee genuinely called something with an asterisk in the middle keeps it.
+    it 'does not strip a rail-like word from the middle' do
+      expect(name_for("Chocolates SQ *Special")).to eq "Chocolates SQ *Special"
+    end
+
+    # An empty box on the confirmation screen is worse than a poor suggestion.
+    it 'does not empty a name that is nothing but a rail' do
+      expect(name_for("PAYPAL *")).to eq "PAYPAL *"
+    end
+  end
+
   describe 'marking a group whose members disagree about the category' do
     before do
       create(:import_matcher, counterparty: tesco_stores, category: Category.find_by!(name: "Shopping"),
