@@ -439,8 +439,9 @@ labels are those three words on every screen, so a spec can `click_button 'Destr
 names the record, so the record partials do not repeat it as a `Name:` field.
 
 The confirmation text is the screen's own argument, because what a delete costs differs — an account takes
-its transactions with it, a counterparty leaves them behind. Actions belonging to a *list* further down the
-page stay with that list: `Add New Transaction` is on the transaction list, not in the account's strip.
+its transactions with it, a counterparty leaves them behind. An action belonging to a *different* list
+further down a Show screen stays with that list: `Add New Transaction` is on the transaction list, beside
+the rows it inserts, not in the account's strip.
 `spec/system/show_actions_spec.rb` covers all five screens, and asserts by geometry that the strip is above
 the data rather than only that its buttons exist.
 
@@ -449,14 +450,36 @@ same position — under the `<h1>`, above the form. It draws **Back** to the lis
 **Show** to the record; those bare words again, not per-model wording. There is no Destroy: a form offers
 nothing to delete that its Show screen does not, and Save should not sit next to it. Nothing goes at the
 foot of the page — that is what this replaced, and on the category edit screen, whose form is followed by
-the regular-payments table, it put the way back off the bottom of the screen. `.form-actions` is a second
-selector on the `.show-actions` rule in `application.css`; do **not** rename `.show-actions` to unify them,
-because `show_actions_spec.rb` selects on it to assert what a Show screen holds.
-`spec/system/form_actions_spec.rb` covers all ten screens, by geometry, the same way.
+the regular-payments table, it put the way back off the bottom of the screen. `spec/system/form_actions_spec.rb` covers
+the New and Edit screens, by geometry, the same way.
 
-`import_matchers/index` uses `form_actions` as well: it is the only list reached from somewhere other than
-the menu bar, so the only one with anywhere to go back to. Transaction rows are the exception to all of
-this, because the row is the form — the controller renders Turbo Streams and there is no `edit` route.
+**Index screens have their own strip too**, `index_actions` (rendering `layouts/_index_actions`), in the
+same position, holding everything the list can do as a whole — New, and anything acting on a selection.
+Per-row actions stay in their row. `back:` is passed only by the two lists reached from somewhere other
+than the menu bar (`import_matchers/index` and `merge_suggestions/index`); a menu-bar destination has
+nowhere to go back to, so it omits it. `spec/system/index_actions_spec.rb` covers all six lists, by
+geometry, the same way.
+
+**This reversed an earlier decision, and the reversal is the interesting part.** These actions used to sit
+under the table on the reasoning that a list's actions belong with the list. That reads fine on a short
+list and badly on a long one: on the counterparties screen, at 232 rows, everything you could do was two
+screens below the heading and out of sight from the moment you arrived. Predictable beat adjacent — the
+other two strips had already made the top of the screen the place to look. So **when adding a screen of any
+kind, the actions go under the `<h1>`**, and the only thing that varies is which of the three helpers draws
+them.
+
+Each strip has **its own class** — `.show-actions`, `.form-actions`, `.index-actions` — even though all
+three look identical, because each spec selects on its own to assert what that kind of screen holds, and a
+shared class would let one screen satisfy another's expectations. They are unified in `application.css`
+instead, as three selectors on one rule, which is where looking alike belongs. Do **not** collapse them.
+
+One action is a submit rather than a link: **Merge selected** on the counterparties list. It sits in the
+strip but drives the form wrapped around the table below, reached by `submit_tag ..., form:
+"counterparty-merge"` — HTML's `form` attribute — so the form stays tight around the tick boxes that
+belong to it. `click_button` drives it exactly as if it were inside, which five merge specs depend on.
+
+Transaction rows are the exception to all of this, because the row is the form — the controller renders
+Turbo Streams and there is no `edit` route.
 
 ## Testing conventions
 

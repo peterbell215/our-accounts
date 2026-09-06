@@ -64,7 +64,8 @@ body div.container {
    a list beneath it, off the bottom of the page.  Two class names because the strips hold different things:
    Back, Edit and Destroy on a Show screen, Back and Show on a form.  They are laid out identically. */
 .show-actions,
-.form-actions {
+.form-actions,
+.index-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;

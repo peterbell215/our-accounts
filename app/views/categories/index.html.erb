@@ -4,6 +4,10 @@
 
 <h1>Categories</h1>
 
+<%= index_actions do %>
+  <%= link_to "New category", new_category_path, class: "pure-button" %>
+<% end %>
+
 <p>Click a column heading to reorder the list, and again to reverse it.</p>
 
 <table id="categories" class="pure-table pure-table-striped">
@@ -26,7 +30,3 @@
     <% end %>
   </tbody>
 </table>
-
-<div style="margin-top: 1rem">
-  <%= link_to "New category", new_category_path, class: "pure-button" %>
-</div>

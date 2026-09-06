@@ -4,6 +4,10 @@
 
 <h1>Accounts</h1>
 
+<%= index_actions do %>
+  <%= link_to "New account", new_account_path, class: "pure-button" %>
+<% end %>
+
 <table id="accounts" class="pure-table pure-table-striped">
   <thead>
     <tr>
@@ -28,8 +32,3 @@
     <% end %>
   </tbody>
 </table>
-
-<div style="margin-top: 1rem">
-  <%= link_to "New account", new_account_path, class: "pure-button" %>
-</div>
-

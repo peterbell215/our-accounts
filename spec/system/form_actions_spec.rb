@@ -163,18 +163,4 @@ RSpec.describe 'The actions on a form screen', type: :system do
       expect(page).to have_css('h1', text: 'Counterparties')
     end
   end
-
-  # The rules list is the only index reached from somewhere other than the menu bar, so the only one with
-  # anywhere to go back to.
-  describe 'the rules list' do
-    let(:account) { create(:lloyds_account) }
-
-    it 'offers the way back up to its account' do
-      visit account_import_matchers_path(account)
-
-      within('.form-actions') { click_link 'Back' }
-
-      expect(page).to have_css('h1', text: account.name)
-    end
-  end
 end

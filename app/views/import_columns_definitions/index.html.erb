@@ -4,6 +4,10 @@
 
 <h1>Import columns definitions</h1>
 
+<%= index_actions do %>
+  <%= link_to "New import columns definition", new_import_columns_definition_path, class: "pure-button" %>
+<% end %>
+
 <table id="import_columns_definitions" class="pure-table pure-table-striped">
   <thead>
   <tr>
@@ -28,7 +32,3 @@
   <% end %>
   </tbody>
 </table>
-
-<div style="margin-top: 1rem">
-  <%= link_to "New import columns definition", new_import_columns_definition_path, class: "pure-button" %>
-</div>
