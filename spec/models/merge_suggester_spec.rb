@@ -75,6 +75,37 @@ describe MergeSuggester, type: :model do
     end
   end
 
+  # The prompt asks for a name without a payment rail in it and was ignored, twice in one answer:
+  # "Zettle GB Chocolates" and "PAYPAL *Spotify" came back for payees called GB Chocolates and Spotify.
+  # Removing a known prefix is not a judgement, so it is done here instead of asked for.
+  describe 'the name it offers for the merged payee' do
+    def name_for(suggested)
+      answer = [ { name: suggested, members: [ "TESCO STORES 2889", "TESCO STORES 2228" ], reason: "." } ]
+      suggester_for(reply_with(answer)).groups.sole.name
+    end
+
+    it 'takes a rail off the front, whichever rail it is' do
+      expect(name_for("PAYPAL *Spotify")).to eq "Spotify"
+      expect(name_for("Zettle_*GB Chocolates")).to eq "GB Chocolates"
+      expect(name_for("SQ *Stir Bakery")).to eq "Stir Bakery"
+      expect(name_for("SumUp * Two Magpies")).to eq "Two Magpies"
+    end
+
+    it 'leaves a name with no rail in it alone' do
+      expect(name_for("Two Magpies Bakery")).to eq "Two Magpies Bakery"
+    end
+
+    # Only the front: a payee genuinely called something with an asterisk in the middle keeps it.
+    it 'does not strip a rail-like word from the middle' do
+      expect(name_for("Chocolates SQ *Special")).to eq "Chocolates SQ *Special"
+    end
+
+    # An empty box on the confirmation screen is worse than a poor suggestion.
+    it 'does not empty a name that is nothing but a rail' do
+      expect(name_for("PAYPAL *")).to eq "PAYPAL *"
+    end
+  end
+
   describe 'marking a group whose members disagree about the category' do
     before do
       create(:import_matcher, counterparty: tesco_stores, category: Category.find_by!(name: "Shopping"),
@@ -238,6 +269,61 @@ describe MergeSuggester, type: :model do
 
       expect(Anthropic::Client).to have_received(:new)
         .with(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
+    end
+
+    # Measured against a real Claude Code token: Opus 5, Opus 4.8 and Sonnet 5 all answer 429 with no
+    # rate-limit headers, and only Haiku 4.5 answers. So the default model has to travel with the
+    # credential, or development asks for a model it cannot have and 429s on every press.
+    it 'defaults a Claude Code sign-in to the only model it can reach' do
+      with_credentials(nil)
+      with_oauth_token("sk-ant-oat01-test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq described_class::OAUTH_MODEL
+    end
+
+    it 'defaults a configured credential to the first-party model' do
+      with_oauth_token(nil)
+      with_credentials(auth_token: "dop_v1_test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq described_class::MODEL
+    end
+
+    # Development configures everything through the environment, so the model has to be settable there
+    # too — there is deliberately nothing in the credentials file to put it in.
+    it 'lets the environment override the model' do
+      with_credentials(nil)
+      with_oauth_token("sk-ant-oat01-test")
+      allow(ENV).to receive(:[]).with(described_class::MODEL_VARIABLE).and_return("claude-sonnet-5")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq "claude-sonnet-5"
+    end
+
+    # A rate limit on a sign-in that can only reach one model is permanent, whatever x-should-retry says,
+    # so the message must not invite the reader to wait it out.
+    it 'says what a rate limit means on a Claude Code sign-in' do
+      with_credentials(nil)
+      with_oauth_token("sk-ant-oat01-test")
+      messages = double("messages")
+      allow(messages).to receive(:create).and_raise(
+        Anthropic::Errors::RateLimitError.new(url: URI("https://api.anthropic.com/v1/messages"),
+                                              status: 429, headers: {}, body: nil,
+                                              request: nil, response: nil)
+      )
+      allow(Anthropic::Client).to receive(:new).and_return(double("client", messages: messages))
+
+      suggester = described_class.new
+      expect(suggester.groups).to be_empty
+      expect(suggester.error).to include("rate limited", described_class::OAUTH_MODEL.to_s,
+                                         described_class::MODEL_VARIABLE)
     end
 
     # The state a checkout with neither is in, so it has to read as setup rather than as breakage.

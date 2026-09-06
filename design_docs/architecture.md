@@ -116,6 +116,45 @@ against, and a spec asserts the request carries names and category names only: n
 account numbers, nothing per-transaction. This is the one place in the application where anything leaves the
 machine.
 
+**Run against the real 232 names, on the weakest model it will ever use** (Haiku 4.5, which is all a Claude
+Code sign-in reaches), it proposed six groups: five sound, one wrong, and one miss. The five include three
+the string heuristics could not have found — `SQ *STIR BAKERY CH`/`GR` grouped on the bakery rather than on
+`SQ *`, `SumUp *Two Magpie` matched to `Two Magpies Bakery`, and `PAYPAL *GBCHOCOLAT` matched to
+`Zettle *GB Chocola` across two different rails. It grouped nothing by a rail, which is the failure that
+disqualified all four heuristics.
+
+The wrong one is worth recording because it named a gap in the prompt rather than a failure to follow it:
+`CAMBRIDGE NORTH SS` was folded into `GREATER ANGLIA` on the reasoning that Cambridge North is a station on
+that network. That is the `LNK TESCO` error wearing different clothes — a *place* mistaken for a payee — and
+the prompt had only ever said it about cash machines. It now says it about venues generally. The prompt also
+now forbids a payment rail in the suggested name, after "Zettle GB Chocolates" came back for what is simply
+GB Chocolates.
+
+The miss — `PAYPAL *SPOTIFY` against `SPOTIFY`, found by a local digit-and-rail-stripping sweep — was left
+alone deliberately. It is the same rail-stripping the model got right three times in the same answer, so it
+is inconsistency rather than incapability, and the production model is a tier above. Tuning the prompt
+against the weakest model's lapses would be fitting to the wrong target.
+
+**A second run, after those two prompt changes, moved the numbers the wrong way as well as the right one.**
+Twelve groups instead of six: it found `PAYPAL *SPOTIFY`/`SPOTIFY`, `SAINSBURYS S/MKTS`/`Sainsbury's`,
+`SQ *STIR CAFE CHES`/`HIST` and the Co-op variants, and the Greater Anglia error was gone. But it also folded
+`SQ *THE HAYMAKERS` — a pub, nineteen transactions — into Two Magpies Bakery, which it had grouped correctly
+the run before, and put `Daily Bread Co-ope` in with Co-op Group on the strength of a shared word that is a
+legal form rather than a brand. Both false groups sit inside one category, so the category-clash marking
+cannot warn about either.
+
+Two things follow. **Single runs are weak evidence at this tier** — six groups against twelve, from a
+two-line prompt change, is mostly variance — so a prompt should not be tuned on one sample. And **the
+confirmation screen is doing real work**: a pub inside a bakery merge is obvious to a reader and invisible to
+the category check, which is exactly why nothing here merges anything on its own.
+
+**The naming instruction was ignored outright, so it moved into code.** Asked not to put a payment rail in
+the suggested name, the same answer returned "Zettle GB Chocolates" and "PAYPAL *Spotify" for payees plainly
+called GB Chocolates and Spotify. Removing a known prefix from a string is not a judgement and never needed
+to be a request: `RAIL_PREFIX` strips it in `#suggested_name`, where it is deterministic and specced. A name
+that is *only* a rail is left alone rather than emptied — an empty box on the confirmation screen is worse
+than a poor suggestion, and the reader types over it either way.
+
 **It proposes; it never merges.** Every group is a link into the existing confirmation screen carrying the
 ids and a suggested name, so `CounterpartyMerge` — where the load-bearing ordering lives — runs unchanged
 over a set a person has approved. Three answers are dropped rather than shown, because each would open a
@@ -144,6 +183,24 @@ token-cache path, taken when the credential is an access-token *provider*. So th
 `Anthropic::Credentials::StaticToken`, whose whole job is to satisfy that protocol with a fixed value.
 Handed to `auth_token:` instead it would go out as a bearer with no beta header and come back 401 — a
 failure that looks like a bad token rather than a missing header.
+
+**What a sign-in can reach is narrower than what a key can, and the model travels with the credential
+because of it.** Measured against a real Claude Code token: Opus 5, Opus 4.8 and Sonnet 5 all answer
+`429 rate_limit_error` with the message `"Error"` and no `anthropic-ratelimit-*` headers whatever, while
+Haiku 4.5 answers normally. Three refusals in a row at three different tiers is a boundary rather than a
+queue, and the absence of rate-limit headers is the tell: nothing is being counted, so nothing is being
+replenished. The 429's `x-should-retry: true` is therefore misleading, which is why the failure message
+names the boundary instead of inviting the reader to wait.
+
+So `#resolution` returns a credential *and* a default model together. Picking the credential first and
+defaulting the model separately is the arrangement that fails: development would inherit the first-party
+default, ask for a model its token cannot have, and 429 on every press with a message about rate limits.
+`ANTHROPIC_MODEL` overrides either default, the environment being where development configures everything.
+
+The cost is that development and production run different models against the same prompt — Haiku locally,
+Opus 5 through the gateway — so a suggestion seen locally is not the one the deployed copy would make. That
+is worth knowing when judging the suggestions rather than the plumbing: the local screen proves the feature
+works, not that it works well.
 
 The production settings belong in `config/credentials/production.yml.enc` rather than the shared
 `credentials.yml.enc`, which is committed and readable everywhere: a gateway token left in the shared file

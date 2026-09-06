@@ -28,6 +28,27 @@ class MergeSuggester
   # the household's policy is to sign in with the CLI rather than to issue API keys.
   OAUTH_TOKEN_VARIABLE = "CLAUDE_CODE_OAUTH_TOKEN"
 
+  # What a Claude Code sign-in can actually reach, which is not the same as what an API key can.  Measured
+  # rather than assumed: against a real token, Opus 5, Opus 4.8 and Sonnet 5 all answer 429
+  # `rate_limit_error` with no `anthropic-ratelimit-*` headers at all, while Haiku 4.5 answers normally.
+  # That is a tier boundary and not throttling — the 429 carries `x-should-retry: true`, but waiting does
+  # not help, because nothing is being replenished.  So the default model travels with the credential.
+  OAUTH_MODEL = :"claude-haiku-4-5"
+
+  # The payment rails seen in the real statement descriptions, as they appear at the *start* of a name:
+  # "PAYPAL *GBCHOCOLAT", "SQ *STIR BAKERY CH", "SumUp *Two Magpie", "Zettle_*GB Chocola".
+  #
+  # Stripped from the suggested name in code rather than asked for in the prompt.  The prompt does ask —
+  # and was ignored, twice in one answer, coming back with "Zettle GB Chocolates" and "PAYPAL *Spotify"
+  # for payees plainly called GB Chocolates and Spotify.  Removing a known prefix from a string is not a
+  # judgement, so it does not belong in a request to a model that may or may not honour it.
+  RAIL_PREFIX = /\A(?:paypal|sq|sumup|zettle|izettle|iz)[\s_]*\*[\s_]*/i
+
+  # Overrides the default for whichever credential is in use.  An environment variable as well as a
+  # credentials setting, because development configures everything through the environment — there is
+  # deliberately nothing in the credentials file there.
+  MODEL_VARIABLE = "ANTHROPIC_MODEL"
+
   SYSTEM = <<~PROMPT.freeze
     You are given the payee names from one household's bank and credit-card statements, each with the
     spending categories that household files it under. The names are raw statement text: the bank
@@ -43,9 +64,13 @@ class MergeSuggester
 
     What does not, however similar the text looks:
 
-    - A payment rail is not a payee. LNK is a cash machine network, SQ * is Square, PAYPAL * is PayPal.
-      LNK TESCO is a cash withdrawal at a machine that happens to stand in a Tesco, and it is not the
-      supermarket. Never group by the rail.
+    - A payment rail is not a payee. LNK is a cash machine network, SQ * is Square, PAYPAL * is PayPal,
+      SumUp * and Zettle * are card readers. Never group by the rail. Do look past it: SQ *STIR BAKERY
+      and STIR BAKERY are the same payee, and so are PAYPAL *GBCHOCOLAT and Zettle *GB Chocola.
+    - Where a payment happened is not who was paid. LNK TESCO is a withdrawal from a machine standing in
+      a Tesco, not the supermarket. A purchase at CAMBRIDGE NORTH is at a railway station, not from the
+      train operator that runs it. A venue, a building or a station is a place, and a place is not a payee
+      however strongly it suggests one.
     - A shared first word is not a payee. THE ROYAL OAK and THE RED LION are two different pubs.
     - The same brand doing different things is not one payee where the household files it differently.
       TESCO STORES under Food and TESCO PAY AT PUMP under Car are the supermarket and the petrol station.
@@ -57,6 +82,9 @@ class MergeSuggester
 
     For each group give the name the merged payee should take — the clearest form of the real name, not
     necessarily one of the strings given — and one short sentence saying why they are the same payee.
+
+    Never put a payment rail in that name. PAYPAL *GBCHOCOLAT and Zettle *GB Chocola are "GB Chocolates",
+    not "Zettle GB Chocolates": how the money travelled is not part of who was paid.
   PROMPT
 
   SCHEMA = {
@@ -136,20 +164,31 @@ class MergeSuggester
   #    header on exactly one path — where the credential is an access-token *provider* rather than a bare
   #    token (`client.rb#auth_headers`) — so it is wrapped in a StaticToken rather than passed as
   #    `auth_token:`, which would send the bearer without the header and be refused.
-  def credential
-    settings = provider_settings
+  # Resolved together, because which models a credential can reach is a property of that credential: an
+  # API key reaches the lot, a Claude Code sign-in reaches only OAUTH_MODEL.  Picking the credential and
+  # then defaulting the model separately is how development ends up asking for a model it cannot have.
+  def resolution
+    @resolution ||=
+      if provider_settings[:api_key].present?
+        { credential: { api_key: provider_settings[:api_key] }, model: MODEL }
+      elsif provider_settings[:auth_token].present?
+        { credential: { auth_token: provider_settings[:auth_token] }, model: MODEL }
+      elsif oauth_token.present?
+        { credential: { credentials: Anthropic::Credentials::StaticToken.new(oauth_token) },
+          model: OAUTH_MODEL }
+      else
+        # No credential is not resolved as an error here, because asking which model to use must not
+        # depend on having one: the specs inject a client and never need a credential at all.  It is
+        # #credential that cannot proceed without one, and #credential that says so.
+        { credential: nil, model: MODEL }
+      end
+  end
 
-    if settings[:api_key].present?
-      { api_key: settings[:api_key] }
-    elsif settings[:auth_token].present?
-      { auth_token: settings[:auth_token] }
-    elsif oauth_token.present?
-      { credentials: Anthropic::Credentials::StaticToken.new(oauth_token) }
-    else
-      raise KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials, and no " \
-                      "#{OAUTH_TOKEN_VARIABLE} in the environment. Add one with bin/rails credentials:edit, " \
-                      "or sign in with the Claude Code CLI."
-    end
+  def credential
+    resolution[:credential] ||
+      raise(KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials, and no " \
+                      "#{OAUTH_TOKEN_VARIABLE} in the environment. Add one with " \
+                      "bin/rails credentials:edit, or sign in with the Claude Code CLI.")
   end
 
   # Read at call time rather than at boot: a token that has expired is replaced by exporting a new one, and
@@ -162,7 +201,9 @@ class MergeSuggester
     url.present? ? { base_url: url } : {}
   end
 
-  def model = provider_settings[:model].presence || MODEL
+  def model
+    provider_settings[:model].presence || ENV[MODEL_VARIABLE].presence || resolution[:model]
+  end
 
   # Beside seed_data rather than in the environment, so that a checkout with config/master.key needs
   # nothing else set to work.
@@ -229,10 +270,24 @@ class MergeSuggester
       next if members.size < CounterpartyMerge::MINIMUM
       next unless seen.add?(members.map(&:id).sort)
 
-      Group.new(name: group["name"].to_s.squish, counterparties: members.sort_by(&:name),
+      Group.new(name: suggested_name(group["name"]), counterparties: members.sort_by(&:name),
                 reason: group["reason"].to_s.squish,
                 categories: members.flat_map { |m| categories_by_id[m.id].to_a }.uniq.sort)
     end.sort_by { |group| -group.counterparties.size }
+  end
+
+  # The name to offer for the merged payee, with any payment rail taken off the front: how the money
+  # travelled is not part of who was paid.  A name that is *only* a rail is left alone rather than
+  # emptied, since an empty box on the confirmation screen is worse than a poor suggestion — and the
+  # reader is expected to type over whatever is offered in any case.
+  #
+  # @param [String, nil] name
+  # @return [String]
+  def suggested_name(name)
+    squished = name.to_s.squish
+    stripped = squished.sub(RAIL_PREFIX, "")
+
+    stripped.presence || squished
   end
 
   # One query for every counterparty's categories rather than one per counterparty: this runs over a few
@@ -247,6 +302,12 @@ class MergeSuggester
     case error
     when KeyError
       "No credential is configured, so there is nothing to ask. #{error.message}"
+    when Anthropic::Errors::RateLimitError
+      # Worth naming the tier boundary here: on a Claude Code sign-in this is what asking for a model
+      # above Haiku looks like, and it reads as something that will pass on its own when it will not.
+      "The request was rate limited asking for #{model}. A Claude Code sign-in only reaches " \
+      "#{OAUTH_MODEL}; the larger models answer this however long you wait. Set #{MODEL_VARIABLE} to " \
+      "choose another."
     when Anthropic::Errors::APIConnectionError
       "Could not reach the API. Nothing has changed."
     else

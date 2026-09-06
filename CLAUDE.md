@@ -577,6 +577,18 @@ this, because the row is the form — the controller renders Turbo Streams and t
      DigitalOcean and other Messages-API gateways want. This is the production path.
   3. `CLAUDE_CODE_OAUTH_TOKEN` in the environment, written by `claude setup-token` — the development path.
 
+  **A Claude Code sign-in only reaches Haiku 4.5, and this was measured rather than assumed.** Against a
+  real token, Opus 5, Opus 4.8 and Sonnet 5 all answer `429 rate_limit_error` with the message `"Error"`
+  and **no `anthropic-ratelimit-*` headers at all**, while Haiku 4.5 answers normally. That is a tier
+  boundary, not throttling: the 429 carries `x-should-retry: true`, but nothing is being replenished, so
+  waiting never clears it. The default model therefore travels *with* the credential — `OAUTH_MODEL` for a
+  sign-in, `MODEL` for a configured one — because choosing the credential and defaulting the model
+  separately is exactly how development ends up asking for a model it cannot have. `ANTHROPIC_MODEL`
+  overrides either, the environment being where development configures everything.
+
+  Note that development and production therefore run **different models** on the same prompt, so a
+  suggestion seen locally is not the one the deployed copy would make.
+
   **The OAuth token is not passed as `auth_token:`, and that is not a detail.** An OAuth token is only
   accepted alongside `anthropic-beta: oauth-2025-04-20`, and the SDK attaches that header on exactly one
   path: where the credential is an access-token *provider* rather than a bare token (`client.rb#auth_headers`
