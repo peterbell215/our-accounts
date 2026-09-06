@@ -4,13 +4,25 @@
 
 <h1>Suggested merges</h1>
 
-<%= index_actions back: counterparties_path %>
+<%= index_actions back: counterparties_path do %>
+  <%# The only thing on this screen that asks the API. Everything else, including coming back here after a
+      merge, reads the answer already given. %>
+  <%= link_to "Suggest again", merge_suggestions_path(refresh: 1), class: "pure-button" %>
+<% end %>
 
 <p>
   Sets of names that look like one payee, worked out from the names themselves and the categories you file
   them under. <strong>These are proposals, not decisions</strong> — nothing has been merged. Open one to see
   what would move, change the name if you want a different one, and confirm it there.
 </p>
+
+<% if @kept_at %>
+  <p>
+    Worked out <%= time_ago_in_words(@kept_at) %> ago and kept since, so merging one of these and coming
+    back costs nothing. A group you have merged drops off the list. Press
+    <strong>Suggest again</strong> for a fresh answer.
+  </p>
+<% end %>
 
 <p>
   Only the payee names and their category names were sent away to work this out. No amounts, no dates, no
@@ -55,7 +67,11 @@
             <% end %>
           </td>
           <td>
-            <%= link_to "Review", new_counterparty_merge_path(ids: group.ids, name: group.name),
+            <%# `from` is what sends the confirmation back here rather than to the counterparties list:
+                the same screen is also reached by ticking boxes there, and each way in should lead out
+                the way it came. %>
+            <%= link_to "Review",
+                        new_counterparty_merge_path(ids: group.ids, name: group.name, from: "suggestions"),
                         class: "pure-button" %>
           </td>
         </tr>

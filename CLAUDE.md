@@ -591,6 +591,19 @@ Turbo Streams and there is no `edit` route.
   category names and nothing else — no amounts, no dates, no account numbers — and a spec asserts that, so
   widening it is a deliberate act.
 
+  **The answer is kept in `Rails.cache` for an hour**, keyed on the signed-in session, and only
+  `?refresh=1` — set by **Suggest again** and nothing else — asks the model. This screen recomputed on
+  every visit at first; merging is done a group at a time and each merge returns here, so recomputing on
+  arrival spent a request to redraw a list that had only lost the row just acted on. A merged group needs
+  no bookkeeping: its losers are destroyed, so it fails the they-all-still-exist check and drops off. A
+  failure is not kept. The test cache is a null store, so specs touching this swap in a real one.
+
+  **Each way into the merge confirmation leads out the way it came.** It is reached both by ticking boxes
+  on the counterparties list and by **Review** here, and afterwards should land on the survivor in the
+  first case and back on the suggestions in the second. `from=suggestions` travels on the Review link and
+  through the POST in a hidden field; Back, Cancel and a completed merge all read it. A *name*, not a path
+  — a path from the query string is an open redirect waiting to happen.
+
   **Which provider it talks to is configuration, not code**, because no API keys are issued here: development
   signs in with the Claude Code CLI and production goes through a third-party service. Three ways in, tried
   in that order, with configured credentials beating the ambient environment:

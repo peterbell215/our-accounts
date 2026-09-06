@@ -168,6 +168,32 @@ API unreachable, a refusal, an answer that will not parse — is reported above 
 rather than raised. No key configured is the state every checkout starts in, and it has to read as something
 to set up rather than as something broken.
 
+**The answer is kept, which reverses how this screen started.** It first recomputed on every visit, on the
+reasoning that asking again after a merge was the reasonable thing to want. Using it showed the opposite:
+merging is done a group at a time, each merge sends the reader back to the list, and recomputing on arrival
+spends a request to redraw a list that has only lost the row just acted on. The reader is working through an
+answer, not asking a new question. So `MergeSuggestionsController` writes the groups to `Rails.cache` under
+the signed-in session's id for an hour, and only `?refresh=1` — set by **Suggest again**, and by nothing
+else — asks the model.
+
+A merged group needs no special handling: its losers are destroyed, so it fails the they-all-still-exist
+test on the way out of the cache and drops off the list. Nothing is written to say a group has been dealt
+with, which is why the kept list is safe to show — it can only ever shrink towards the truth.
+
+`Rails.cache` rather than the session, because the session is a 4KB cookie: a dozen groups of names and
+reasons is a substantial fraction of it, with nothing to say what happens on the run that proposes thirty.
+A failure is deliberately **not** kept — the next visit should try again rather than re-show the excuse.
+The test environment's cache is a null store, so the specs that exercise any of this swap in a real one and
+say so.
+
+**Each way into the merge confirmation leads out the way it came in.** The same screen is reached by ticking
+boxes on the counterparties list and by **Review** on a suggestion, and the right destination afterwards
+differs: the survivor's page when the reader chose the set themselves and there is nothing to go back to,
+the suggestions when they are working down a list. The Review link carries `from=suggestions`, the
+confirmation carries it through the POST in a hidden field, and Back, Cancel and a completed merge all read
+it. It is deliberately a *name* rather than a path — a path from the query string is somewhere anyone could
+point this screen's Cancel button, and an open redirect is not worth the flexibility.
+
 **Which provider serves the model is configuration, not code**, and the reason is a constraint rather than a
 preference: no API keys are issued here. Development signs in with the Claude Code CLI, production goes
 through a third-party service. Both have to work, so the credential is resolved in three steps —
