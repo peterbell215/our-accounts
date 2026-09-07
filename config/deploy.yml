@@ -38,11 +38,21 @@ registry:
 env:
   secret:
     - RAILS_MASTER_KEY
+    # The merge suggester's gateway token.  A Kamal secret rather than a credential: an environment
+    # credentials file replaces the shared one rather than adding to it, and the shared one is readable
+    # in development.  See MergeSuggester in CLAUDE.md.
+    - ANTHROPIC_AUTH_TOKEN
   clear:
     # The hostname the application answers to.  config/environments/production.rb refuses any other Host
     # header, so that a scanner arriving at the bare IP address gets nothing.  Keep this in step with
     # proxy.host above.
     APP_HOST: accounts.peterbell.org.uk
+
+    # Where the merge suggester asks, and what that provider calls the model.  In the open rather than as
+    # secrets, because neither is one and a wrong model id is a bare 404 — better visible here than
+    # hidden in a file.  Model ids are provider-specific: this is `claude-opus-5` first-party.
+    ANTHROPIC_BASE_URL: https://inference.do-ai.run
+    ANTHROPIC_MODEL: anthropic-claude-opus-5
 
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.

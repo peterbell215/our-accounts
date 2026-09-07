@@ -49,6 +49,12 @@ class MergeSuggester
   # deliberately nothing in the credentials file there.
   MODEL_VARIABLE = "ANTHROPIC_MODEL"
 
+  # The gateway a deployed copy talks to, injected as a Kamal environment secret rather than held in the
+  # credentials.  Both are named as the SDK names them, but read here explicitly rather than left to the
+  # SDK's own environment handling, so that all four ways in are resolved in one place and can be specced.
+  AUTH_TOKEN_VARIABLE = "ANTHROPIC_AUTH_TOKEN"
+  BASE_URL_VARIABLE = "ANTHROPIC_BASE_URL"
+
   SYSTEM = <<~PROMPT.freeze
     You are given the payee names from one household's bank and credit-card statements, each with the
     spending categories that household files it under. The names are raw statement text: the bank
@@ -173,6 +179,12 @@ class MergeSuggester
         { credential: { api_key: provider_settings[:api_key] }, model: MODEL }
       elsif provider_settings[:auth_token].present?
         { credential: { auth_token: provider_settings[:auth_token] }, model: MODEL }
+      elsif gateway_token.present?
+        # A deployed copy: a bearer token for a Messages-API gateway, with its base URL and model beside
+        # it in the environment.  Above the Claude Code sign-in because an injected credential is a
+        # deliberate act of deployment, while an exported one is whatever the developer happens to have.
+        # Not tier-limited the way a sign-in is, so the default model is the ordinary one.
+        { credential: { auth_token: gateway_token }, model: MODEL }
       elsif oauth_token.present?
         { credential: { credentials: Anthropic::Credentials::StaticToken.new(oauth_token) },
           model: OAUTH_MODEL }
@@ -186,19 +198,22 @@ class MergeSuggester
 
   def credential
     resolution[:credential] ||
-      raise(KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials, and no " \
-                      "#{OAUTH_TOKEN_VARIABLE} in the environment. Add one with " \
-                      "bin/rails credentials:edit, or sign in with the Claude Code CLI.")
+      raise(KeyError, "No anthropic.api_key or anthropic.auth_token in the credentials, and neither " \
+                      "#{AUTH_TOKEN_VARIABLE} nor #{OAUTH_TOKEN_VARIABLE} in the environment. Add one " \
+                      "with bin/rails credentials:edit, or sign in with the Claude Code CLI.")
   end
 
   # Read at call time rather than at boot: a token that has expired is replaced by exporting a new one, and
   # a server that cached the old one at boot would go on failing after it had been.
   def oauth_token = ENV[OAUTH_TOKEN_VARIABLE]
 
+  def gateway_token = ENV[AUTH_TOKEN_VARIABLE]
+
+  # Omitted entirely when unset, so the gem's own default stands rather than being overwritten with nil.
   # Omitted entirely when unset, so the gem's own default stands rather than being overwritten with nil.
   def base_url
-    url = provider_settings[:base_url]
-    url.present? ? { base_url: url } : {}
+    url = provider_settings[:base_url].presence || ENV[BASE_URL_VARIABLE].presence
+    url ? { base_url: url } : {}
   end
 
   def model
