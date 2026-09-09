@@ -228,9 +228,24 @@ Opus 5 through the gateway — so a suggestion seen locally is not the one the d
 is worth knowing when judging the suggestions rather than the plumbing: the local screen proves the feature
 works, not that it works well.
 
-The production settings belong in `config/credentials/production.yml.enc` rather than the shared
-`credentials.yml.enc`, which is committed and readable everywhere: a gateway token left in the shared file
-would have every development machine spending the production budget.
+**The production gateway is a Kamal environment secret, and both credentials routes were rejected on the way
+to that.** The obvious one, `config/credentials/production.yml.enc`, does not work: Rails *replaces* the
+shared file rather than merging with it — `railties/.../configuration.rb:643-645` falls back to
+`credentials.yml.enc` only when the environment file is absent. Creating one would take production off
+`secret_key_base`, which Rails refuses to boot without, and off `active_record_encryption`, without which
+the `encrypts`-ed `otp_secret` cannot be read and nobody with two-factor can sign in. Both could be copied
+across, at the price of two files holding the same secrets and a rotation that has to remember the second.
+The other route, the shared file, is committed and readable in development, where `#resolution` prefers a
+configured credential over the environment — so every development machine would quietly start spending the
+deployed copy's budget.
+
+What is left is the shape the rest of this deployment already uses: a file under `.kamal/local/`, read by
+`.kamal/secrets`, injected as `env.secret`, exactly as the registry password and the R2 keys are.
+`ANTHROPIC_BASE_URL` and `ANTHROPIC_MODEL` sit in `env.clear` beside it — neither is a secret, and a wrong
+model id fails as a bare 404, which is better seen in `deploy.yml` than hidden in a file. The credential
+chain therefore has four tiers, and the environment gateway sits *above* the Claude Code sign-in: an
+injected credential is a deliberate act of deployment, an exported one is whatever the developer happens to
+have in their shell, and production must not fall through to somebody's personal sign-in.
 
 The motive for the gateway is consolidation rather than capability: running the application on a host that
 also sells inference puts the model on the same bill. It is worth being clear that this buys nothing

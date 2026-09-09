@@ -394,20 +394,21 @@ than you expected on your own machine, that is why, and the deployed copy using 
 do better on the same names. `ANTHROPIC_MODEL=claude-sonnet-5` in your shell overrides the choice if your
 sign-in ever reaches further.
 
-**For a deployed copy, name a provider in the credentials instead.** Some hosts sell access to the same
-models, which is worth having if you already pay them for hosting and would rather keep one bill.
-DigitalOcean is one; give it a token, its address, and its own name for the model:
+**A deployed copy gets its own provider, set where the other deploy secrets are.** Some hosts sell access to
+the same models, which is worth having if you already pay them for hosting and would rather keep one bill.
+DigitalOcean is the one set up here. Put its token in a file beside the registry password and the backup
+keys, and it is injected when you deploy:
 
-```yaml
-anthropic:
-  auth_token: dop_v1_...
-  base_url: https://inference.do-ai.run
-  model: anthropic-claude-opus-5
+```sh
+printf '%s' 'dop_v1_...' > .kamal/local/anthropic-auth-token
+chmod 600 .kamal/local/anthropic-auth-token
+bin/kamal deploy
 ```
 
-Put that in the **production** credentials — `bin/rails credentials:edit --environment production` — rather
-than the shared file. The shared one is readable on every machine, so a token left there would have everyone
-developing against the deployed copy's account.
+That directory is ignored by both git and Docker, so the token stays on your machine and never reaches the
+image. The address and the model name are in `config/deploy.yml` where you can see them, neither being a
+secret. Nothing goes in the credentials file: it is readable on every machine, so a token left there would
+have everyone developing against the deployed copy's account.
 
 The model name differs by provider: the same model is `claude-opus-5` from Anthropic and
 `anthropic-claude-opus-5` from DigitalOcean, and giving one provider the other's name fails with an unhelpful

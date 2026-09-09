@@ -632,17 +632,30 @@ Turbo Streams and there is no `edit` route.
   `Anthropic::Credentials::StaticToken`, which routes through the token cache. Passed as `auth_token:` it
   would go out as a bearer with no beta header and come back 401.
 
-  Put the production settings in `config/credentials/production.yml.enc`, not the shared credentials file:
-  `credentials.yml.enc` is committed and readable in every environment, so a gateway token left there would
-  have development spending the production budget. **Model ids are provider-specific** — the same model is
-  `claude-opus-5` first-party and `anthropic-claude-opus-5` on DigitalOcean (`https://inference.do-ai.run`),
-  and sending one provider's id to the other is a bare 404. Nothing configured at all is the state a fresh
-  checkout is in, and the screen says so rather than failing.
+  **Production's gateway is a Kamal environment secret, not a credential**, and both credentials routes were
+  tried and rejected on the way to that. `config/credentials/production.yml.enc` *replaces* the shared file
+  rather than adding to it — `railties/.../configuration.rb:643-645` falls back to `credentials.yml.enc`
+  only when the environment file is absent — so creating one would take production off `secret_key_base`
+  (Rails then refuses to boot) and `active_record_encryption` (nobody with two-factor could sign in) unless
+  every shared value were copied across, leaving two files holding the same secrets. And the shared file is
+  committed and readable in development, where a gateway token would silently outrank the Claude Code
+  sign-in and spend the deployed copy's budget. So the token is a file under `.kamal/local/`, read by
+  `.kamal/secrets`, injected as `env.secret` — the same shape as the registry password and the R2 keys —
+  with `ANTHROPIC_BASE_URL` and `ANTHROPIC_MODEL` in `env.clear` beside it, neither being a secret.
 
-  Specs that touch this **must pin `CLAUDE_CODE_OAUTH_TOKEN`**, including to `nil`. It is exported on the
-  machines this is developed on, so an unpinned example reads a real token, builds a real client and makes a
-  real network call from the suite — confirmed by removing the pin and watching a 401 come back from
-  `api.anthropic.com`.
+  **Model ids are provider-specific** — the same model is `claude-opus-5` first-party and
+  `anthropic-claude-opus-5` on DigitalOcean (`https://inference.do-ai.run`), and sending one provider's id
+  to the other is a bare 404. Nothing configured at all is the state a fresh checkout is in, and the screen
+  says so rather than failing.
+
+  Specs that touch this **must pin every variable the class reads** — `CLAUDE_CODE_OAUTH_TOKEN`,
+  `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL` — including to `nil`, which
+  `merge_suggester_spec`'s `with_env` does from a `before` so that isolation is the default. The first two
+  are exported on the machines this is developed on and injected where it is deployed, so an unpinned
+  example reads a real credential, builds a real client and makes a real network call from the suite. That
+  is not hypothetical twice over: removing the pin once produced a 401 from `api.anthropic.com`, and adding
+  the second variable left two examples reading the real one until the suite was run with all four
+  exported. Run it that way when changing this.
 
   Note `output_config: { format_: ... }` — the Ruby SDK spells that attribute with a trailing underscore
   (`api_name: :format`, as with `system_`), and passing `format:` sends no schema at all and returns prose.

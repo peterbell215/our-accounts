@@ -174,11 +174,23 @@ describe MergeSuggester, type: :model do
       allow(Rails.application.credentials).to receive(:dig).with(:anthropic).and_return(settings)
     end
 
-    # The environment is controlled rather than read: CLAUDE_CODE_OAUTH_TOKEN is exported on the machines
-    # this is developed on, so a spec that left it alone would pass or fail depending on whose shell ran it.
-    def with_oauth_token(token)
+    # Every variable the class reads is pinned, always, including to nil. CLAUDE_CODE_OAUTH_TOKEN is
+    # exported on the machines this is developed on and ANTHROPIC_AUTH_TOKEN is injected in production, so
+    # an unpinned example reads a real credential, builds a real client and makes a real network call from
+    # the suite. That is not hypothetical: it happened, and came back 401 from api.anthropic.com.
+    #
+    # Pinning them one at a time was the earlier shape and it did not survive a second variable being
+    # added — the new one was simply unpinned everywhere. Naming them all here means adding a fifth is a
+    # change in one place.
+    def with_env(oauth: nil, gateway: nil, base_url: nil, model: nil)
       allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with(described_class::OAUTH_TOKEN_VARIABLE).and_return(token)
+
+      { described_class::OAUTH_TOKEN_VARIABLE => oauth,
+        described_class::AUTH_TOKEN_VARIABLE => gateway,
+        described_class::BASE_URL_VARIABLE => base_url,
+        described_class::MODEL_VARIABLE => model }.each do |name, value|
+        allow(ENV).to receive(:[]).with(name).and_return(value)
+      end
     end
 
     def stub_client
@@ -189,9 +201,15 @@ describe MergeSuggester, type: :model do
       client
     end
 
+    # Cleared for every example, so isolation is the default rather than something each one has to
+    # remember. An example that wants a value calls with_env again and overrides. Two examples here did
+    # forget, and were caught only by running the suite with all four variables exported — which is the
+    # state of a machine that both develops this and deploys it.
+    before { with_env }
+
     # The first-party API wants x-api-key, which is what `api_key:` sends, and its own default host.
     it 'sends a key as api_key, with no base_url of its own' do
-      with_oauth_token(nil)
+      with_env(oauth: nil)
       with_credentials(api_key: "sk-ant-test")
       stub_client
 
@@ -202,7 +220,7 @@ describe MergeSuggester, type: :model do
 
     # DigitalOcean and other gateways want Authorization: Bearer, which is what `auth_token:` sends.
     it 'sends a token as auth_token, with the base_url it was given' do
-      with_oauth_token(nil)
+      with_env(oauth: nil)
       with_credentials(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
       stub_client
 
@@ -247,7 +265,7 @@ describe MergeSuggester, type: :model do
     # one path — a credential *provider* — so a bare auth_token: would be sent without it and refused.
     it 'wraps the Claude Code token in a provider, so the OAuth beta header travels with it' do
       with_credentials(nil)
-      with_oauth_token("sk-ant-oat01-test")
+      with_env(oauth: "sk-ant-oat01-test")
       stub_client
 
       described_class.new.groups
@@ -262,7 +280,7 @@ describe MergeSuggester, type: :model do
     # happened to be in the shell. Production settings must not be overridden by a developer's own token.
     it 'prefers a configured credential over the environment' do
       with_credentials(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
-      with_oauth_token("sk-ant-oat01-test")
+      with_env(oauth: "sk-ant-oat01-test")
       stub_client
 
       described_class.new.groups
@@ -271,12 +289,71 @@ describe MergeSuggester, type: :model do
         .with(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
     end
 
+    # A deployed copy gets its gateway from the environment, injected as a Kamal secret, because the two
+    # credentials-file routes were both wrong: an environment credentials file *replaces* the shared one
+    # rather than adding to it, and the shared one is readable in development.
+    it 'sends an environment gateway token as auth_token, with its base URL' do
+      with_credentials(nil)
+      with_env(gateway: "dop_v1_test", base_url: "https://inference.do-ai.run")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new)
+        .with(auth_token: "dop_v1_test", base_url: "https://inference.do-ai.run")
+    end
+
+    # An injected credential is a deliberate act of deployment; an exported one is whatever the developer
+    # happens to have in their shell. Production must not fall through to somebody's CLI sign-in.
+    it 'prefers an environment gateway token over a Claude Code sign-in' do
+      with_credentials(nil)
+      with_env(gateway: "dop_v1_test", oauth: "sk-ant-oat01-test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new).with(auth_token: "dop_v1_test")
+    end
+
+    it 'still prefers a configured credential over the environment' do
+      with_credentials(auth_token: "from-credentials")
+      with_env(gateway: "dop_v1_test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(Anthropic::Client).to have_received(:new).with(auth_token: "from-credentials")
+    end
+
+    # A gateway is not tier-limited the way a CLI sign-in is, so it gets the ordinary model rather than
+    # OAUTH_MODEL. Getting this wrong would quietly ask production for Haiku.
+    it 'defaults an environment gateway to the ordinary model, not the sign-in one' do
+      with_credentials(nil)
+      with_env(gateway: "dop_v1_test")
+      stub_client
+
+      described_class.new.groups
+
+      expect(@sent[:model]).to eq described_class::MODEL
+      expect(@sent[:model]).not_to eq described_class::OAUTH_MODEL
+    end
+
+    it 'names both environment variables when nothing is configured at all' do
+      with_credentials(nil)
+      with_env
+      suggester = described_class.new
+
+      expect(suggester.groups).to be_empty
+      expect(suggester.error).to include(described_class::AUTH_TOKEN_VARIABLE,
+                                         described_class::OAUTH_TOKEN_VARIABLE)
+    end
+
     # Measured against a real Claude Code token: Opus 5, Opus 4.8 and Sonnet 5 all answer 429 with no
     # rate-limit headers, and only Haiku 4.5 answers. So the default model has to travel with the
     # credential, or development asks for a model it cannot have and 429s on every press.
     it 'defaults a Claude Code sign-in to the only model it can reach' do
       with_credentials(nil)
-      with_oauth_token("sk-ant-oat01-test")
+      with_env(oauth: "sk-ant-oat01-test")
       stub_client
 
       described_class.new.groups
@@ -285,7 +362,7 @@ describe MergeSuggester, type: :model do
     end
 
     it 'defaults a configured credential to the first-party model' do
-      with_oauth_token(nil)
+      with_env(oauth: nil)
       with_credentials(auth_token: "dop_v1_test")
       stub_client
 
@@ -298,8 +375,7 @@ describe MergeSuggester, type: :model do
     # too — there is deliberately nothing in the credentials file to put it in.
     it 'lets the environment override the model' do
       with_credentials(nil)
-      with_oauth_token("sk-ant-oat01-test")
-      allow(ENV).to receive(:[]).with(described_class::MODEL_VARIABLE).and_return("claude-sonnet-5")
+      with_env(oauth: "sk-ant-oat01-test", model: "claude-sonnet-5")
       stub_client
 
       described_class.new.groups
@@ -311,7 +387,7 @@ describe MergeSuggester, type: :model do
     # so the message must not invite the reader to wait it out.
     it 'says what a rate limit means on a Claude Code sign-in' do
       with_credentials(nil)
-      with_oauth_token("sk-ant-oat01-test")
+      with_env(oauth: "sk-ant-oat01-test")
       messages = double("messages")
       allow(messages).to receive(:create).and_raise(
         Anthropic::Errors::RateLimitError.new(url: URI("https://api.anthropic.com/v1/messages"),
@@ -329,7 +405,7 @@ describe MergeSuggester, type: :model do
     # The state a checkout with neither is in, so it has to read as setup rather than as breakage.
     it 'reports having no credential at all, rather than raising' do
       with_credentials(nil)
-      with_oauth_token(nil)
+      with_env(oauth: nil)
       suggester = described_class.new
 
       expect(suggester.groups).to be_empty
